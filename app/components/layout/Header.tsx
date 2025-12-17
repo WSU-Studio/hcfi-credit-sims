@@ -1,0 +1,67 @@
+'use client';
+
+import { useState } from "react";
+import type { NavItem } from "@/app/types";
+import { Container } from "@/app/components/ui/Container";
+
+type HeaderProps = {
+  items: NavItem[];
+};
+
+export function Header({ items }: HeaderProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-black/80 backdrop-blur">
+      <Container className="flex items-center justify-between py-4">
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg border border-white/30 bg-white/5 px-3 py-2 text-sm font-semibold text-white">
+            Hyundai Capital
+          </div>
+        </div>
+
+        <nav className="hidden items-center gap-10 text-sm font-medium text-white/90 md:flex">
+          {items.map((item) => (
+            <a key={item.href} href={item.href} className="hover:text-[var(--accent)]">
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <button
+          type="button"
+          aria-label="Toggle navigation"
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white md:hidden"
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <span className="sr-only">Menu</span>
+          <div className="flex flex-col gap-[6px]">
+            <span className="block h-0.5 w-5 bg-white" />
+            <span className="block h-0.5 w-5 bg-white" />
+            <span className="block h-0.5 w-5 bg-white" />
+          </div>
+        </button>
+      </Container>
+
+      {open ? (
+        <div id="mobile-menu" className="border-t border-[var(--border)] bg-black/95 md:hidden">
+          <Container className="flex flex-col gap-3 py-3">
+            {items.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="py-2 text-sm font-medium text-white/90 hover:text-[var(--accent)]"
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+              </a>
+            ))}
+          </Container>
+        </div>
+      ) : null}
+    </header>
+  );
+}
+
