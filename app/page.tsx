@@ -1,65 +1,93 @@
-import Image from "next/image";
+import { Footer } from "@/app/components/layout/Footer";
+import { Header } from "@/app/components/layout/Header";
+import { HeroSlider } from "@/app/components/home/HeroSlider";
+import { ProductSection } from "@/app/components/home/ProductSection";
+import type { Benefit, CompanyInfo, NavItem, Product, Slide } from "@/app/types";
+
+const navItems: NavItem[] = [
+  { label: "Simulasi Kredit", href: "#hero" },
+  { label: "Promosi", href: "#products" },
+  { label: "Informasi", href: "#footer" },
+];
+
+const slides: Slide[] = [
+  {
+    title: "Dapatkan Benefit Kredit Mobil Baru Anda di",
+    highlight: "Hyundai Finance",
+    description:
+      "Rasakan kemudahan proses kredit dengan layanan profesional dan penawaran yang terjaga keasliannya.",
+    image: "/images/main-banner.jpg",
+  },
+];
+
+const benefits: Benefit[] = [
+  {
+    title: "Jaminan Keaslian",
+    description: "Semua penawaran dari kami terjaga keasliannya.",
+  },
+  {
+    title: "Layanan Profesional",
+    description: "Perjalanan memilih sampai pembelian Anda ditemani tenaga kami yang profesional.",
+  },
+];
+
+const products: Product[] = [
+  {
+    title: "Smart Installment Program",
+    subtitle: "Stargazer & Creta",
+    image:
+      "https://images.unsplash.com/photo-1523983254932-638dfc1f4d05?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    title: "Kredit 50:50",
+    subtitle: "Bebas Angsuran 1 Tahun",
+    image:
+      "https://images.unsplash.com/photo-1611672585731-77dc7f92a0e0?auto=format&fit=crop&w=1200&q=80",
+  },
+  {
+    title: "Balloon Payment",
+    subtitle: "Lebih Leluasa & Ringan",
+    image:
+      "https://images.unsplash.com/photo-1508264165352-258859e62245?auto=format&fit=crop&w=1200&q=80",
+  },
+];
+
+const companyInfo: CompanyInfo = {
+  name: "Hyundai Capital",
+  address: [
+    "PT Hyundai Capital Finance Indonesia",
+    "Sequis Tower, 23rd Floor, Unit 1 - 7, Jl. Jenderal Sudirman",
+    "Kav. 71, Senayan, Kebayoran Baru, South Jakarta, 12190",
+  ],
+  legalLinks: [
+    { label: "Privacy Policy", href: "#" },
+    { label: "Terms & Condition", href: "#" },
+  ],
+  contact: [
+    { label: "Call", text: "1500708", href: "tel:1500708" },
+    { label: "WhatsApp", text: "08111500708", href: "tel:08111500708" },
+    { label: "Email", text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
+  ],
+  apps: [
+    { label: "Google Play", href: "#" },
+    { label: "App Store", href: "#" },
+  ],
+  disclaimer:
+    "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
+  copyright: "Copyright © 2025 - All Right Reserved",
+};
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen bg-black text-white">
+      <Header items={navItems} />
+      <main className="pb-16">
+        <HeroSlider slides={slides} benefits={benefits} />
+        <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
       </main>
+      <div id="footer">
+        <Footer company={companyInfo} />
+      </div>
     </div>
   );
 }
