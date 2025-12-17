@@ -12,7 +12,8 @@ type HeroSliderProps = {
 
 export function HeroSlider({ slides, benefits }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
-  const current = slides[index] ?? slides[0];
+  const fallbackImage = "/images/main-banner.jpg";
+  const current = slides[index] ?? slides[0] ?? { image: fallbackImage, title: "", highlight: "", description: "" };
 
   if (!current) return null;
 
@@ -21,7 +22,7 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
       <div className="relative h-[540px] w-full md:h-[680px]">
         <div
           className="absolute inset-0 bg-cover bg-center transition-[background-image]"
-          style={{ backgroundImage: `url(${current.image})` }}
+          style={{ backgroundImage: `url(${current.image || fallbackImage})` }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
