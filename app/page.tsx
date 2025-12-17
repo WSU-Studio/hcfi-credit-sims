@@ -35,20 +35,17 @@ const products: Product[] = [
   {
     title: "Smart Installment Program",
     subtitle: "Stargazer & Creta",
-    image:
-      "https://images.unsplash.com/photo-1523983254932-638dfc1f4d05?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/product-01.jpg",
   },
   {
     title: "Kredit 50:50",
     subtitle: "Bebas Angsuran 1 Tahun",
-    image:
-      "https://images.unsplash.com/photo-1611672585731-77dc7f92a0e0?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/product-02.jpg",
   },
   {
     title: "Balloon Payment",
     subtitle: "Lebih Leluasa & Ringan",
-    image:
-      "https://images.unsplash.com/photo-1508264165352-258859e62245?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/product-03.jpg",
   },
 ];
 
