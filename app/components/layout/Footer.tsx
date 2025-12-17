@@ -1,5 +1,6 @@
 import type { CompanyInfo } from "@/app/types";
 import { Container } from "@/app/components/ui/Container";
+import Link from "next/link";
 
 type FooterProps = {
   company: CompanyInfo;
@@ -20,10 +21,13 @@ export function Footer({ company }: FooterProps) {
               ))}
             </div>
             <div className="flex flex-wrap gap-4 pt-3 text-xs text-white/80">
-              {company.legalLinks.map((link) => (
-                <a key={link.href} href={link.href} className="hover:text-[var(--accent)]">
+              {company.legalLinks.map((link, index) => (
+                <Link 
+                  key={`${link.label}-${index}`} 
+                  href={link.href} 
+                  className="hover:text-[var(--accent)]">
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -31,12 +35,12 @@ export function Footer({ company }: FooterProps) {
           <div className="space-y-3">
             <p className="text-base font-semibold text-white">Customer Care</p>
             <ul className="space-y-2 leading-relaxed">
-              {company.contact.map((item) => (
-                <li key={item.label}>
+              {company.contact.map((item, index) => (
+                <li key={`${item.text}-${index}`}>
                   {item.href ? (
-                    <a href={item.href} className="hover:text-[var(--accent)]">
+                    <Link href={item.href} className="hover:text-[var(--accent)]">
                       {item.text}
-                    </a>
+                    </Link>
                   ) : (
                     item.text
                   )}
@@ -48,14 +52,14 @@ export function Footer({ company }: FooterProps) {
           <div className="space-y-3">
             <p className="text-base font-semibold text-white">Unduh Aplikasi</p>
             <div className="flex flex-wrap gap-3">
-              {company.apps.map((app) => (
-                <a
-                  key={app.href}
+              {company.apps.map((app, index) => (
+                <Link
+                  key={`${app.label}-${index}`}
                   href={app.href}
                   className="flex items-center justify-center rounded-lg border border-[var(--border)] bg-white/5 px-4 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
                 >
                   {app.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
