@@ -5,7 +5,7 @@ import { Footer } from "./components/layout/Footer";
 import { CompanyInfo, NavItem } from "./types";
 
 const navItems: NavItem[] = [
-  { label: "Simulasi Kredit", href: "#hero" },
+  { label: "Simulasi Kredit", href: "/simulasi-kredit" },
   { label: "Promosi", href: "#products" },
   { label: "Informasi", href: "#footer" },
 ];
@@ -27,8 +27,8 @@ const companyInfo: CompanyInfo = {
     { label: "Email", text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
   ],
   apps: [
-    { label: "Google Play", href: "#" },
-    { label: "App Store", href: "#" },
+    { label: "Google Play", src: "/images/play-store.png", href: "#" },
+    { label: "App Store", src: "/images/app-store.png", href: "#" },
   ],
   disclaimer:
     "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",

@@ -29,6 +29,7 @@ export type ContactItem = {
 
 export type AppLink = {
   label: string;
+  src: string;
   href: string;
 };
 

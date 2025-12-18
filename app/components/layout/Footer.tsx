@@ -1,6 +1,7 @@
 import type { CompanyInfo } from "@/app/types";
 import { Container } from "@/app/components/ui/Container";
 import Link from "next/link";
+import Image from "next/image";
 
 type FooterProps = {
   company: CompanyInfo;
@@ -12,9 +13,7 @@ export function Footer({ company }: FooterProps) {
       <Container className="space-y-8 py-10">
         <div className="grid gap-8 md:grid-cols-3">
           <div className="space-y-3">
-            <div className="inline-flex items-center rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white">
-              {company.name}
-            </div>
+            <Image src="/logo.svg" alt="Hyundai Capital" width={136} height={28} priority />
             <div className="space-y-1 leading-relaxed">
               {company.address.map((line) => (
                 <p key={line}>{line}</p>
@@ -56,9 +55,9 @@ export function Footer({ company }: FooterProps) {
                 <Link
                   key={`${app.label}-${index}`}
                   href={app.href}
-                  className="flex items-center justify-center rounded-lg border border-[var(--border)] bg-white/5 px-4 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
+                  className="flex items-center justify-center rounded-sm border border-[var(--border)] bg-white/5 transition duration-300 hover:border-white/30 hover:bg-white/10 overflow-hidden"
                 >
-                  {app.label}
+                  <Image src={app.src} alt={app.label} width={128} height={100} priority />
                 </Link>
               ))}
             </div>
