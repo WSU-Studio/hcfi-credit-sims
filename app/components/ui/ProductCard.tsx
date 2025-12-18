@@ -8,7 +8,6 @@ type ProductCardProps = Product & {
 export function ProductCard({ title, subtitle, image, className }: ProductCardProps) {
   const base =
     "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[5/2] md:aspect-[4/3]";
-  const backgroundImage = image ? { backgroundImage: `url(${image})` } : undefined;
 
   return (
     <div className={className ? `${base} ${className}` : base} role="img" aria-label={title}>
