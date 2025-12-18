@@ -1,14 +1,6 @@
-import { Footer } from "@/app/components/layout/Footer";
-import { Header } from "@/app/components/layout/Header";
 import { HeroSlider } from "@/app/components/home/HeroSlider";
 import { ProductSection } from "@/app/components/home/ProductSection";
-import type { Benefit, CompanyInfo, NavItem, Product, Slide } from "@/app/types";
-
-const navItems: NavItem[] = [
-  { label: "Simulasi Kredit", href: "#hero" },
-  { label: "Promosi", href: "#products" },
-  { label: "Informasi", href: "#footer" },
-];
+import type { Benefit, Product, Slide } from "@/app/types";
 
 const slides: Slide[] = [
   {
@@ -49,42 +41,11 @@ const products: Product[] = [
   },
 ];
 
-const companyInfo: CompanyInfo = {
-  name: "Hyundai Capital",
-  address: [
-    "PT Hyundai Capital Finance Indonesia",
-    "Sequis Tower, 23rd Floor, Unit 1 - 7, Jl. Jenderal Sudirman",
-    "Kav. 71, Senayan, Kebayoran Baru, South Jakarta, 12190",
-  ],
-  legalLinks: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms & Condition", href: "#" },
-  ],
-  contact: [
-    { label: "Call", text: "1500708", href: "tel:1500708" },
-    { label: "WhatsApp", text: "08111500708", href: "tel:08111500708" },
-    { label: "Email", text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
-  ],
-  apps: [
-    { label: "Google Play", href: "#" },
-    { label: "App Store", href: "#" },
-  ],
-  disclaimer:
-    "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
-  copyright: "Copyright © 2025 - All Right Reserved",
-};
-
 export default function Home() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Header items={navItems} />
-      <main className="pb-16">
-        <HeroSlider slides={slides} benefits={benefits} />
-        <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
-      </main>
-      <div id="footer">
-        <Footer company={companyInfo} />
-      </div>
-    </div>
+    <>
+      <HeroSlider slides={slides} benefits={benefits} />
+      <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
+    </>
   );
 }

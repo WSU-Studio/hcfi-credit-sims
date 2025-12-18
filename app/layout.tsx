@@ -1,16 +1,39 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Header } from "./components/layout/Header";
+import { Footer } from "./components/layout/Footer";
+import { CompanyInfo, NavItem } from "./types";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const navItems: NavItem[] = [
+  { label: "Simulasi Kredit", href: "#hero" },
+  { label: "Promosi", href: "#products" },
+  { label: "Informasi", href: "#footer" },
+];
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const companyInfo: CompanyInfo = {
+  name: "Hyundai Capital",
+  address: [
+    "PT Hyundai Capital Finance Indonesia",
+    "Sequis Tower, 23rd Floor, Unit 1 - 7, Jl. Jenderal Sudirman",
+    "Kav. 71, Senayan, Kebayoran Baru, South Jakarta, 12190",
+  ],
+  legalLinks: [
+    { label: "Privacy Policy", href: "#" },
+    { label: "Terms & Condition", href: "#" },
+  ],
+  contact: [
+    { label: "Call", text: "1500708", href: "tel:1500708" },
+    { label: "WhatsApp", text: "08111500708", href: "tel:08111500708" },
+    { label: "Email", text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
+  ],
+  apps: [
+    { label: "Google Play", href: "#" },
+    { label: "App Store", href: "#" },
+  ],
+  disclaimer:
+    "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
+  copyright: "Copyright © 2025 - All Right Reserved",
+};
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,9 +48,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`antialiased`}
       >
-        {children}
+        <div className="min-h-screen bg-black text-white">
+          <Header items={navItems} />
+          <main className="pb-16">
+            {children}
+          </main>
+          <div id="footer">
+            <Footer company={companyInfo} />
+          </div>
+        </div>
       </body>
     </html>
   );
