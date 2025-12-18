@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Benefit, Slide } from "@/app/types";
 import { Container } from "../ui/Container";
 import { BenefitCard } from "../ui/BenefitCard";
+import Image from "next/image";
 
 type HeroSliderProps = {
   slides: Slide[];
@@ -19,17 +20,20 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
 
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-black">
-      <div className="relative h-[540px] w-full md:h-[680px]">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-[background-image]"
-          style={{ backgroundImage: `url(${current.image || fallbackImage})` }}
+      <div className="relative w-full h-auto md:h-[500px] lg:h-[680px]">
+        <Image
+          src={current.image || fallbackImage}
+          alt={current.title}
+          width={1000}
+          height={1000}
+          className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
 
         <Container className="relative flex h-full items-end pb-12 md:pb-16">
           <div className="max-w-2xl space-y-5">
-            <p className="text-3xl font-semibold leading-tight text-white md:text-4xl">
+            <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
               {current.title}{" "}
               <span className="text-[var(--accent)]">{current.highlight}</span>
             </p>

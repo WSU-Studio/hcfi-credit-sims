@@ -1,4 +1,5 @@
 import type { Product } from "@/app/types";
+import Image from "next/image";
 
 type ProductCardProps = Product & {
   className?: string;
@@ -6,13 +7,17 @@ type ProductCardProps = Product & {
 
 export function ProductCard({ title, subtitle, image, className }: ProductCardProps) {
   const base =
-    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[4/3]";
+    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[5/2] md:aspect-[4/3]";
   const backgroundImage = image ? { backgroundImage: `url(${image})` } : undefined;
 
   return (
     <div className={className ? `${base} ${className}` : base} role="img" aria-label={title}>
-      <div
-        className="absolute inset-0 bg-cover bg-center"
+      <Image
+        src={image}
+        alt={title}
+        width={1000}
+        height={1000}
+        className="absolute inset-0 object-cover"
         style={backgroundImage}
         aria-hidden="true"
       />
