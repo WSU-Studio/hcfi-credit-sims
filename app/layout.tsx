@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { CompanyInfo, NavItem } from "./types";
+import { IconBrandWhatsapp, IconPhone, IconMail } from "@tabler/icons-react";
 
 const navItems: NavItem[] = [
   { label: "Simulasi Kredit", href: "/simulasi-kredit" },
@@ -22,9 +23,9 @@ const companyInfo: CompanyInfo = {
     { label: "Terms & Condition", href: "#" },
   ],
   contact: [
-    { label: "Call", text: "1500708", href: "tel:1500708" },
-    { label: "WhatsApp", text: "08111500708", href: "tel:08111500708" },
-    { label: "Email", text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
+    { label: "Call", icon: <IconPhone size={16} />, text: "1500708", href: "tel:1500708" },
+    { label: "WhatsApp", icon: <IconBrandWhatsapp size={16} />, text: "08111500708", href: "tel:08111500708" },
+    { label: "Email", icon: <IconMail size={16} />, text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
   ],
   apps: [
     { label: "Google Play", src: "/images/play-store.png", href: "#" },

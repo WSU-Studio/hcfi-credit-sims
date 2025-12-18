@@ -37,7 +37,8 @@ export function Footer({ company }: FooterProps) {
               {company.contact.map((item, index) => (
                 <li key={`${item.text}-${index}`}>
                   {item.href ? (
-                    <Link href={item.href} className="hover:text-[var(--accent)]">
+                    <Link href={item.href} className="hover:text-[var(--accent)] flex items-center gap-2">
+                      {item.icon}
                       {item.text}
                     </Link>
                   ) : (
