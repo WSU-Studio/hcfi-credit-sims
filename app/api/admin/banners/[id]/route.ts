@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await auth();
@@ -16,8 +16,9 @@ export async function GET(
 
     await requirePermission('BANNERS', 'view');
 
+    const { id } = await Promise.resolve(params);
     const banner = await prisma.banner.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!banner) {
@@ -25,9 +26,16 @@ export async function GET(
     }
 
     return NextResponse.json({ banner });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  } catch (error: unknown) {
+    console.error('Error in GET /api/admin/banners/[id]:', error);
+    if (error instanceof Error) {
+      if (error.message.includes('Forbidden')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      return NextResponse.json(
+        { error: error.message || 'Internal server error' },
+        { status: 500 }
+      );
     }
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -38,7 +46,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await auth();
@@ -48,16 +56,40 @@ export async function PUT(
 
     await requirePermission('BANNERS', 'edit');
 
+    const { id } = await Promise.resolve(params);
     const body = await request.json();
+
+    // Clean up empty strings and invalid URLs
+    const cleanedData: any = { ...body };
+    if (cleanedData.ctaUrl === '' || cleanedData.ctaUrl === '-') {
+      cleanedData.ctaUrl = null;
+    }
+    if (cleanedData.ctaLabel === '') {
+      cleanedData.ctaLabel = null;
+    }
+    if (cleanedData.highlight === '') {
+      cleanedData.highlight = null;
+    }
+    if (cleanedData.description === '') {
+      cleanedData.description = null;
+    }
+
     const banner = await prisma.banner.update({
-      where: { id: params.id },
-      data: body,
+      where: { id },
+      data: cleanedData,
     });
 
     return NextResponse.json({ banner });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  } catch (error: unknown) {
+    console.error('Error in PUT /api/admin/banners/[id]:', error);
+    if (error instanceof Error) {
+      if (error.message.includes('Forbidden')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      return NextResponse.json(
+        { error: error.message || 'Internal server error' },
+        { status: 500 }
+      );
     }
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -68,7 +100,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await auth();
@@ -78,14 +110,22 @@ export async function DELETE(
 
     await requirePermission('BANNERS', 'delete');
 
+    const { id } = await Promise.resolve(params);
     await prisma.banner.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  } catch (error: unknown) {
+    console.error('Error in DELETE /api/admin/banners/[id]:', error);
+    if (error instanceof Error) {
+      if (error.message.includes('Forbidden')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      return NextResponse.json(
+        { error: error.message || 'Internal server error' },
+        { status: 500 }
+      );
     }
     return NextResponse.json(
       { error: 'Internal server error' },
