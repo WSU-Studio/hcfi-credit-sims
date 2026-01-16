@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Disable image optimization for certain external domains that block Next.js optimization
+    // This prevents 403 errors when external services block the optimization requests
+    unoptimized: false, // Keep optimization for most images, but use regular img tag in components for problematic URLs
   },
 };
 

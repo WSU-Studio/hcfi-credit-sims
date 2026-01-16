@@ -13,22 +13,41 @@ type HeroSliderProps = {
 
 export function HeroSlider({ slides, benefits }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
   const fallbackImage = "/images/main-banner.jpg";
   const current = slides[index] ?? slides[0] ?? { image: fallbackImage, title: "", highlight: "", description: "" };
 
   if (!current) return null;
 
+  // Get the current image source, fallback if error occurred
+  const imageSrc = imageError || !current.image ? fallbackImage : current.image;
+  
+  // Check if image is external URL (starts with http/https)
+  const isExternalUrl = imageSrc.startsWith('http://') || imageSrc.startsWith('https://');
+
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-black">
       <div className="relative w-full h-auto md:h-[500px] lg:h-[680px]">
-        <Image
-          src={current.image || fallbackImage}
-          alt={current.title}
-          width={1000}
-          height={1000}
-          className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
-          aria-hidden="true"
-        />
+        {isExternalUrl ? (
+          // Use regular img tag for external URLs to avoid Next.js Image optimization issues
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageSrc}
+            alt={current.title}
+            className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
+            onError={() => setImageError(true)}
+            aria-hidden="true"
+          />
+        ) : (
+          <Image
+            src={imageSrc}
+            alt={current.title}
+            width={1000}
+            height={1000}
+            className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
+            aria-hidden="true"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
 
         <Container className="relative flex h-full items-end pb-12 md:pb-16">
@@ -58,7 +77,10 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
               type="button"
               aria-label={`Slide ${idx + 1}`}
               aria-pressed={idx === index}
-              onClick={() => setIndex(idx)}
+              onClick={() => {
+                setIndex(idx);
+                setImageError(false); // Reset error state when changing slide
+              }}
               className={`h-2 w-8 rounded-full transition ${
                 idx === index
                   ? "bg-[var(--accent)] shadow-[0_0_0_4px_rgba(59,130,246,0.25)]"
