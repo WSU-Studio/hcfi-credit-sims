@@ -19,7 +19,7 @@ Buat file `.env` di root project dengan konfigurasi berikut:
 
 ```env
 # Database
-DATABASE_URL="postgresql://username:password@localhost:5432/hfci_credit?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:5432/hcfi_credit?schema=public"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:3070"
@@ -27,12 +27,12 @@ NEXTAUTH_SECRET="your-secret-key-here" # Generate dengan: openssl rand -base64 3
 
 # Cloudinary (optional, untuk media upload)
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="hfci_media"
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="hcfi_media"
 ```
 
 ### 2. Database Setup
 
-1. Pastikan PostgreSQL server sudah running (hfci-credit di pgAdmin4)
+1. Pastikan PostgreSQL server sudah running (hcfi-credit di pgAdmin4)
 2. Jalankan migration:
 ```bash
 npm run db:migrate
@@ -49,7 +49,7 @@ npm run db:seed
 ```
 
 **Default Super Admin Credentials:**
-- Email: `admin@hfci.com`
+- Email: `admin@hcfi.com`
 - Password: `admin123`
 
 ⚠️ **PENTING:** Ganti password default setelah login pertama kali!
@@ -57,7 +57,7 @@ npm run db:seed
 ### 3. Cloudinary Setup (Optional)
 
 1. Daftar di [Cloudinary](https://cloudinary.com) (free tier available)
-2. Buat upload preset dengan nama `hfci_media`
+2. Buat upload preset dengan nama `hcfi_media`
 3. Tambahkan environment variables di `.env`
 
 Jika tidak menggunakan Cloudinary, media akan disimpan di local storage.
@@ -167,7 +167,7 @@ npm run db:studio
 **Database connection error**
 - Pastikan PostgreSQL running
 - Check DATABASE_URL di `.env`
-- Pastikan database `hfci_credit` sudah dibuat
+- Pastikan database `hcfi_credit` sudah dibuat
 
 **Media upload tidak bekerja**
 - Pastikan Cloudinary environment variables sudah di-set
