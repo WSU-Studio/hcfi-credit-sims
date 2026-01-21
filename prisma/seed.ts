@@ -104,10 +104,10 @@ async function main() {
   // Create default Super Admin user
   const hashedPassword = await hashPassword('admin123');
   const superAdminUser = await prisma.user.upsert({
-    where: { email: 'admin@hfci.com' },
+    where: { email: 'admin@hcfi.com' },
     update: {},
     create: {
-      email: 'admin@hfci.com',
+      email: 'admin@hcfi.com',
       password: hashedPassword,
       name: 'Super Admin',
       isActive: true,
@@ -133,7 +133,7 @@ async function main() {
 
   console.log('Super Admin role assigned to user');
   console.log('✅ Seeding completed!');
-  console.log('📧 Email: admin@hfci.com');
+  console.log('📧 Email: admin@hcfi.com');
   console.log('🔑 Password: admin123');
 }
 
