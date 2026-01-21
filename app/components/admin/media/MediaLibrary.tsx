@@ -34,7 +34,7 @@ export function MediaLibrary() {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="mb-6">
         <CldUploadButton
-          uploadPreset="hfci_media"
+          uploadPreset="hcfi_media"
           onUpload={handleUpload}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
