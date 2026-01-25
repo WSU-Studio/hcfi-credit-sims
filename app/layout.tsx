@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${hyundaiSans.variable} ${montserrat.variable} antialiased`}>
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-white text-white">
           {children}
         </div>
       </body>

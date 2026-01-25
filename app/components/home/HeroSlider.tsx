@@ -43,7 +43,7 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
 
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-black">
-      <div className="relative w-full h-auto md:h-[500px] lg:h-[680px]">
+      <div className="relative w-full h-[376px] md:h-[480px] lg:h-[640px]">
         {isExternalUrl ? (
           // Use regular img tag for external URLs to avoid Next.js Image optimization issues
           // eslint-disable-next-line @next/next/no-img-element
@@ -67,7 +67,7 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
             unoptimized
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
+        {/* <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" /> */}
 
         <Container className="relative flex h-full items-end pb-12 md:pb-16">
           <div className="max-w-2xl space-y-5">
