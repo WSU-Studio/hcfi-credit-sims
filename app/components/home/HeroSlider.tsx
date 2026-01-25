@@ -24,6 +24,22 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
   
   // Check if image is external URL (starts with http/https)
   const isExternalUrl = imageSrc.startsWith('http://') || imageSrc.startsWith('https://');
+  
+  // Add cache busting for local images - use URL as key to force reload when URL changes
+  const getImageUrl = (url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // For local images, add a hash-based cache buster that changes when URL changes
+    // This ensures browser reloads when image is updated even with same filename
+    const urlHash = url.split('').reduce((acc, char) => {
+      return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}cb=${Math.abs(urlHash)}`;
+  };
+  
+  const finalImageSrc = getImageUrl(imageSrc);
 
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-black">
@@ -32,20 +48,23 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
           // Use regular img tag for external URLs to avoid Next.js Image optimization issues
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={imageSrc}
+            src={finalImageSrc}
             alt={current.title}
             className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
             onError={() => setImageError(true)}
             aria-hidden="true"
+            key={finalImageSrc}
           />
         ) : (
           <Image
-            src={imageSrc}
+            src={finalImageSrc}
             alt={current.title}
             width={1000}
             height={1000}
             className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
             aria-hidden="true"
+            key={finalImageSrc}
+            unoptimized
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
