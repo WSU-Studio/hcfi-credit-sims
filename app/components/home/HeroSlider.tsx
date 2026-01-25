@@ -54,9 +54,9 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
           <div className="max-w-2xl space-y-5">
             <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
               {current.title}{" "}
-              <span className="text-[var(--accent)]">{current.highlight}</span>
+              <span className="text-[#008AEC]">{current.highlight}</span>
             </p>
-            <p className="max-w-xl text-base leading-relaxed text-[var(--muted)] md:text-lg">
+            <p className="max-w-xl text-base leading-relaxed text-white/90 md:text-lg">
               {current.description}
             </p>
 
@@ -83,7 +83,7 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
               }}
               className={`h-2 w-8 rounded-full transition ${
                 idx === index
-                  ? "bg-[var(--accent)] shadow-[0_0_0_4px_rgba(59,130,246,0.25)]"
+                  ? "bg-[#008AEC] shadow-[0_0_0_4px_rgba(0,138,236,0.25)]"
                   : "bg-white/30 hover:bg-white/60"
               }`}
             />
