@@ -19,8 +19,8 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-action: var(--action);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-hyundai-sans), var(--font-montserrat), system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,7 +44,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-hyundai-sans), var(--font-montserrat), system-ui, -apple-system, sans-serif;
   letter-spacing: 0.01em;
   min-height: 100vh;
   margin: 0;
