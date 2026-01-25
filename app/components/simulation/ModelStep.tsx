@@ -83,8 +83,8 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
               onClick={() => onSelect(asset)}
               className={`p-6 border-2 rounded-xl text-left transition ${
                 selectedAsset?.AssetCode === asset.AssetCode
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 shadow-lg'
-                  : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-md'
+                  ? 'border-[#008AEC] bg-[#008AEC]/10 shadow-lg'
+                  : 'border-[var(--border)] hover:border-[#008AEC]/50 hover:shadow-md'
               }`}
             >
               <div className="flex items-start justify-between mb-2">
@@ -97,7 +97,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
               </div>
               <div className="mt-3 pt-3 border-t border-[var(--border)]">
                 <div className="text-sm text-[var(--muted)]">Mulai dari</div>
-                <div className="text-xl font-bold text-[var(--accent)]">
+                <div className="text-xl font-bold text-[#008AEC]">
                   {formatPrice(asset.Price)}
                 </div>
               </div>

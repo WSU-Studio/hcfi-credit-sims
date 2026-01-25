@@ -125,15 +125,15 @@ export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
             }}
             className={`p-6 border-2 rounded-xl text-left transition ${
               selectedProduct?.ProductCode === product.ProductCode
-                ? 'border-[var(--accent)] bg-[var(--accent)]/10 shadow-lg'
-                : 'border-[var(--border)] hover:border-[var(--accent)]/50 hover:shadow-md'
+                ? 'border-[#008AEC] bg-[#008AEC]/10 shadow-lg'
+                : 'border-[var(--border)] hover:border-[#008AEC]/50 hover:shadow-md'
             }`}
           >
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="font-semibold text-lg">{product.ProductName}</div>
                 {product.Default && (
-                  <div className="text-xs text-[var(--accent)] mt-1">★ Rekomendasi</div>
+                  <div className="text-xs text-[#008AEC] mt-1">★ Rekomendasi</div>
                 )}
               </div>
             </div>
@@ -145,7 +145,7 @@ export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-[var(--muted)]">Angsuran/Bulan:</span>
-                <span className="font-bold text-lg text-[var(--accent)]">
+                <span className="font-bold text-lg text-[#008AEC]">
                   {formatCurrency(product.InstallmentAmt)}
                 </span>
               </div>
@@ -174,7 +174,7 @@ export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
               </div>
               <div>
                 <div className="text-[var(--muted)]">Angsuran per Bulan</div>
-                <div className="font-bold text-xl text-[var(--accent)]">
+                <div className="font-bold text-xl text-[#008AEC]">
                   {formatCurrency(selectedProduct.InstallmentAmt)}
                 </div>
                 <div className="text-xs text-[var(--muted)]">{selectedProduct.Tenor} bulan</div>
@@ -212,7 +212,7 @@ export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
             </button>
             <button
               type="button"
-              className="px-6 py-3 border-2 border-[var(--accent)] text-[var(--accent)] rounded-lg font-semibold hover:bg-[var(--accent)]/10 transition"
+              className="px-6 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
             >
               <IconPhone size={20} />
             </button>

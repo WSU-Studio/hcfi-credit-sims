@@ -124,16 +124,16 @@ export default function SimulasiKreditPage() {
                   disabled={!canGoToStep(step.num as Step)}
                   className={`flex flex-col items-center flex-1 ${
                     currentStep === step.num
-                      ? 'text-[var(--accent)]'
+                      ? 'text-[#008AEC]'
                       : canGoToStep(step.num as Step)
-                      ? 'text-[var(--muted)] hover:text-[var(--accent)]'
+                      ? 'text-[var(--muted)] hover:text-[#008AEC]'
                       : 'text-[var(--muted)] opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div
                     className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-semibold mb-1 transition ${
                       currentStep === step.num
-                        ? 'border-[var(--accent)] bg-[var(--accent)] text-white'
+                        ? 'border-[#008AEC] bg-[#008AEC] text-white'
                         : canGoToStep(step.num as Step)
                         ? 'border-[var(--muted)]'
                         : 'border-[var(--muted)] opacity-50'
@@ -147,7 +147,7 @@ export default function SimulasiKreditPage() {
                   <div
                     className={`h-0.5 flex-1 mx-2 mb-5 ${
                       currentStep > step.num
-                        ? 'bg-[var(--accent)]'
+                        ? 'bg-[#008AEC]'
                         : 'bg-[var(--border)]'
                     }`}
                   />

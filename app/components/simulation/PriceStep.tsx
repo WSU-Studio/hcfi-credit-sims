@@ -50,7 +50,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
               value={price === '' ? '' : formatPrice(price)}
               onChange={handlePriceChange}
               placeholder="Masukkan harga OTR"
-              className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-lg"
+              className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC] focus:border-transparent text-lg"
               required
             />
           </div>
@@ -58,7 +58,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
             <button
               type="button"
               onClick={() => setPrice(suggestedPrice)}
-              className="mt-2 text-sm text-[var(--accent)] hover:underline"
+              className="mt-2 text-sm text-[#008AEC] hover:underline"
             >
               Gunakan harga starting: {formatPrice(suggestedPrice)}
             </button>
@@ -68,7 +68,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
         <button
           type="submit"
           disabled={!price || price <= 0}
-          className="w-full px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-semibold hover:bg-[var(--accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full px-6 py-3 bg-[#1956FF] text-white rounded-lg font-semibold hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           Hitung Simulasi Kredit
         </button>

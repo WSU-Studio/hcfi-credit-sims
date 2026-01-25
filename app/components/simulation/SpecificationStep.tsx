@@ -173,7 +173,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[var(--accent)]"
+            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
             required
           >
             <option value="">Pilih Tahun Produksi</option>
@@ -195,7 +195,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               <select
                 value={selectedVariant}
                 onChange={(e) => setSelectedVariant(e.target.value)}
-                className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[var(--accent)]"
+                className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
                 required
                 disabled={!selectedYear}
               >
@@ -217,7 +217,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedExtColor}
               onChange={(e) => setSelectedExtColor(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[var(--accent)]"
+              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
               required
               disabled={!selectedVariant}
             >
@@ -238,7 +238,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedIntColor}
               onChange={(e) => setSelectedIntColor(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[var(--accent)]"
+              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
               required
               disabled={!selectedExtColor}
             >
