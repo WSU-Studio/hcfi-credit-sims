@@ -14,15 +14,15 @@ export function Header({ items }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[#008AEC] backdrop-blur">
-      <Container className="flex items-center justify-between py-4">
+    <header className="sticky top-0 z-40 bg-[#008AEC] backdrop-blur shadow-lg">
+      <Container className="flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <Link href="/">
-            <Image src="/logo.svg" alt="Hyundai Capital" width={160} height={32} priority />
+            <Image src="/HF-logo.svg" className="brightness-0 invert" alt="Hyundai Capital" width={280} height={36} priority />
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-10 text-sm font-medium text-white md:flex">
+        <nav className="hidden gap-6 text-base lg:text-lg text-white md:flex">
           {items.map((item, index) => (
             <Link key={`${item.label}-${index}`} href={item.href} className="hover:text-white/80 transition-colors">
               {item.label}
