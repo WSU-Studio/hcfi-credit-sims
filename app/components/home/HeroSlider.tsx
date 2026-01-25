@@ -61,7 +61,7 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
             alt={current.title}
             width={1000}
             height={1000}
-            className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
+            className="min-h-full min-w-full md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
             aria-hidden="true"
             key={finalImageSrc}
             unoptimized

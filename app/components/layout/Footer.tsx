@@ -13,7 +13,7 @@ export function Footer({ company }: FooterProps) {
       <Container className="space-y-8 py-10">
         <div className="grid gap-8 md:grid-cols-3">
           <div className="space-y-3">
-            <Image src="/logo.svg" alt="Hyundai Capital" width={136} height={28} priority />
+            <Image src="/HF-logo.svg" alt="Hyundai Capital" width={240} height={28} priority />
             <div className="space-y-1 leading-relaxed text-[var(--muted)]">
               {company.address.map((line) => (
                 <p key={line}>{line}</p>
