@@ -6,7 +6,7 @@ type BenefitCardProps = Benefit & {
 
 export function BenefitCard({ title, description, className }: BenefitCardProps) {
   const base =
-    "rounded-xl bg-white text-[var(--foreground)] shadow-md border border-[#008AEC]/20 px-6 py-5 hover:border-[#008AEC]/40 hover:shadow-lg transition-all";
+    "rounded-xl bg-white text-[var(--foreground)] shadow-md border border-[#008AEC]/20 px-4 py-3 hover:border-[#008AEC]/40 hover:shadow-lg transition-all";
 
   return (
     <div className={className ? `${base} ${className}` : base}>

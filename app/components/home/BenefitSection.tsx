@@ -20,12 +20,12 @@ export function BenefitSection({ benefits }: BenefitSectionProps) {
   ];
 
   return (
-    <section id="benefits" className="bg-[#F5F5F5] py-12 md:py-16 min-h-[400px]">
+    <section id="benefits" className="bg-slate-100 py-6 md:py-8">
       <Container>
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 lg:gap-12">
           {/* Left side - Heading */}
           <div className="flex-1">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight text-[var(--foreground)]">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-[var(--foreground)]">
               <span className="block">Dapatkan Benefit</span>
               <span className="block">Kredit Mobil Baru Anda</span>
               <span className="block">
@@ -35,7 +35,7 @@ export function BenefitSection({ benefits }: BenefitSectionProps) {
           </div>
 
           {/* Right side - Benefit Cards */}
-          <div className="flex-1 grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:max-w-md">
+          <div className="flex-1 grid gap-4 sm:grid-cols-2 lg:grid-cols-2 w-full">
             {displayBenefits.map((benefit, index) => (
               <BenefitCard 
                 key={`${benefit.title}-${index}`} 
