@@ -1,5 +1,6 @@
 import { HeroSlider } from "@/app/components/home/HeroSlider";
 import { ProductSection } from "@/app/components/home/ProductSection";
+import { BenefitSection } from "@/app/components/home/BenefitSection";
 import type { Benefit, Product, Slide } from "@/app/types";
 import { prisma } from "@/lib/prisma";
 
@@ -119,6 +120,9 @@ export default async function Home() {
   return (
     <>
       <HeroSlider slides={slides} benefits={benefits} />
+      
+      <BenefitSection benefits={benefits} />
+
       <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
     </>
   );
