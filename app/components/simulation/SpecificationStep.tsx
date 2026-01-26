@@ -158,13 +158,13 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Pilih Spesifikasi</h2>
         <p className="text-[var(--muted)]">Pilih tahun produksi, varian, dan warna kendaraan</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 text-gray-900">
         {/* Manufacturing Year */}
         <div>
           <label className="block text-sm font-medium mb-2">

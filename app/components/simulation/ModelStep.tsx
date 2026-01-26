@@ -74,7 +74,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Pilih Model Mobil</h2>
         <p className="text-[var(--muted)]">

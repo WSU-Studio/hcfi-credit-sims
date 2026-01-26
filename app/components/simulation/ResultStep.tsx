@@ -82,7 +82,7 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
 
   if (loading) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 text-gray-900">
         <div className="text-[var(--muted)]">Menghitung simulasi kredit...</div>
       </div>
     );
@@ -90,7 +90,7 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+      <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-gray-900">
         <div className="text-red-700 font-semibold mb-2">Error</div>
         <div className="text-red-600">{error}</div>
         <div className="mt-4 text-sm text-[var(--muted)]">
@@ -102,7 +102,7 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 text-gray-900">
         <div className="text-[var(--muted)] mb-4">Belum ada data simulasi</div>
         <div className="text-sm text-[var(--muted)]">
           <p>Untuk mendapatkan simulasi kredit yang akurat, silakan hubungi sales kami.</p>
@@ -112,7 +112,7 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Hasil Simulasi Kredit</h2>
         <p className="text-[var(--muted)]">Pilih produk kredit yang sesuai dengan kebutuhan Anda</p>

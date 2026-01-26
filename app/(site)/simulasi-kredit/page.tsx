@@ -100,11 +100,11 @@ export default function SimulasiKreditPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] py-12">
+    <div className="min-h-screen bg-white py-12">
       <Container>
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Simulasi Kredit Mobil</h1>
-          <p className="text-[var(--muted)]">Dapatkan estimasi cicilan kredit kendaraan impian Anda</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">Simulasi Kredit Mobil</h1>
+          <p className="text-gray-500">Dapatkan estimasi cicilan kredit kendaraan impian Anda</p>
         </div>
 
         {/* Progress Steps */}

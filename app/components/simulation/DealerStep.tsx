@@ -53,7 +53,7 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
     : vendors;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Pilih Dealer</h2>
         <p className="text-[var(--muted)]">Pilih kota dan dealer untuk melanjutkan simulasi</p>
