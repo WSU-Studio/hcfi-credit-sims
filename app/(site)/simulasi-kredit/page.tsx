@@ -122,12 +122,12 @@ export default function SimulasiKreditPage() {
                   type="button"
                   onClick={() => canGoToStep(step.num as Step) && goToStep(step.num as Step)}
                   disabled={!canGoToStep(step.num as Step)}
-                  className={`flex flex-col items-center flex-1 ${
+                  className={`flex flex-col items-center group ${
                     currentStep === step.num
-                      ? 'text-[#008AEC]'
+                      ? ''
                       : canGoToStep(step.num as Step)
-                      ? 'text-[var(--muted)] hover:text-[#008AEC]'
-                      : 'text-[var(--muted)] opacity-50 cursor-not-allowed'
+                      ? ''
+                      : 'text-gray-500 opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div
@@ -135,13 +135,13 @@ export default function SimulasiKreditPage() {
                       currentStep === step.num
                         ? 'border-[#008AEC] bg-[#008AEC] text-white'
                         : canGoToStep(step.num as Step)
-                        ? 'border-[var(--muted)]'
-                        : 'border-[var(--muted)] opacity-50'
+                        ? 'border-gray-500 group-hover:border-blue-400 transition-colors duration-300 text-gray-500 group-hover:text-blue-400 cursor-pointer'
+                        : 'border-gray-500 opacity-50 cursor-not-allowed'
                     }`}
                   >
                     {step.num}
                   </div>
-                  <span className="text-xs">{step.label}</span>
+                  <span className="text-xs text-gray-500 group-hover:text-blue-400 transition-colors duration-300">{step.label}</span>
                 </button>
                 {index < 4 && (
                   <div
@@ -206,7 +206,7 @@ export default function SimulasiKreditPage() {
             <button
               type="button"
               onClick={() => setCurrentStep((currentStep - 1) as Step)}
-              className="px-6 py-3 border border-[var(--border)] rounded-lg hover:bg-[var(--card)] transition"
+              className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
             >
               Kembali
             </button>
