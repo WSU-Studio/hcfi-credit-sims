@@ -194,7 +194,21 @@ export default function SimulasiKreditPage() {
           {currentStep === 5 && (
             <ResultStep
               leadNo={leadNo || undefined}
-              otrPrice={otrPrice || undefined}
+              otrPrice={otrPrice ?? undefined}
+              vehicle={
+                selectedAsset || specs.trimName || specs.exteriorColorName || specs.interiorColorName
+                  ? {
+                      modelName: selectedAsset
+                        ? (specs.manufacturingYear
+                            ? `${specs.manufacturingYear} ${selectedAsset.AssetName}`
+                            : selectedAsset.AssetName)
+                        : undefined,
+                      trimName: specs.trimName,
+                      exteriorColor: specs.exteriorColorName,
+                      interiorColor: specs.interiorColorName,
+                    }
+                  : undefined
+              }
               onSelectProduct={handleProductSelect}
             />
           )}

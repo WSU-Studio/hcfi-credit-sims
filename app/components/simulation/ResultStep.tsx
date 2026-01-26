@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
-import { IconPhone, IconBrandWhatsapp } from '@tabler/icons-react';
+import { IconPhone, IconBrandWhatsapp, IconFileDescription } from '@tabler/icons-react';
+import {
+  SimulationSummaryModal,
+  type VehicleSummaryInfo,
+} from '@/app/components/simulation/SimulationSummaryModal';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -10,10 +14,11 @@ type FirstInstallment = 'ADDM' | 'ADDB';
 interface ResultStepProps {
   leadNo?: string;
   otrPrice?: number;
+  vehicle?: VehicleSummaryInfo;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProps) {
+export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: ResultStepProps) {
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
   const [listPromo, setListPromo] = useState<ProductCalculation[]>([]);
@@ -28,6 +33,7 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
   const [tableRows, setTableRows] = useState<ProductCalculation[]>([]);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateError, setSimulateError] = useState<string | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const products = tab === 'Standard' ? listStandard : listPromo;
 
@@ -333,26 +339,43 @@ export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProp
                   <div className="font-semibold">{highlightedRow.EffRatePrcnt}%</div>
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-wrap gap-3 pt-2">
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(
                     `Halo, saya tertarik simulasi:\n${selectedProduct.ProductName}\nDP ${dpPercent}%\nTenor ${highlightedRow.Tenor} bln\nAngsuran ${formatCurrency(highlightedRow.InstallmentAmt)}/bln`
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
                 >
                   <IconBrandWhatsapp size={20} />
                   WhatsApp
                 </a>
                 <button
                   type="button"
-                  className="px-6 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition flex items-center gap-2"
+                  onClick={() => setSummaryOpen(true)}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
+                >
+                  <IconFileDescription size={20} />
+                  Lihat Summary
+                </button>
+                <button
+                  type="button"
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2"
                 >
                   <IconPhone size={20} />
                   Telepon
                 </button>
               </div>
+              <SimulationSummaryModal
+                open={summaryOpen}
+                onClose={() => setSummaryOpen(false)}
+                product={highlightedRow}
+                vehicle={vehicle}
+                otrPrice={otrPrice ?? 0}
+                dpPercent={dpPercent}
+                firstInstallment={firstInstallment}
+              />
             </div>
           )}
         </div>
