@@ -282,7 +282,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           type="button"
           onClick={handleContinue}
           disabled={!isFormValid}
-          className="w-full px-6 py-3 bg-[#1956FF] text-white rounded-lg font-semibold hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
+          className="w-full px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
         >
           Lanjut ke Harga
         </button>

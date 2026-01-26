@@ -265,7 +265,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
             type="button"
             onClick={handleCalculate}
             disabled={simulateLoading || !otrPrice}
-            className="w-full py-3 bg-[#1956FF] text-white rounded-lg font-semibold hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
           >
             {simulateLoading ? 'Menghitung...' : 'Hitung'}
           </button>
