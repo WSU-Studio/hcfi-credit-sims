@@ -14,6 +14,7 @@ import {
   IconSettings,
   IconFolder,
   IconLogout,
+  IconPhone,
 } from '@tabler/icons-react';
 
 const menuItems = [
@@ -25,6 +26,7 @@ const menuItems = [
   { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', icon: IconTag },
   { code: 'ARTICLES', name: 'Artikel/Berita', path: '/admin/articles', icon: IconNews },
   { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', icon: IconFileText },
+  { code: 'LEADS', name: 'Leads', path: '/admin/leads', icon: IconPhone },
   { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', icon: IconSettings },
   { code: 'MEDIA', name: 'Media Library', path: '/admin/media', icon: IconFolder },
 ];
