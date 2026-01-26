@@ -7,6 +7,7 @@ import {
   SimulationSummaryModal,
   type VehicleSummaryInfo,
 } from '@/app/components/simulation/SimulationSummaryModal';
+import { ContactModal } from '@/app/components/simulation/ContactModal';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -34,6 +35,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const products = tab === 'Standard' ? listStandard : listPromo;
 
@@ -353,18 +355,19 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 </a>
                 <button
                   type="button"
+                  onClick={() => setContactOpen(true)}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
+                >
+                  <IconPhone size={20} />
+                  Contact
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSummaryOpen(true)}
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
                 >
                   <IconFileDescription size={20} />
                   Lihat Summary
-                </button>
-                <button
-                  type="button"
-                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition flex items-center gap-2"
-                >
-                  <IconPhone size={20} />
-                  Telepon
                 </button>
               </div>
               <SimulationSummaryModal
@@ -375,6 +378,14 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 otrPrice={otrPrice ?? 0}
                 dpPercent={dpPercent}
                 firstInstallment={firstInstallment}
+              />
+              <ContactModal
+                open={contactOpen}
+                onClose={() => setContactOpen(false)}
+                productName={highlightedRow ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan` : selectedProduct?.ProductName}
+                otrPrice={otrPrice ?? undefined}
+                dpPercent={dpPercent}
+                tenor={highlightedRow?.Tenor}
               />
             </div>
           )}
