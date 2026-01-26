@@ -94,8 +94,8 @@ const MOCK_ASSET_MASTERS: AssetMaster[] = [
 
 // Mock Data - Manufacturing Years
 const MOCK_MANUFACTURING_YEARS: KeyValuePair[] = [
-  { Key: 2024, Value: 2024 },
-  { Key: 2025, Value: 2025 },
+  { Key: 2024, Value: '2024' },
+  { Key: 2025, Value: '2025' },
 ];
 
 // Mock Data - Variants/Trims (dibuat berdasarkan model)
@@ -169,166 +169,101 @@ const MOCK_SALES_PERSONS: KeyValuePair[] = [
   { Key: 'HYUNDAI.BANDUNG.EMP.BUDI', Value: 'HYUNDAI BANDUNG EMP BUDI' },
 ];
 
+// Product definitions aligned with Postman collection (GetListDefaultProductFromRuleByLeadNo)
+const STANDARD_PRODUCTS = [
+  { ProductCode: 'RF', ProductName: 'Product DP Ringan', defaultDP: 10, InstallmentSchemeCode: 'RF', effRate: 12, isBalloon: false, is5050: false },
+  { ProductCode: 'RF', ProductName: 'Product Bunga Murah', defaultDP: 20, InstallmentSchemeCode: 'RF', effRate: 11, isBalloon: false, is5050: false },
+  { ProductCode: 'BL', ProductName: 'Product Balloon', defaultDP: 20, InstallmentSchemeCode: 'BL', effRate: 10, isBalloon: true, is5050: false },
+  { ProductCode: '50:50', ProductName: 'Product 5050', defaultDP: 50, InstallmentSchemeCode: '50:50', effRate: 8, isBalloon: false, is5050: true },
+] as const;
+
+const TENORS = [12, 24, 36, 48, 60] as const;
+const ADMIN_FEE = 2000000;
+const FIDUCIA_FEE = 1000000;
+const PROVISION_PCT = 2;
+
+function annuityInstallment(loan: number, annualRate: number, tenor: number): number {
+  const m = annualRate / 12;
+  return (loan * m * Math.pow(1 + m, tenor)) / (Math.pow(1 + m, tenor) - 1);
+}
+
+function buildProductRow(
+  otrPrice: number,
+  dpPct: number,
+  tenor: number,
+  product: (typeof STANDARD_PRODUCTS)[number],
+  firstInstallment: 'ADDM' | 'ADDB',
+  effRateOverride?: number
+): ProductCalculation {
+  const dpAmt = Math.round(otrPrice * (dpPct / 100));
+  const loanAmount = otrPrice - dpAmt;
+  const rate = effRateOverride ?? product.effRate;
+  const inst = annuityInstallment(loanAmount, rate / 100, tenor);
+  const prov = Math.round(loanAmount * (PROVISION_PCT / 100));
+
+  let tdp = dpAmt + ADMIN_FEE + prov + FIDUCIA_FEE;
+  if (firstInstallment === 'ADDM') {
+    tdp += Math.round(inst); // first installment di muka
+  }
+
+  return {
+    ProductCode: product.ProductCode,
+    ProductName: product.ProductName,
+    TdpAmt: tdp,
+    InstallmentAmt: Math.round(inst),
+    InstallmentSchemeCode: product.InstallmentSchemeCode,
+    Default: tenor === 36 && firstInstallment === 'ADDB',
+    DPPrcnt: dpPct,
+    DPPrcntBhv: 'Min',
+    Tenor: tenor,
+    FirstInstallment: firstInstallment,
+    EffRatePrcnt: rate,
+    EffRateBhv: 'LOCK',
+    BalloonAmt: product.isBalloon ? Math.round(loanAmount * 0.6) : 0,
+    DefermentPeriod: 0,
+    DefermentRatePrcnt: 0,
+    AdminFeeAmt: ADMIN_FEE,
+    AdminFeeCptlz: false,
+    AdminFeeBhv: 'DEF',
+    ProvisionType: 'PRCNT',
+    ProvisionFee: PROVISION_PCT,
+    ProvisionFeeCptlz: false,
+    ProvisionFeeBhv: 'DEF',
+    FiduciaFeeAmt: FIDUCIA_FEE,
+    FiduciaFeeCptlz: false,
+    FiduciaFeeBhv: 'LOCK_ALL',
+  };
+}
+
+/** List default products for cards (Standard tab). Matches collection structure. */
+function getListDefaultProductsForCards(otrPrice: number): ProductCalculation[] {
+  return STANDARD_PRODUCTS.map((p, i) => {
+    const tenor = p.is5050 ? 12 : 36;
+    return buildProductRow(otrPrice, p.defaultDP, tenor, p, 'ADDB');
+  }).map((r, i) => ({ ...r, Default: i === 0 }));
+}
+
 /**
- * Credit Calculation Logic
- * Menghitung simulasi kredit berdasarkan harga OTR
+ * CalculateProductFromRule-style: returns rows per tenor (and FirstInstallment).
+ * ADDM vs ADDB: ADDM includes first installment in TDP.
  */
-function calculateCreditProducts(otrPrice: number): ProductCalculation[] {
-  const products: ProductCalculation[] = [];
-
-  // Product 1: Low DP (10% DP, 36 bulan)
-  const dp1 = otrPrice * 0.1;
-  const loanAmount1 = otrPrice - dp1;
-  const interestRate1 = 0.12; // 12% per tahun
-  const tenor1 = 36;
-  const monthlyInterest1 = interestRate1 / 12;
-  const installment1 =
-    (loanAmount1 * monthlyInterest1 * Math.pow(1 + monthlyInterest1, tenor1)) /
-    (Math.pow(1 + monthlyInterest1, tenor1) - 1);
-
-  products.push({
-    ProductCode: 'RF',
-    ProductName: 'Loan Low DP',
-    TdpAmt: Math.round(dp1),
-    InstallmentAmt: Math.round(installment1),
-    InstallmentSchemeCode: 'RF',
-    Default: true,
-    DPPrcnt: 10,
-    DPPrcntBhv: 'Min',
-    Tenor: tenor1,
-    FirstInstallment: 'ADDB',
-    EffRatePrcnt: 12,
-    EffRateBhv: 'LOCK',
-    BalloonAmt: 0,
-    DefermentPeriod: 0,
-    DefermentRatePrcnt: 0,
-    AdminFeeAmt: 2000000,
-    AdminFeeCptlz: false,
-    AdminFeeBhv: 'FIXED',
-    ProvisionType: 'PRCNT',
-    ProvisionFee: 2,
-    ProvisionFeeCptlz: false,
-    ProvisionFeeBhv: 'FIXED',
-    FiduciaFeeAmt: 1000000,
-    FiduciaFeeCptlz: false,
-    FiduciaFeeBhv: 'FIXED',
-  });
-
-  // Product 2: Medium DP (20% DP, 48 bulan)
-  const dp2 = otrPrice * 0.2;
-  const loanAmount2 = otrPrice - dp2;
-  const interestRate2 = 0.11; // 11% per tahun
-  const tenor2 = 48;
-  const monthlyInterest2 = interestRate2 / 12;
-  const installment2 =
-    (loanAmount2 * monthlyInterest2 * Math.pow(1 + monthlyInterest2, tenor2)) /
-    (Math.pow(1 + monthlyInterest2, tenor2) - 1);
-
-  products.push({
-    ProductCode: 'RF48',
-    ProductName: 'Loan Medium DP',
-    TdpAmt: Math.round(dp2),
-    InstallmentAmt: Math.round(installment2),
-    InstallmentSchemeCode: 'RF',
-    Default: false,
-    DPPrcnt: 20,
-    DPPrcntBhv: 'Min',
-    Tenor: tenor2,
-    FirstInstallment: 'ADDB',
-    EffRatePrcnt: 11,
-    EffRateBhv: 'LOCK',
-    BalloonAmt: 0,
-    DefermentPeriod: 0,
-    DefermentRatePrcnt: 0,
-    AdminFeeAmt: 2000000,
-    AdminFeeCptlz: false,
-    AdminFeeBhv: 'FIXED',
-    ProvisionType: 'PRCNT',
-    ProvisionFee: 2,
-    ProvisionFeeCptlz: false,
-    ProvisionFeeBhv: 'FIXED',
-    FiduciaFeeAmt: 1000000,
-    FiduciaFeeCptlz: false,
-    FiduciaFeeBhv: 'FIXED',
-  });
-
-  // Product 3: High DP (30% DP, 60 bulan)
-  const dp3 = otrPrice * 0.3;
-  const loanAmount3 = otrPrice - dp3;
-  const interestRate3 = 0.10; // 10% per tahun
-  const tenor3 = 60;
-  const monthlyInterest3 = interestRate3 / 12;
-  const installment3 =
-    (loanAmount3 * monthlyInterest3 * Math.pow(1 + monthlyInterest3, tenor3)) /
-    (Math.pow(1 + monthlyInterest3, tenor3) - 1);
-
-  products.push({
-    ProductCode: 'RF60',
-    ProductName: 'Loan High DP',
-    TdpAmt: Math.round(dp3),
-    InstallmentAmt: Math.round(installment3),
-    InstallmentSchemeCode: 'RF',
-    Default: false,
-    DPPrcnt: 30,
-    DPPrcntBhv: 'Min',
-    Tenor: tenor3,
-    FirstInstallment: 'ADDB',
-    EffRatePrcnt: 10,
-    EffRateBhv: 'LOCK',
-    BalloonAmt: 0,
-    DefermentPeriod: 0,
-    DefermentRatePrcnt: 0,
-    AdminFeeAmt: 2000000,
-    AdminFeeCptlz: false,
-    AdminFeeBhv: 'FIXED',
-    ProvisionType: 'PRCNT',
-    ProvisionFee: 2,
-    ProvisionFeeCptlz: false,
-    ProvisionFeeBhv: 'FIXED',
-    FiduciaFeeAmt: 1000000,
-    FiduciaFeeCptlz: false,
-    FiduciaFeeBhv: 'FIXED',
-  });
-
-  // Product 4: Special Promo (15% DP, 36 bulan, lower rate)
-  const dp4 = otrPrice * 0.15;
-  const loanAmount4 = otrPrice - dp4;
-  const interestRate4 = 0.095; // 9.5% per tahun (promo)
-  const tenor4 = 36;
-  const monthlyInterest4 = interestRate4 / 12;
-  const installment4 =
-    (loanAmount4 * monthlyInterest4 * Math.pow(1 + monthlyInterest4, tenor4)) /
-    (Math.pow(1 + monthlyInterest4, tenor4) - 1);
-
-  products.push({
-    ProductCode: 'PROMO',
-    ProductName: 'Lo Cicilan Paling Murah',
-    TdpAmt: Math.round(dp4),
-    InstallmentAmt: Math.round(installment4),
-    InstallmentSchemeCode: 'RF',
-    Default: false,
-    DPPrcnt: 15,
-    DPPrcntBhv: 'Min',
-    Tenor: tenor4,
-    FirstInstallment: 'ADDB',
-    EffRatePrcnt: 9.5,
-    EffRateBhv: 'LOCK',
-    BalloonAmt: 0,
-    DefermentPeriod: 0,
-    DefermentRatePrcnt: 0,
-    AdminFeeAmt: 1500000, // Promo: admin fee lebih murah
-    AdminFeeCptlz: false,
-    AdminFeeBhv: 'FIXED',
-    ProvisionType: 'PRCNT',
-    ProvisionFee: 1.5, // Promo: provision lebih murah
-    ProvisionFeeCptlz: false,
-    ProvisionFeeBhv: 'FIXED',
-    FiduciaFeeAmt: 1000000,
-    FiduciaFeeCptlz: false,
-    FiduciaFeeBhv: 'FIXED',
-  });
-
-  return products;
+function computeProductRows(params: {
+  otrPrice: number;
+  dpPrcnt: number;
+  productCode: string;
+  productName: string;
+  firstInstallment: 'ADDM' | 'ADDB';
+}): ProductCalculation[] {
+  const product = STANDARD_PRODUCTS.find(
+    (p) => p.ProductName === params.productName && p.ProductCode === params.productCode
+  );
+  if (!product) {
+    return [];
+  }
+  const tenors = product.is5050 ? ([12] as const) : TENORS;
+  return tenors.map((t) =>
+    buildProductRow(params.otrPrice, params.dpPrcnt, t, product, params.firstInstallment)
+  );
 }
 
 /**
@@ -524,28 +459,11 @@ export const mockApi = {
    */
   getDefaultProducts(params: { LeadNo: string }): ApiResponse<DefaultProduct> {
     return {
-      ReturnObject: [
-        {
-          ProductName: 'Lo Cicilan Paling Murah',
-          MrInstSchemeCode: 'RF',
-          InstSchemeName: 'Regular Fixed',
-        },
-        {
-          ProductName: 'Loan Low DP',
-          MrInstSchemeCode: 'RF',
-          InstSchemeName: 'Regular Fixed',
-        },
-        {
-          ProductName: 'Loan Medium DP',
-          MrInstSchemeCode: 'RF',
-          InstSchemeName: 'Regular Fixed',
-        },
-        {
-          ProductName: 'Loan High DP',
-          MrInstSchemeCode: 'RF',
-          InstSchemeName: 'Regular Fixed',
-        },
-      ],
+      ReturnObject: STANDARD_PRODUCTS.map((p) => ({
+        ProductName: p.ProductName,
+        MrInstSchemeCode: p.InstallmentSchemeCode,
+        InstSchemeName: 'Regular Fixed',
+      })),
       HeaderObj: {
         ResponseTime: '5 ms',
         StatusCode: '200',
@@ -560,20 +478,45 @@ export const mockApi = {
   },
 
   /**
-   * Get List Product from Rule by LeadNo (With Calculation)
-   * This is the main calculation API
+   * Get List Default Products (for Step 5 cards). Aligns with GetListDefaultProductFromRuleByLeadNo.
    */
-  getProductCalculations(params: { LeadNo: string; otrPrice?: number }): {
+  getListDefaultProducts(params: { LeadNo?: string; otrPrice?: number }): {
+    ListDefaultStandardProductObj: ProductCalculation[];
+    ListDefaultPromotionProductObj: ProductCalculation[];
+  } {
+    const otrPrice = params.otrPrice ?? 500000000;
+    const standard = getListDefaultProductsForCards(otrPrice);
+    return {
+      ListDefaultStandardProductObj: standard,
+      ListDefaultPromotionProductObj: [],
+    };
+  },
+
+  /**
+   * CalculateProductFromRule / SimulateFinancialCalculate style.
+   * Params: otrPrice, dpPrcnt, productCode, productName, firstInstallment (ADDM|ADDB).
+   * Returns ListProductObj per tenor (12,24,36,48,60; 5050 only 12).
+   */
+  calculateProductFromRule(params: {
+    otrPrice: number;
+    dpPrcnt: number;
+    productCode: string;
+    productName: string;
+    firstInstallment: 'ADDM' | 'ADDB';
+  }): { ListProductObj: ProductCalculation[] } {
+    const rows = computeProductRows(params);
+    return { ListProductObj: rows };
+  },
+
+  /**
+   * Get List Product from Rule by LeadNo (With Calculation) – backward compatible
+   */
+  getProductCalculations(params: { LeadNo?: string; otrPrice?: number }): {
     ListProductObj: ProductCalculation[];
   } {
-    // In real API, LeadNo contains the OTR price info
-    // For mock, we use otrPrice parameter or default to 500M
-    const otrPrice = params.otrPrice || 500000000;
-    const products = calculateCreditProducts(otrPrice);
-
-    return {
-      ListProductObj: products,
-    };
+    const otrPrice = params.otrPrice ?? 500000000;
+    const products = getListDefaultProductsForCards(otrPrice);
+    return { ListProductObj: products };
   },
 };
 

@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
 
     // Check if mock mode is enabled
     if (isMockModeEnabled()) {
-      await simulateDelay(500); // Simulate calculation delay
-      const mockResponse = mockApi.getProductCalculations({
+      await simulateDelay(400);
+      const mockResponse = mockApi.getListDefaultProducts({
         LeadNo: body.LeadNo || 'MOCK-LEAD-001',
         otrPrice: body.otrPrice,
       });
@@ -53,26 +53,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback to mock API
-    await simulateDelay(500);
-    const mockResponse = mockApi.getProductCalculations({
+    await simulateDelay(400);
+    const mockResponse = mockApi.getListDefaultProducts({
       LeadNo: body.LeadNo || 'MOCK-LEAD-001',
       otrPrice: body.otrPrice,
     });
     return NextResponse.json(mockResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error calculating products:', error);
-    
-    // Last resort: try mock API
+    // Last resort: try mock API (body already consumed; use empty)
     try {
-      const body = await request.json();
-      const mockResponse = mockApi.getProductCalculations({
-        LeadNo: body.LeadNo || 'MOCK-LEAD-001',
-        otrPrice: body.otrPrice,
+      const mockResponse = mockApi.getListDefaultProducts({
+        LeadNo: 'MOCK-LEAD-001',
+        otrPrice: 500000000,
       });
       return NextResponse.json(mockResponse);
-    } catch (mockError) {
+    } catch {
       return NextResponse.json(
-        { error: 'Internal server error', message: error.message },
+        { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       );
     }
