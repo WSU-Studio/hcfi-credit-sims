@@ -348,15 +348,15 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer transition-colors duration-300"
                 >
-                  <IconBrandWhatsapp size={20} />
-                  WhatsApp
+                  <IconBrandWhatsapp size={20} className="text-gray-100" />
+                  <span className="text-gray-100">WhatsApp</span>
                 </a>
                 <button
                   type="button"
                   onClick={() => setContactOpen(true)}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconPhone size={20} />
                   Contact
@@ -364,7 +364,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 <button
                   type="button"
                   onClick={() => setSummaryOpen(true)}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 py-3 border-2 border-[#1956FF] text-[#1956FF] rounded-lg font-semibold hover:bg-[#1956FF]/10 transition"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconFileDescription size={20} />
                   Lihat Summary
