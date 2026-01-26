@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { KeyValuePair, ManufacturingYear, AssetVariant, ExteriorColor, InteriorColor } from '@/app/types/credit-simulation';
+import { useEffect, useState, useCallback } from 'react';
+import type { ManufacturingYear, AssetVariant, ExteriorColor, InteriorColor } from '@/app/types/credit-simulation';
 
 interface SpecificationStepProps {
   modelCode: string;
@@ -39,62 +39,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
 
   const [loading, setLoading] = useState(false);
 
-  // Fetch manufacturing years
-  useEffect(() => {
-    if (modelCode && dealerCode) {
-      fetchManufacturingYears();
-    }
-  }, [modelCode, dealerCode]);
-
-  // Fetch variants when year is selected
-  useEffect(() => {
-    if (selectedYear && modelCode && dealerCode) {
-      fetchVariants();
-      setSelectedVariant('');
-      setSelectedExtColor('');
-      setSelectedIntColor('');
-    }
-  }, [selectedYear, modelCode, dealerCode]);
-
-  // Fetch exterior colors when variant is selected
-  useEffect(() => {
-    if (selectedVariant && selectedYear) {
-      fetchExteriorColors();
-      setSelectedExtColor('');
-      setSelectedIntColor('');
-    }
-  }, [selectedVariant, selectedYear]);
-
-  // Fetch interior colors when exterior color is selected
-  useEffect(() => {
-    if (selectedExtColor && selectedVariant && selectedYear) {
-      fetchInteriorColors();
-      setSelectedIntColor('');
-    }
-  }, [selectedExtColor, selectedVariant, selectedYear]);
-
-  // Auto-complete when all are selected
-  useEffect(() => {
-    if (selectedYear && selectedVariant && selectedExtColor && selectedIntColor) {
-      const variant = variants.find(v => v.Key === selectedVariant);
-      const extColor = exteriorColors.find(c => c.Key === selectedExtColor);
-      const intColor = interiorColors.find(c => c.Key === selectedIntColor);
-
-      if (variant && extColor && intColor) {
-        onComplete({
-          manufacturingYear: selectedYear as number,
-          fscCode: selectedVariant,
-          trimName: variant.Value,
-          exteriorColorCode: selectedExtColor,
-          exteriorColorName: extColor.Value,
-          interiorColorCode: selectedIntColor,
-          interiorColorName: intColor.Value,
-        });
-      }
-    }
-  }, [selectedYear, selectedVariant, selectedExtColor, selectedIntColor]);
-
-  const fetchManufacturingYears = async () => {
+  const fetchManufacturingYears = useCallback(async () => {
     try {
       const response = await fetch('/api/simulation/manufacturing-years', {
         method: 'POST',
@@ -106,9 +51,9 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
     } catch (err) {
       console.error('Error fetching manufacturing years:', err);
     }
-  };
+  }, [modelCode, dealerCode]);
 
-  const fetchVariants = async () => {
+  const fetchVariants = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/simulation/variants', {
@@ -123,9 +68,9 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
     } finally {
       setLoading(false);
     }
-  };
+  }, [modelCode, dealerCode, selectedYear]);
 
-  const fetchExteriorColors = async () => {
+  const fetchExteriorColors = useCallback(async () => {
     try {
       const response = await fetch('/api/simulation/colors/exterior', {
         method: 'POST',
@@ -137,9 +82,9 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
     } catch (err) {
       console.error('Error fetching exterior colors:', err);
     }
-  };
+  }, [selectedVariant, selectedYear]);
 
-  const fetchInteriorColors = async () => {
+  const fetchInteriorColors = useCallback(async () => {
     try {
       const response = await fetch('/api/simulation/colors/interior', {
         method: 'POST',
@@ -155,13 +100,93 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
     } catch (err) {
       console.error('Error fetching interior colors:', err);
     }
+  }, [selectedExtColor, selectedVariant, selectedYear]);
+
+  // Fetch manufacturing years
+  useEffect(() => {
+    if (modelCode && dealerCode) {
+      fetchManufacturingYears();
+    }
+  }, [modelCode, dealerCode, fetchManufacturingYears]);
+
+  // Fetch variants when year is selected
+  useEffect(() => {
+    if (selectedYear && modelCode && dealerCode) {
+      fetchVariants();
+      // Reset dependent fields when year changes (unless they're in initialSpecs)
+      if (initialSpecs?.manufacturingYear !== selectedYear) {
+        setSelectedVariant(initialSpecs?.fscCode || '');
+        setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
+        setSelectedIntColor(initialSpecs?.interiorColorCode || '');
+      }
+    }
+  }, [selectedYear, modelCode, dealerCode, fetchVariants, initialSpecs]);
+
+  // Fetch exterior colors when variant is selected
+  useEffect(() => {
+    if (selectedVariant && selectedYear) {
+      fetchExteriorColors();
+      // Reset dependent fields when variant changes (unless they're in initialSpecs)
+      if (initialSpecs?.fscCode !== selectedVariant) {
+        setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
+        setSelectedIntColor(initialSpecs?.interiorColorCode || '');
+      }
+    }
+  }, [selectedVariant, selectedYear, fetchExteriorColors, initialSpecs]);
+
+  // Fetch interior colors when exterior color is selected
+  useEffect(() => {
+    if (selectedExtColor && selectedVariant && selectedYear) {
+      fetchInteriorColors();
+    }
+  }, [selectedExtColor, selectedVariant, selectedYear, fetchInteriorColors]);
+
+  // Validate and reset interior color if it's not available for the new exterior color
+  useEffect(() => {
+    if (interiorColors.length > 0 && selectedIntColor) {
+      const isValidColor = interiorColors.some((c) => c.Key === selectedIntColor);
+      if (!isValidColor) {
+        // Reset if current selection is not in the new list
+        setSelectedIntColor('');
+      }
+    }
+  }, [interiorColors, selectedIntColor]);
+
+  const handleContinue = () => {
+    // Validate all fields are filled
+    if (!selectedYear || !selectedVariant || !selectedExtColor || !selectedIntColor) {
+      return;
+    }
+
+    const variant = variants.find((v) => v.Key === selectedVariant);
+    const extColor = exteriorColors.find((c) => c.Key === selectedExtColor);
+    const intColor = interiorColors.find((c) => c.Key === selectedIntColor);
+
+    if (variant && extColor && intColor) {
+      onComplete({
+        manufacturingYear: selectedYear as number,
+        fscCode: selectedVariant,
+        trimName: variant.Value,
+        exteriorColorCode: selectedExtColor,
+        exteriorColorName: extColor.Value,
+        interiorColorCode: selectedIntColor,
+        interiorColorName: intColor.Value,
+      });
+    }
   };
+
+  const isFormValid = !!(
+    selectedYear &&
+    selectedVariant &&
+    selectedExtColor &&
+    selectedIntColor
+  );
 
   return (
     <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Pilih Spesifikasi</h2>
-        <p className="text-[var(--muted)]">Pilih tahun produksi, varian, dan warna kendaraan</p>
+        <p className="text-gray-500">Pilih tahun produksi, varian, dan warna kendaraan</p>
       </div>
 
       <div className="space-y-6 text-gray-900">
@@ -173,7 +198,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition"
             required
           >
             <option value="">Pilih Tahun Produksi</option>
@@ -190,12 +215,12 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               Varian/Trim <span className="text-red-500">*</span>
             </label>
             {loading ? (
-              <div className="text-[var(--muted)]">Memuat varian...</div>
+              <div className="text-gray-500">Memuat varian...</div>
             ) : (
               <select
                 value={selectedVariant}
                 onChange={(e) => setSelectedVariant(e.target.value)}
-                className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 required
                 disabled={!selectedYear}
               >
@@ -217,7 +242,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedExtColor}
               onChange={(e) => setSelectedExtColor(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
               required
               disabled={!selectedVariant}
             >
@@ -238,7 +263,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedIntColor}
               onChange={(e) => setSelectedIntColor(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC]"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
               required
               disabled={!selectedExtColor}
             >
@@ -248,6 +273,23 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               ))}
             </select>
           </div>
+        )}
+      </div>
+
+      {/* Continue Button */}
+      <div className="pt-4 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={handleContinue}
+          disabled={!isFormValid}
+          className="w-full px-6 py-3 bg-[#1956FF] text-white rounded-lg font-semibold hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition duration-300"
+        >
+          Lanjut ke Harga
+        </button>
+        {!isFormValid && (
+          <p className="mt-2 text-sm text-gray-500 text-center">
+            Silakan lengkapi semua field untuk melanjutkan
+          </p>
         )}
       </div>
     </div>
