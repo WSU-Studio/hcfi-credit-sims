@@ -49,6 +49,19 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
     if (selectedProduct) setDpPercent(selectedProduct.DPPrcnt);
   }, [selectedProduct]);
 
+  // Auto-calculate ketika firstInstallment, selectedProduct, atau dpPercent berubah
+  // Hanya trigger jika semua data sudah lengkap dan tidak sedang loading
+  useEffect(() => {
+    if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode && !simulateLoading) {
+      // Delay sedikit untuk menghindari multiple calls saat initial load
+      const timer = setTimeout(() => {
+        handleCalculate();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstInstallment, selectedProduct?.ProductCode, selectedProduct?.ProductName, dpPercent]);
+
   const fetchList = async () => {
     setLoading(true);
     setError(null);
@@ -261,14 +274,20 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
             </p>
           </div>
 
-          <button
+          {/* <button
             type="button"
             onClick={handleCalculate}
             disabled={simulateLoading || !otrPrice}
             className="w-full py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
           >
             {simulateLoading ? 'Menghitung...' : 'Hitung'}
-          </button>
+          </button> */}
+
+          {simulateLoading && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm text-center">
+              Menghitung simulasi...
+            </div>
+          )}
 
           {simulateError && (
             <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
