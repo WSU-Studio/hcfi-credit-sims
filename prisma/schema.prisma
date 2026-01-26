@@ -230,3 +230,24 @@ model Media {
 
   @@map("media")
 }
+
+// ============================================
+// Credit Simulation Leads
+// ============================================
+
+model Lead {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String
+  email       String
+  productName String?
+  otrPrice    Float?
+  dpPercent   Float?
+  tenor       Int?
+  notes       String?  @db.Text
+  status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leads")
+}

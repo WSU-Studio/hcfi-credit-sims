@@ -21,9 +21,10 @@ async function main() {
     { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', order: 6 },
     { code: 'ARTICLES', name: 'Artikel/Berita', path: '/admin/articles', order: 7 },
     { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', order: 8 },
-    { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 9 },
-    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 10 },
-    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 11 },
+    { code: 'LEADS', name: 'Leads', path: '/admin/leads', order: 9 },
+    { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 10 },
+    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 11 },
+    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 12 },
   ];
 
   for (const menu of menus) {
