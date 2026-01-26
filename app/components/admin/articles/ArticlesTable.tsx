@@ -101,12 +101,12 @@ export function ArticlesTable() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/articles/${article.id}/edit`}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="h-5 w-5 flex items-center justify-center"
                     >
-                      <IconEdit size={18} />
+                      <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
-                      className="text-red-600 hover:text-red-900"
+                      className="h-5 w-5 flex items-center justify-center cursor-pointer"
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this article?')) {
                           fetch(`/api/admin/articles/${article.id}`, {
@@ -117,7 +117,7 @@ export function ArticlesTable() {
                         }
                       }}
                     >
-                      <IconTrash size={18} />
+                      <IconTrash size={18} className="text-red-500" />
                     </button>
                   </div>
                 </td>

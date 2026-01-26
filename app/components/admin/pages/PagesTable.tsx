@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { IconEdit, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
 
 type Page = {
   id: string;
@@ -77,10 +77,24 @@ export function PagesTable() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/admin/pages/${page.id}/edit`}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="h-5 w-5 flex items-center justify-center"
                   >
-                    <IconEdit size={18} />
+                    <IconEdit size={18} className="text-blue-500" title="Edit Page" />
                   </Link>
+                  <button
+                    className="h-5 w-5 flex items-center justify-center cursor-pointer"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this page?')) {
+                        fetch(`/api/admin/pages/${page.id}`, {
+                          method: 'DELETE',
+                        }).then(() => {
+                          setPages((prev) => prev.filter((p) => p.id !== page.id));
+                        });
+                      }
+                    }}
+                  >
+                    <IconTrash size={18} className="text-red-500" title="Delete Page" />
+                  </button>
                 </td>
               </tr>
             ))}

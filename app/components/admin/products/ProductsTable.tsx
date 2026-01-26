@@ -101,13 +101,13 @@ export function ProductsTable() {
                   <div className="flex items-center gap-3">
                     <Link
                       href={`/admin/products/${product.id}/edit`}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                      className="h-5 w-5 flex items-center justify-center"
                       title="Edit Product"
                     >
-                      <IconEdit color="blue" size={18} />
+                      <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                      className="h-5 w-5 flex items-center justify-center cursor-pointer"
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this product?')) {
                           fetch(`/api/admin/products/${product.id}`, {
@@ -119,7 +119,7 @@ export function ProductsTable() {
                       }}
                       title="Delete Product"
                     >
-                      <IconTrash size={18} />
+                      <IconTrash size={18} className="text-red-500" />
                     </button>
                   </div>
                 </td>

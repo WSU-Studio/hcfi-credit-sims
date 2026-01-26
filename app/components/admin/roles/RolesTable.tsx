@@ -84,9 +84,9 @@ export function RolesTable() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <Link
                     href={`/admin/roles/${role.id}/edit`}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="h-5 w-5 flex items-center justify-center"
                   >
-                    <IconEdit size={18} />
+                    <IconEdit size={18} className="text-blue-500" />
                   </Link>
                 </td>
               </tr>

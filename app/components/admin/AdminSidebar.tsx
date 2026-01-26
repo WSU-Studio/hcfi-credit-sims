@@ -24,7 +24,7 @@ const menuItems = [
   { code: 'BANNERS', name: 'Banner Management', path: '/admin/banners', icon: IconPhoto },
   { code: 'PRODUCTS', name: 'Product Section', path: '/admin/products', icon: IconShoppingBag },
   { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', icon: IconTag },
-  { code: 'ARTICLES', name: 'Artikel/Berita', path: '/admin/articles', icon: IconNews },
+  { code: 'ARTICLES', name: 'Article Management', path: '/admin/articles', icon: IconNews },
   { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', icon: IconFileText },
   { code: 'LEADS', name: 'Leads', path: '/admin/leads', icon: IconPhone },
   { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', icon: IconSettings },
