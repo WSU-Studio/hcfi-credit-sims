@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
 
 const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
 
 // Get All Asset Master Lv2 with Starting Price
 export async function POST(request: NextRequest) {
+  // Check if mock mode is enabled
+  if (isMockModeEnabled()) {
+    await simulateDelay(300);
+    const body = await request.json();
+    const mockResponse = mockApi.getAssetMasters({
+      AssetHierarchyLv1Code: 'HYUNDAI',
+      CmoEmpNo: body.CmoEmpNo || '',
+      DealerCode: body.DealerCode,
+      GetLatestAsset: body.GetLatestAsset ?? true,
+    });
+    return NextResponse.json(mockResponse);
+  }
+
   try {
     const body = await request.json();
 
@@ -32,9 +46,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Error fetching assets:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    console.log('Falling back to mock API...');
+    
+    // Fallback to mock API on error
+    try {
+      const body = await request.json();
+      const mockResponse = mockApi.getAssetMasters({
+        AssetHierarchyLv1Code: 'HYUNDAI',
+        CmoEmpNo: body.CmoEmpNo || '',
+        DealerCode: body.DealerCode,
+        GetLatestAsset: body.GetLatestAsset ?? true,
+      });
+      return NextResponse.json(mockResponse);
+    } catch (mockError) {
+      return NextResponse.json(
+        { error: 'Internal server error', message: error.message },
+        { status: 500 }
+      );
+    }
   }
 }

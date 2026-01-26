@@ -194,6 +194,7 @@ export default function SimulasiKreditPage() {
           {currentStep === 5 && (
             <ResultStep
               leadNo={leadNo || undefined}
+              otrPrice={otrPrice || undefined}
               onSelectProduct={handleProductSelect}
             />
           )}

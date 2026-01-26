@@ -10,6 +10,7 @@ interface PriceStepProps {
 
 export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepProps) {
   const [price, setPrice] = useState<number | ''>(suggestedPrice || '');
+  const [error, setError] = useState<string | null>(null);
 
   const formatPrice = (value: number | '') => {
     if (value === '') return '';
@@ -21,22 +22,34 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     const value = e.target.value.replace(/[^\d]/g, '');
     setPrice(value === '' ? '' : Number(value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (price && price > 0) {
-      onComplete(price as number);
+    setError(null);
+    if (!price || price <= 0) return;
+
+    const minOtr = suggestedPrice ?? 0;
+    if (minOtr > 0 && price < minOtr) {
+      setError(
+        `Harga OTR tidak boleh lebih rendah dari harga kendaraan (min. ${formatPrice(minOtr)}). OTR adalah total harga mobil, bukan uang muka (DP).`
+      );
+      return;
     }
+
+    onComplete(price as number);
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Harga Kendaraan (OTR)</h2>
-        <p className="text-[var(--muted)]">Masukkan harga On The Road untuk kendaraan {modelName}</p>
+        <p className="text-[var(--muted)]">
+          Masukkan <strong>total harga On The Road</strong> untuk {modelName}. OTR = harga mobil lengkap (bukan uang muka). Sistem akan menghitung DP, tenor, dan angsuran berdasarkan OTR ini.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -50,14 +63,26 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
               value={price === '' ? '' : formatPrice(price)}
               onChange={handlePriceChange}
               placeholder="Masukkan harga OTR"
-              className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC] focus:border-transparent text-lg"
+              className={`w-full px-4 py-3 border rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC] focus:border-transparent text-lg ${
+                error ? 'border-red-500' : 'border-[var(--border)]'
+              }`}
               required
+              aria-invalid={!!error}
+              aria-describedby={error ? 'otr-error' : undefined}
             />
           </div>
+          {error && (
+            <p id="otr-error" className="mt-2 text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          )}
           {suggestedPrice && (
             <button
               type="button"
-              onClick={() => setPrice(suggestedPrice)}
+              onClick={() => {
+                setPrice(suggestedPrice);
+                setError(null);
+              }}
               className="mt-2 text-sm text-[#008AEC] hover:underline"
             >
               Gunakan harga starting: {formatPrice(suggestedPrice)}

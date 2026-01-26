@@ -6,25 +6,26 @@ import { IconPhone, IconBrandWhatsapp } from '@tabler/icons-react';
 
 interface ResultStepProps {
   leadNo?: string;
+  otrPrice?: number;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
+export function ResultStep({ leadNo, otrPrice, onSelectProduct }: ResultStepProps) {
   const [products, setProducts] = useState<ProductCalculation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
 
   useEffect(() => {
-    // TODO: Implement actual API call when LeadNo is available
-    // For now, we'll show a mock or placeholder
-    if (leadNo) {
+    // Fetch products when leadNo or otrPrice is available
+    // In mock mode, we can use otrPrice directly without LeadNo
+    if (leadNo || otrPrice) {
       fetchProducts();
     }
-  }, [leadNo]);
+  }, [leadNo, otrPrice]);
 
   const fetchProducts = async () => {
-    if (!leadNo) return;
+    if (!leadNo && !otrPrice) return;
     
     setLoading(true);
     setError(null);
@@ -32,7 +33,10 @@ export function ResultStep({ leadNo, onSelectProduct }: ResultStepProps) {
       const response = await fetch('/api/simulation/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ LeadNo: leadNo }),
+        body: JSON.stringify({ 
+          LeadNo: leadNo,
+          otrPrice: otrPrice,
+        }),
       });
 
       const data = await response.json();

@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
 
 const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
 
 // Get List Vendor And Vendor City
 export async function POST(request: NextRequest) {
+  // Check if mock mode is enabled
+  if (isMockModeEnabled()) {
+    await simulateDelay(300);
+    const body = await request.json();
+    const mockResponse = mockApi.getVendorsAndCities({
+      hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
+      hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
+    });
+    return NextResponse.json(mockResponse);
+  }
+
   let timeoutId: NodeJS.Timeout | null = null;
   
   try {
@@ -41,33 +53,24 @@ export async function POST(request: NextRequest) {
     if (timeoutId) clearTimeout(timeoutId);
     
     console.error('Error fetching vendors:', error);
-    console.error('API URL:', API_BASE_URL);
+    console.log('Falling back to mock API...');
     
-    // Check if it's a timeout or connection error
-    if (
-      error.name === 'AbortError' || 
-      error.code === 'UND_ERR_CONNECT_TIMEOUT' || 
-      error.code === 'ECONNREFUSED' ||
-      error.message?.includes('timeout')
-    ) {
+    // Fallback to mock API on error
+    try {
+      const body = await request.json();
+      const mockResponse = mockApi.getVendorsAndCities({
+        hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
+        hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
+      });
+      return NextResponse.json(mockResponse);
+    } catch (mockError) {
       return NextResponse.json(
         { 
-          error: 'Connection timeout',
-          message: 'Tidak dapat terhubung ke server API. Pastikan Anda terhubung ke VPN atau network yang tepat.',
-          details: `API URL: ${API_BASE_URL}`,
-          suggestion: 'Periksa koneksi VPN atau pastikan API URL benar di environment variables (CREDIT_SIMULATION_API_URL)',
+          error: 'Internal server error', 
+          message: error.message,
         },
-        { status: 504 }
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        message: error.message,
-        details: `API URL: ${API_BASE_URL}`,
-      },
-      { status: 500 }
-    );
   }
 }
