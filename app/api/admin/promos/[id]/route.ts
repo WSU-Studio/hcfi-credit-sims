@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,9 +16,10 @@ export async function PUT(
 
     await requirePermission('PROMOS', 'edit');
 
+    const { id } = await params;
     const body = await request.json();
     const promo = await prisma.promo.update({
-      where: { id: params.id },
+      where: { id },
       data: body,
     });
 
@@ -36,7 +37,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -46,8 +47,9 @@ export async function DELETE(
 
     await requirePermission('PROMOS', 'delete');
 
+    const { id } = await params;
     await prisma.promo.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

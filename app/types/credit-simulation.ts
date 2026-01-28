@@ -48,8 +48,8 @@ export interface AssetMaster {
   ManufacturingYear?: number;
 }
 
-// Manufacturing Year
-export interface ManufacturingYear extends KeyValuePair {
+// Manufacturing Year (Key/Value both number, unlike KeyValuePair)
+export interface ManufacturingYear {
   Key: number;
   Value: number;
 }
