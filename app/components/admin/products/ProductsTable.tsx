@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import { CldImage } from 'next-cloudinary';
+import Image from 'next/image';
 
 type Product = {
   id: string;
@@ -80,10 +81,12 @@ export function ProductsTable() {
                         className="object-cover"
                       />
                     ) : (
-                      <img
+                      <Image
                         src={product.imageUrl}
                         alt={product.title}
                         className="w-full h-full object-cover"
+                        width={80}
+                        height={48}
                       />
                     )}
                   </div>
