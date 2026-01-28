@@ -126,7 +126,7 @@ export function ProductForm({ productId }: ProductFormProps) {
             required
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
             placeholder="e.g., Smart Installment Program"
           />
         </div>
@@ -141,7 +141,7 @@ export function ProductForm({ productId }: ProductFormProps) {
             id="subtitle"
             value={formData.subtitle || ''}
             onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
             placeholder="e.g., Stargazer & Creta"
           />
           <p className="mt-1 text-xs text-gray-500">
@@ -161,7 +161,7 @@ export function ProductForm({ productId }: ProductFormProps) {
               required
               value={formData.imageUrl}
               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
               placeholder="/images/product.jpg or Cloudinary URL"
             />
             <MediaPicker
@@ -194,7 +194,7 @@ export function ProductForm({ productId }: ProductFormProps) {
             min="0"
             value={formData.order}
             onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
           />
           <p className="mt-1 text-xs text-gray-500">
             Urutan tampil (angka lebih kecil = tampil lebih dulu)

@@ -154,7 +154,7 @@ export function SimulationSummaryModal({
               <dt className="text-gray-500">Total Down Payment</dt>
               <dd className="font-semibold text-gray-900">{formatRp(product.TdpAmt)}</dd>
               <dt className="text-gray-500">Total Payment</dt>
-              <dd className="font-semibold text-[#008AEC]">{formatRp(totalPayment)}</dd>
+              <dd className="font-semibold text-[#002c5f]">{formatRp(totalPayment)}</dd>
             </dl>
           </section>
 
@@ -192,7 +192,7 @@ export function SimulationSummaryModal({
               <dt className="text-gray-500">Asset Insurance Capitalized</dt>
               <dd className="font-medium text-gray-900">{formatRp(0)}</dd>
               <dt className="text-gray-500">NTF Amount</dt>
-              <dd className="font-semibold text-[#008AEC]">{formatRp(ntfAmount)}</dd>
+              <dd className="font-semibold text-[#002c5f]">{formatRp(ntfAmount)}</dd>
             </dl>
           </section>
         </div>
@@ -201,7 +201,7 @@ export function SimulationSummaryModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-[#008AEC] text-white rounded-lg font-medium hover:bg-[#008AEC]/90 transition"
+            className="px-5 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition"
           >
             Tutup
           </button>

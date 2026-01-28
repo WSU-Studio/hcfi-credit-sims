@@ -156,7 +156,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
           type="button"
           onClick={() => setTab('Standard')}
           className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
-            tab === 'Standard' ? 'bg-[#008AEC] text-white' : 'text-gray-600 hover:bg-gray-200'
+            tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
           Standard
@@ -165,7 +165,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
           type="button"
           onClick={() => setTab('Promotion')}
           className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
-            tab === 'Promotion' ? 'bg-[#008AEC] text-white' : 'text-gray-600 hover:bg-gray-200'
+            tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
           Promotion
@@ -185,13 +185,13 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
             }}
             className={`p-4 rounded-xl border-2 text-left transition ${
               selectedProduct?.ProductName === p.ProductName
-                ? 'border-[#008AEC] bg-[#008AEC]/10'
-                : 'border-gray-200 hover:border-[#008AEC]/50'
+                ? 'border-[#002c5f] bg-[#002c5f]/10'
+                : 'border-gray-200 hover:border-[#002c5f]/50'
             }`}
           >
             <div className="font-semibold mb-1">{p.ProductName}</div>
             <div className="text-xs text-gray-500">TDP: {formatCurrency(p.TdpAmt)}</div>
-            <div className="text-sm font-bold text-[#008AEC]">
+            <div className="text-sm font-bold text-[#002c5f]">
               Installment: {formatCurrency(p.InstallmentAmt)}
             </div>
           </button>
@@ -220,7 +220,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                   type="button"
                   onClick={() => setDpPercent(pct)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    dpPercent === pct ? 'bg-[#008AEC] text-white' : 'bg-white border border-gray-300 hover:border-[#008AEC]'
+                    dpPercent === pct ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]'
                   }`}
                 >
                   {pct} %
@@ -254,7 +254,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 type="button"
                 onClick={() => setFirstInstallment('ADDM')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
-                  firstInstallment === 'ADDM' ? 'bg-[#008AEC] text-white' : 'bg-white border border-gray-300'
+                  firstInstallment === 'ADDM' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
                 }`}
               >
                 ADDM
@@ -263,7 +263,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 type="button"
                 onClick={() => setFirstInstallment('ADDB')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
-                  firstInstallment === 'ADDB' ? 'bg-[#008AEC] text-white' : 'bg-white border border-gray-300'
+                  firstInstallment === 'ADDB' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
                 }`}
               >
                 ADDB
@@ -314,7 +314,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                       <tr
                         key={r.Tenor}
                         className={`border-t border-gray-200 ${
-                          r.Tenor === selectedTenor ? 'bg-[#008AEC]/10' : 'hover:bg-gray-50'
+                          r.Tenor === selectedTenor ? 'bg-[#002c5f]/10' : 'hover:bg-gray-50'
                         }`}
                       >
                         <td className="py-2 px-3">
@@ -323,12 +323,12 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                             name="tenor"
                             checked={r.Tenor === selectedTenor}
                             onChange={() => setSelectedTenor(r.Tenor)}
-                            className="text-[#008AEC]"
+                            className="text-[#002c5f]"
                           />
                         </td>
                         <td className="py-2 px-3">{r.Tenor} bulan</td>
                         <td className="py-2 px-3 text-right font-medium">{formatCurrency(r.TdpAmt)}</td>
-                        <td className="py-2 px-3 text-right font-bold text-[#008AEC]">
+                        <td className="py-2 px-3 text-right font-bold text-[#002c5f]">
                           {formatCurrency(r.InstallmentAmt)}
                         </td>
                       </tr>
@@ -349,7 +349,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 </div>
                 <div>
                   <div className="text-gray-500">Angsuran/Bulan</div>
-                  <div className="font-bold text-[#008AEC]">{formatCurrency(highlightedRow.InstallmentAmt)}</div>
+                  <div className="font-bold text-[#002c5f]">{formatCurrency(highlightedRow.InstallmentAmt)}</div>
                 </div>
                 <div>
                   <div className="text-gray-500">Tenor</div>

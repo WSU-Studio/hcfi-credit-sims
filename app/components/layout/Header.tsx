@@ -14,7 +14,7 @@ export function Header({ items }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#008AEC] backdrop-blur shadow-lg">
+    <header className="sticky top-0 z-40 bg-[#002c5f] backdrop-blur shadow-lg">
       <Container className="flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <Link href="/">
@@ -48,7 +48,7 @@ export function Header({ items }: HeaderProps) {
       </Container>
 
       {open ? (
-        <div id="mobile-menu" className="border-t border-white/20 bg-[#008AEC] md:hidden">
+        <div id="mobile-menu" className="border-t border-white/20 bg-[#002c5f] md:hidden">
           <Container className="flex flex-col gap-3 py-3">
             {items.map((item, index) => (
               <Link

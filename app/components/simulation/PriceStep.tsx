@@ -75,7 +75,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
               value={price === '' ? '' : formatPrice(price)}
               onChange={handlePriceChange}
               placeholder="Masukkan harga OTR"
-              className={`w-full px-4 py-3 border rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC] focus:border-transparent text-lg ${
+              className={`w-full px-4 py-3 border rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent text-lg ${
                 error ? 'border-red-500' : 'border-[var(--border)]'
               }`}
               required
@@ -96,7 +96,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
                   setPrice(suggestedPrice);
                   setError(null);
                 }}
-                className="text-sm text-[#008AEC] hover:underline"
+                className="text-sm text-[#002c5f] hover:underline"
               >
                 Gunakan harga starting: {formatPrice(suggestedPrice)}
               </button>

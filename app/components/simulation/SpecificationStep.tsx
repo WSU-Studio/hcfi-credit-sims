@@ -198,7 +198,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition"
             required
           >
             <option value="">Pilih Tahun Produksi</option>
@@ -220,7 +220,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               <select
                 value={selectedVariant}
                 onChange={(e) => setSelectedVariant(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 required
                 disabled={!selectedYear}
               >
@@ -242,7 +242,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedExtColor}
               onChange={(e) => setSelectedExtColor(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
               required
               disabled={!selectedVariant}
             >
@@ -263,7 +263,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedIntColor}
               onChange={(e) => setSelectedIntColor(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
               required
               disabled={!selectedExtColor}
             >

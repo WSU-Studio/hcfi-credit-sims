@@ -6,9 +6,9 @@
   --muted: #64748b;
   --card: #ffffff;
   --border: #e2e8f0;
-  --accent: #008AEC;
-  --accent-soft: #3ba3ff;
-  --action: #1956FF;
+  --accent: #002c5f;
+  --accent-soft: #204c7f;
+  --action: #1956aF;
 }
 
 @theme inline {
@@ -30,7 +30,7 @@
     --muted: #475569;
     --card: #ffffff;
     --border: #e5e7eb;
-    --accent: #008AEC;
+    --accent: #002c5f;
     --action: #1956FF;
   }
 }

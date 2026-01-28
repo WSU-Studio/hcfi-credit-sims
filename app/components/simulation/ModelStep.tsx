@@ -125,7 +125,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                   onClick={() => setActiveCategory(cat.key)}
                   className={`min-w-[5rem] px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-[#008AEC] text-white shadow-sm'
+                      ? 'bg-[#002c5f] text-white shadow-sm'
                       : 'text-[var(--muted)] hover:bg-[var(--muted)]/20 hover:text-[var(--foreground)]'
                   }`}
                 >
@@ -165,8 +165,8 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                       onClick={() => onSelect(asset)}
                       className={`group relative p-6 text-left rounded-xl border-2 transition-all ${
                         isSelected
-                          ? 'border-[#008AEC] bg-[#008AEC]/10 shadow-lg ring-2 ring-[#008AEC]/30'
-                          : 'border-[var(--border)] hover:border-[#008AEC]/50 hover:shadow-md'
+                          ? 'border-[#002c5f] bg-[#002c5f]/10 shadow-lg ring-2 ring-[#002c5f]/30'
+                          : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:shadow-md'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
@@ -180,14 +180,14 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                                 : asset.AssetCategoryName === 'MPV'
                                   ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
-                                  : 'bg-[#008AEC]/15 text-[#008AEC]'
+                                  : 'bg-[#002c5f]/15 text-[#002c5f]'
                             }`}
                           >
                             {asset.AssetCategoryName}
                           </span>
                         </div>
                         {isSelected && (
-                          <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-[#008AEC] text-white text-xs font-bold">
+                          <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-[#002c5f] text-white text-xs font-bold">
                             ✓
                           </span>
                         )}
@@ -196,7 +196,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                         <div className="text-xs text-[var(--muted)] uppercase tracking-wide">
                           Mulai dari
                         </div>
-                        <div className="mt-1 text-xl font-bold text-[#008AEC]">
+                        <div className="mt-1 text-xl font-bold text-[#002c5f]">
                           {formatPrice(asset.Price)}
                         </div>
                       </div>

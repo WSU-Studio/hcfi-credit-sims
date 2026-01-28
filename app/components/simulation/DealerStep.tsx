@@ -75,7 +75,7 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
             <select
               value={selectedCity}
               onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#008AEC] focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent"
             >
               <option value="">Semua Kota</option>
               {cities.map(city => (
@@ -99,8 +99,8 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
                 onClick={() => onSelect(vendor)}
                 className={`p-4 border-2 rounded-lg text-left transition ${
                   selectedDealer?.VendorCode === vendor.VendorCode
-                    ? 'border-[#008AEC] bg-[#008AEC]/10'
-                    : 'border-[var(--border)] hover:border-[#008AEC]/50'
+                    ? 'border-[#002c5f] bg-[#002c5f]/10'
+                    : 'border-[var(--border)] hover:border-[#002c5f]/50'
                 }`}
               >
                 <div className="font-semibold">{vendor.VendorName}</div>

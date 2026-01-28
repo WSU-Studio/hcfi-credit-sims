@@ -133,7 +133,7 @@ export default function SimulasiKreditPage() {
                   <div
                     className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-semibold mb-1 transition ${
                       currentStep === step.num
-                        ? 'border-[#008AEC] bg-[#008AEC] text-white'
+                        ? 'border-[#002c5f] bg-[#002c5f] text-white'
                         : canGoToStep(step.num as Step)
                         ? 'border-gray-500 group-hover:border-blue-400 transition-colors duration-300 text-gray-500 group-hover:text-blue-400 cursor-pointer'
                         : 'border-gray-500 opacity-50 cursor-not-allowed'
@@ -147,7 +147,7 @@ export default function SimulasiKreditPage() {
                   <div
                     className={`h-0.5 flex-1 mx-2 mb-5 ${
                       currentStep > step.num
-                        ? 'bg-[#008AEC]'
+                        ? 'bg-[#002c5f]'
                         : 'bg-[var(--border)]'
                     }`}
                   />

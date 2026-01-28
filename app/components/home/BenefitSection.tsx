@@ -29,7 +29,7 @@ export function BenefitSection({ benefits }: BenefitSectionProps) {
               <span className="block">Dapatkan Benefit</span>
               <span className="block">Kredit Mobil Baru Anda</span>
               <span className="block">
-                di <span className="text-[#008AEC]">Hyundai Finance</span>
+                di <span className="text-[#002c5f]">Hyundai Finance</span>
               </span>
             </h2>
           </div>

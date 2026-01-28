@@ -150,7 +150,7 @@ export function ContactModal({
               onChange={(e) => setName(e.target.value)}
               required
               disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Masukkan nama lengkap"
             />
           </div>
@@ -166,7 +166,7 @@ export function ContactModal({
               onChange={(e) => setPhone(e.target.value)}
               required
               disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="081234567890"
             />
           </div>
@@ -182,7 +182,7 @@ export function ContactModal({
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="nama@email.com"
             />
           </div>
@@ -212,7 +212,7 @@ export function ContactModal({
             <button
               type="submit"
               disabled={loading || success}
-              className="flex-1 px-4 py-2.5 bg-[#008AEC] text-white rounded-lg font-medium hover:bg-[#008AEC]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Mengirim...' : success ? 'Berhasil!' : 'Kirim'}
             </button>
