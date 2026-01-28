@@ -35,7 +35,7 @@ async function getBanners() {
       image: banner.imageUrl,
     })) as Slide[];
   } catch (error) {
-    // Fallback to default
+    console.error('Error fetching banners:', error);
     return [
       {
         title: "Dapatkan Benefit Kredit Mobil Baru Anda di",
@@ -61,7 +61,7 @@ async function getBenefits() {
       description: benefit.description,
     })) as Benefit[];
   } catch (error) {
-    // Fallback to default
+    console.error('Error fetching benefits:', error);
     return [
       {
         title: "Jaminan Keaslian",
@@ -89,7 +89,7 @@ async function getProducts() {
       image: product.imageUrl,
     })) as Product[];
   } catch (error) {
-    // Fallback to default
+    console.error('Error fetching products:', error);
     return [
       {
         title: "Smart Installment Program",
