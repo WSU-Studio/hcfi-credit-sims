@@ -14,7 +14,7 @@ export function Header({ items }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#002c5f] backdrop-blur shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
       <Container className="flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <Link href="/">

@@ -106,7 +106,7 @@ export default async function SiteLayout({
   return (
     <>
       <Header items={navItems} />
-      <main className="pb-16">
+      <main className="pt-14 pb-16">
         {children}
       </main>
       <div id="footer">
