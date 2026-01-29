@@ -164,8 +164,8 @@ export default function SimulasiKreditPage() {
 
         {/* Step Content */}
         {currentStep >= 3 && selectedDealer && selectedAsset ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            <div className="hidden lg:block lg:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_3fr] gap-4 lg:gap-4">
+            <div className="hidden lg:block">
               <SimulationSidebar
                 dealer={selectedDealer}
                 asset={selectedAsset}
@@ -173,7 +173,7 @@ export default function SimulasiKreditPage() {
                 onChangeModel={() => goToStep(2)}
               />
             </div>
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* Mobile: ringkasan singkat + Ganti Model */}
               <div className="lg:hidden flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50/80">
                 <div className="text-sm text-gray-700">
@@ -189,7 +189,7 @@ export default function SimulasiKreditPage() {
                   Ganti Model
                 </button>
               </div>
-              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8 shadow-lg">
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 md:p-6 shadow-lg">
                 {currentStep === 3 && (
                   <SpecificationStep
                     modelCode={selectedAsset.AssetCode}

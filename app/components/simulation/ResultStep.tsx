@@ -183,14 +183,14 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
               setDpPercent(p.DPPrcnt);
               setTableRows([]);
             }}
-            className={`p-4 rounded-xl border-2 text-left transition ${
+            className={`p-4 rounded-xl border-2 text-left transition flex flex-col justify-start ${
               selectedProduct?.ProductName === p.ProductName
                 ? 'border-[#002c5f] bg-[#002c5f]/10'
                 : 'border-gray-200 hover:border-[#002c5f]/50'
             }`}
           >
-            <div className="font-semibold mb-1">{p.ProductName}</div>
-            <div className="text-xs text-gray-500">TDP: {formatCurrency(p.TdpAmt)}</div>
+            <div className="font-semibold mb-2">{p.ProductName}</div>
+            <div className="text-xs text-gray-500 mb-1">TDP: {formatCurrency(p.TdpAmt)}</div>
             <div className="text-sm font-bold text-[#002c5f]">
               Installment: {formatCurrency(p.InstallmentAmt)}
             </div>
