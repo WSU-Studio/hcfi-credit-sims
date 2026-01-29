@@ -55,16 +55,16 @@ export function RolesTable() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Permissions
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -72,16 +72,16 @@ export function RolesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {roles.map((role) => (
               <tr key={role.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
                   {role.name}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500">
                   {role.description || '-'}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500">
                   {role.rolePermissions.length} permission(s)
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                   <Link
                     href={`/admin/roles/${role.id}/edit`}
                     className="h-5 w-5 flex items-center justify-center"

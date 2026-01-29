@@ -50,19 +50,19 @@ export function ProductsTable() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Title
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Subtitle
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -70,7 +70,7 @@ export function ProductsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden">
                     {product.imageUrl.includes('cloudinary') ? (
                       <CldImage
@@ -91,16 +91,16 @@ export function ProductsTable() {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <td className="px-3 py-2 text-xs font-medium text-gray-900">
                   {product.title}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500">
                   {product.subtitle || '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                   {product.order}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                   <div className="flex items-center gap-3">
                     <Link
                       href={`/admin/products/${product.id}/edit`}
