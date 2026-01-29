@@ -1,7 +1,8 @@
 import { HeroSlider } from "@/app/components/home/HeroSlider";
 import { ProductSection } from "@/app/components/home/ProductSection";
 import { BenefitSection } from "@/app/components/home/BenefitSection";
-import type { Benefit, Product, Slide } from "@/app/types";
+import { ArticleSection } from "@/app/components/home/ArticleSection";
+import type { Benefit, Product, Slide, Article } from "@/app/types";
 import { prisma } from "@/lib/prisma";
 
 // Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
@@ -114,11 +115,32 @@ async function getProducts() {
   }
 }
 
+async function getArticles() {
+  try {
+    const articles = await prisma.article.findMany({
+      where: { isPublished: true },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return articles.map((article) => ({
+      title: article.title,
+      image: article.imageUrl ?? "/images/main-banner.jpg",
+      slug: article.slug ?? undefined,
+    })) as Article[];
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    return [];
+  }
+}
+
 export default async function Home() {
-  const [slides, benefits, products] = await Promise.all([
+  const [slides, benefits, products, articles ] = await Promise.all([
     getBanners(),
     getBenefits(),
     getProducts(),
+    getArticles(),
   ]);
 
   return (
@@ -128,6 +150,8 @@ export default async function Home() {
       <BenefitSection benefits={benefits} />
 
       <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
+
+      <ArticleSection articles={articles} />
     </>
   );
 }
