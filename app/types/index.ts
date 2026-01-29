@@ -14,6 +14,12 @@ export type Product = {
   image: string;
 };
 
+export type Article = {
+  title: string;
+  image: string;
+  slug?: string;
+};
+
 export type Slide = {
   title: string;
   highlight: string;
