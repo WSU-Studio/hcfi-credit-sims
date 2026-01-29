@@ -17,6 +17,11 @@ export async function GET() {
       orderBy: {
         createdAt: 'desc',
       },
+      include: {
+        author: {
+          select: { id: true, name: true, email: true },
+        },
+      },
     });
 
     return NextResponse.json({ articles });
@@ -41,8 +46,34 @@ export async function POST(request: NextRequest) {
     await requirePermission('ARTICLES', 'create');
 
     const body = await request.json();
+    const slug =
+      body.slug?.trim() ||
+      (body.title || '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+    const tags = Array.isArray(body.tags)
+      ? body.tags.filter(Boolean).map((t: string) => String(t).trim())
+      : typeof body.tags === 'string'
+        ? body.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+        : [];
+    const data = {
+      ...body,
+      slug: slug || `article-${Date.now()}`,
+      authorId: session.user.id,
+      metaDescription: body.metaDescription || null,
+      category: body.category || null,
+      tags,
+      readingTime: body.readingTime != null ? Number(body.readingTime) : null,
+      featured: Boolean(body.featured),
+    };
     const article = await prisma.article.create({
-      data: body,
+      data,
+      include: {
+        author: {
+          select: { id: true, name: true, email: true },
+        },
+      },
     });
 
     return NextResponse.json({ article });
