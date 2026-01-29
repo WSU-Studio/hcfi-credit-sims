@@ -44,3 +44,19 @@ export type CompanyInfo = {
   copyright?: string;
 };
 
+// Re-export credit simulation types
+export type {
+  ApiResponse,
+  KeyValuePair,
+  Vendor,
+  VendorKeyValue,
+  AssetMaster,
+  ManufacturingYear,
+  AssetVariant,
+  ExteriorColor,
+  InteriorColor,
+  ProductCalculation,
+  DefaultProduct,
+  SimulationFormData,
+  SimulationResult,
+} from './credit-simulation';

@@ -1,0 +1,263 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Authentication & Authorization
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles UserRole[]
+  articles  Article[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model Menu {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  path      String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  permissions Permission[]
+
+  @@map("menus")
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  menuCode  String
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menu          Menu            @relation(fields: [menuCode], references: [code], onDelete: Cascade)
+  rolePermissions RolePermission[]
+
+  @@unique([menuCode])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================
+// Content Management
+// ============================================
+
+model Banner {
+  id          String    @id @default(uuid())
+  title       String
+  highlight   String?
+  description String?
+  imageUrl    String
+  ctaLabel    String?
+  ctaUrl      String?
+  isActive    Boolean   @default(true)
+  order       Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("banners")
+}
+
+model Benefit {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("benefits")
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+model Promo {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String?
+  content     String?   @db.Text
+  isActive    Boolean   @default(true)
+  isHighlight Boolean   @default(false)
+  order       Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("promos")
+}
+
+model Article {
+  id              String    @id @default(uuid())
+  title           String
+  slug            String    @unique
+  subtitle        String?
+  excerpt         String?
+  content         String    @db.Text
+  imageUrl        String?
+  metaDescription String?
+  category        String?
+  tags            String[]  @default([])
+  readingTime     Int?      // minutes
+  featured        Boolean   @default(false)
+  authorId        String?
+  isPublished     Boolean   @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@map("articles")
+}
+
+model StaticPage {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("static_pages")
+}
+
+model FooterSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("footer_settings")
+}
+
+model SiteSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  message     String
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("announcements")
+}
+
+model Media {
+  id          String   @id @default(uuid())
+  filename    String
+  url         String
+  cloudinaryId String?
+  mimeType    String?
+  size        Int?
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("media")
+}
+
+// ============================================
+// Credit Simulation Leads
+// ============================================
+
+model Lead {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String
+  email       String
+  productName String?
+  otrPrice    Float?
+  dpPercent   Float?
+  tenor       Int?
+  notes       String?  @db.Text
+  status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leads")
+}

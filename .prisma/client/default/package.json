@@ -1,0 +1,5 @@
+{
+  "name": ".prisma/client/default",
+  "main": "index.js",
+  "type": "commonjs"
+}

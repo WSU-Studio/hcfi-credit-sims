@@ -14,17 +14,17 @@ export function Header({ items }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-black/80 backdrop-blur">
-      <Container className="flex items-center justify-between py-4">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
+      <Container className="flex items-center justify-between h-14">
         <div className="flex items-center gap-2">
           <Link href="/">
-            <Image src="/logo.svg" alt="Hyundai Capital" width={160} height={32} priority />
+            <Image src="/HF-logo.svg" className="brightness-0 invert" alt="Hyundai Capital" width={280} height={36} priority />
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-10 text-sm font-medium text-white/90 md:flex">
+        <nav className="hidden gap-6 text-base lg:text-lg text-white md:flex">
           {items.map((item, index) => (
-            <Link key={`${item.label}-${index}`} href={item.href} className="hover:text-[var(--accent)]">
+            <Link key={`${item.label}-${index}`} href={item.href} className="hover:text-white/80 transition-colors">
               {item.label}
             </Link>
           ))}
@@ -35,7 +35,7 @@ export function Header({ items }: HeaderProps) {
           aria-label="Toggle navigation"
           aria-expanded={open}
           aria-controls="mobile-menu"
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/30 text-white md:hidden hover:bg-white/10 transition-colors"
           onClick={() => setOpen((prev) => !prev)}
         >
           <span className="sr-only">Menu</span>
@@ -48,13 +48,13 @@ export function Header({ items }: HeaderProps) {
       </Container>
 
       {open ? (
-        <div id="mobile-menu" className="border-t border-[var(--border)] bg-black/95 md:hidden">
+        <div id="mobile-menu" className="border-t border-white/20 bg-[#002c5f] md:hidden">
           <Container className="flex flex-col gap-3 py-3">
             {items.map((item, index) => (
               <Link
                 key={`${item.label}-${index}`}
                 href={item.href}
-                className="py-2 text-sm font-medium text-white/90 hover:text-[var(--accent)]"
+                className="py-2 text-sm font-medium text-white hover:text-white/80 transition-colors"
                 onClick={() => setOpen(false)}
               >
                 {item.label}
