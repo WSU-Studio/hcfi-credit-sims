@@ -26,12 +26,13 @@ export async function GET() {
     });
 
     return NextResponse.json({ users });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error fetching users:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

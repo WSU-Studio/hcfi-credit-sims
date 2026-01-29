@@ -26,12 +26,13 @@ export async function GET(
     }
 
     return NextResponse.json({ product });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error fetching product:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -57,12 +58,13 @@ export async function PUT(
     });
 
     return NextResponse.json({ product });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error updating product:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -86,12 +88,13 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error deleting product:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

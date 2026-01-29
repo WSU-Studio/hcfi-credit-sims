@@ -21,9 +21,10 @@ export async function GET(request: NextRequest) {
     const hasPermission = await checkPermission(session.user.id, menuCode, action);
 
     return NextResponse.json({ hasPermission });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error('Error checking permission:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

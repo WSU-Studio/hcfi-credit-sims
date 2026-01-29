@@ -20,8 +20,9 @@ export async function GET() {
     });
 
     return NextResponse.json({ promos });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error fetching promos:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -46,8 +47,9 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ promo });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error creating promo:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(

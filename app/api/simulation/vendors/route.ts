@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (timeoutId) clearTimeout(timeoutId);
     
     console.error('Error fetching vendors:', error);
@@ -64,10 +64,11 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json(mockResponse);
     } catch (mockError) {
+      console.error('Error fetching vendors:', mockError);
       return NextResponse.json(
         { 
           error: 'Internal server error', 
-          message: error.message,
+          message: error instanceof Error ? error.message : 'Unknown error',
         },
         { status: 500 }
       );

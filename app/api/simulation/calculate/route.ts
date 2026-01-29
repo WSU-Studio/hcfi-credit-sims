@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(data);
-      } catch (apiError: any) {
+      } catch (apiError: unknown) {
         console.error('Real API error, falling back to mock:', apiError);
         // Fall through to mock API
       }

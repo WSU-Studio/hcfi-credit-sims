@@ -27,8 +27,9 @@ export async function GET() {
     });
 
     return NextResponse.json({ roles });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    console.error('Error fetching roles:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(

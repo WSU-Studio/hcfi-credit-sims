@@ -11,8 +11,9 @@ export async function GET() {
 
     return NextResponse.json({ benefits });
   } catch (error) {
+    console.error('Error fetching benefits:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
