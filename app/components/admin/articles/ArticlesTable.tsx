@@ -189,7 +189,7 @@ export function ArticlesTable() {
                       className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#008AEC] hover:bg-[#008AEC]/10 hover:text-[#1956FF] transition-colors"
                       title="Edit Article"
                     >
-                      <IconEdit size={18} />
+                      <IconEdit size={18} className="text-[#008AEC]" />
                     </Link>
                     <button
                       type="button"

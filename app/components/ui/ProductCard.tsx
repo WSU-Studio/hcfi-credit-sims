@@ -41,7 +41,7 @@ export function ProductCard({ title, subtitle, image, className }: ProductCardPr
       <div className="relative flex h-full flex-col justify-end gap-1 p-4">
         <p className="text-lg font-semibold text-white leading-snug">{title}</p>
         {subtitle ? (
-          <p className="text-sm text-[var(--muted)] leading-snug">{subtitle}</p>
+          <p className="text-sm text-gray-300 leading-snug">{subtitle}</p>
         ) : null}
       </div>
     </div>

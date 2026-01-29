@@ -10,7 +10,7 @@ export function ArticleSection({ articles }: ArticleSectionProps) {
   if (!articles.length) return null;
 
   return (
-    <section id="artikel" className="bg-[var(--background)] py-12 md:py-16">
+    <section id="artikel" className="bg-[var(--background)] pt-12 md:pt-16 pb-4 md:pb-6">
       <Container className="space-y-6">
         <div className="space-y-2">
           {/* <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">Artikel</p> */}

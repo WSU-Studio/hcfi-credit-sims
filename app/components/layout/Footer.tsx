@@ -9,8 +9,8 @@ type FooterProps = {
 
 export function Footer({ company }: FooterProps) {
   return (
-    <footer className="mt-16 border-t border-[var(--border)] bg-[var(--background)] text-sm text-[var(--foreground)]">
-      <Container className="space-y-8 py-10">
+    <footer className="border-t border-slate-200 bg-slate-100/90 text-sm text-slate-700">
+      <Container className="space-y-8 py-12">
         <div className="grid gap-8 md:grid-cols-3">
           <div className="space-y-3">
             <Image src="/HF-logo.svg" alt="Hyundai Capital" width={240} height={28} priority />
