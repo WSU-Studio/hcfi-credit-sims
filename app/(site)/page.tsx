@@ -4,6 +4,10 @@ import { BenefitSection } from "@/app/components/home/BenefitSection";
 import type { Benefit, Product, Slide } from "@/app/types";
 import { prisma } from "@/lib/prisma";
 
+// Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
+// Tanpa ini, halaman di-static generate saat deploy dan update DB lewat admin tidak muncul di home.
+export const dynamic = "force-dynamic";
+
 async function getBanners() {
   try {
     const now = new Date();
