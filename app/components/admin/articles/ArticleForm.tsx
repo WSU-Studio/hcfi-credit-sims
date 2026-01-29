@@ -125,9 +125,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         category: formData.category || null,
         tags,
         readingTime:
-          formData.readingTime !== undefined && formData.readingTime !== ''
-            ? Number(formData.readingTime)
-            : null,
+          formData.readingTime != null ? Number(formData.readingTime) : null,
         featured: Boolean(formData.featured),
       };
 
