@@ -11,7 +11,7 @@ export function Footer({ company }: FooterProps) {
   return (
     <footer className="border-t border-slate-200 bg-slate-100/90 text-sm text-slate-700">
       <Container className="space-y-8 py-12">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
           <div className="space-y-3">
             <Image src="/HF-logo.svg" alt="Hyundai Capital" width={240} height={28} priority />
             <div className="space-y-1 leading-relaxed text-[var(--muted)]">
@@ -24,10 +24,15 @@ export function Footer({ company }: FooterProps) {
                 <Link 
                   key={`${link.label}-${index}`} 
                   href={link.href} 
-                  className="text-[var(--accent)] hover:text-[var(--action)] transition-colors">
+                  className="text-[#008AEC] hover:text-[#1956FF] font-medium transition-colors">
                   {link.label}
                 </Link>
               ))}
+            </div>
+
+            <div className="pt-3 text-xs leading-relaxed text-[var(--muted)]">
+              {company.disclaimer ? <p className="mb-2">{company.disclaimer}</p> : null}
+              <p>{company.copyright ?? `Copyright © ${new Date().getFullYear()} - All Rights Reserved`}</p>
             </div>
           </div>
 
@@ -47,11 +52,11 @@ export function Footer({ company }: FooterProps) {
                 </li>
               ))}
             </ul>
-          </div>
 
-          <div className="space-y-3">
-            <p className="text-base font-semibold text-[var(--foreground)]">Unduh Aplikasi</p>
-            <div className="flex flex-wrap gap-3">
+            <p className="text-sm text-slate-700">
+              Unduh Aplikasi Hyundai Finance di:
+            </p>
+            <div className="flex flex-wrap gap-2">
               {company.apps.map((app, index) => (
                 <Link
                   key={`${app.label}-${index}`}
@@ -64,11 +69,7 @@ export function Footer({ company }: FooterProps) {
             </div>
           </div>
         </div>
-
-        <div className="border-t border-[var(--border)] pt-6 text-xs leading-relaxed text-[var(--muted)]">
-          {company.disclaimer ? <p className="mb-2">{company.disclaimer}</p> : null}
-          <p>{company.copyright ?? `Copyright © ${new Date().getFullYear()} - All Rights Reserved`}</p>
-        </div>
+        
       </Container>
     </footer>
   );
