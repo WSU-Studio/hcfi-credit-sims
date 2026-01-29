@@ -34,18 +34,20 @@ export default function SimulasiKreditPage() {
   const handleDealerSelect = (dealer: Vendor) => {
     setSelectedDealer(dealer);
     setCurrentStep(2);
-    // Reset subsequent steps
+    // Reset step 2–5: user harus ulang pilih model, spesifikasi, harga, hasil
     setSelectedAsset(null);
     setSpecs({});
     setOtrPrice(null);
+    setLeadNo(null);
   };
 
   const handleAssetSelect = (asset: AssetMaster) => {
     setSelectedAsset(asset);
     setCurrentStep(3);
-    // Reset subsequent steps
+    // Reset step 3–5: user harus ulang spesifikasi, harga, hasil. Tidak bisa lompat ke step 4.
     setSpecs({});
     setOtrPrice(null);
+    setLeadNo(null);
   };
 
   const handleSpecsComplete = (completedSpecs: {
@@ -59,7 +61,9 @@ export default function SimulasiKreditPage() {
   }) => {
     setSpecs(completedSpecs);
     setCurrentStep(4);
+    // Reset step 4–5: user harus ulang input harga dan lihat hasil
     setOtrPrice(null);
+    setLeadNo(null);
   };
 
   const handlePriceComplete = async (price: number) => {
