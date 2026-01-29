@@ -7,6 +7,7 @@ import { ModelStep } from '@/app/components/simulation/ModelStep';
 import { SpecificationStep } from '@/app/components/simulation/SpecificationStep';
 import { PriceStep } from '@/app/components/simulation/PriceStep';
 import { ResultStep } from '@/app/components/simulation/ResultStep';
+import { SimulationSidebar } from '@/app/components/simulation/SimulationSidebar';
 import type { Vendor, AssetMaster, ProductCalculation } from '@/app/types/credit-simulation';
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -158,78 +159,120 @@ export default function SimulasiKreditPage() {
         </div>
 
         {/* Step Content */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8 shadow-lg">
-          {currentStep === 1 && (
-            <DealerStep
-              onSelect={handleDealerSelect}
-              selectedDealer={selectedDealer || undefined}
-            />
-          )}
-
-          {currentStep === 2 && selectedDealer && (
-            <ModelStep
-              dealerCode={selectedDealer.VendorCode}
-              onSelect={handleAssetSelect}
-              selectedAsset={selectedAsset || undefined}
-            />
-          )}
-
-          {currentStep === 3 && selectedDealer && selectedAsset && (
-            <SpecificationStep
-              modelCode={selectedAsset.AssetCode}
-              dealerCode={selectedDealer.VendorCode}
-              onComplete={handleSpecsComplete}
-              initialSpecs={specs}
-            />
-          )}
-
-          {currentStep === 4 && selectedAsset && (
-            <PriceStep
-              modelName={selectedAsset.AssetName}
-              suggestedPrice={selectedAsset.Price}
-              onComplete={handlePriceComplete}
-            />
-          )}
-
-          {currentStep === 5 && (
-            <ResultStep
-              leadNo={leadNo || undefined}
-              otrPrice={otrPrice ?? undefined}
-              vehicle={
-                selectedAsset || specs.trimName || specs.exteriorColorName || specs.interiorColorName
-                  ? {
-                      modelName: selectedAsset
-                        ? (specs.manufacturingYear
-                            ? `${specs.manufacturingYear} ${selectedAsset.AssetName}`
-                            : selectedAsset.AssetName)
-                        : undefined,
-                      trimName: specs.trimName,
-                      exteriorColor: specs.exteriorColorName,
-                      interiorColor: specs.interiorColorName,
+        {currentStep >= 3 && selectedDealer && selectedAsset ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="hidden lg:block lg:col-span-1">
+              <SimulationSidebar
+                dealer={selectedDealer}
+                asset={selectedAsset}
+                specs={specs}
+                onChangeModel={() => goToStep(2)}
+              />
+            </div>
+            <div className="lg:col-span-2 space-y-6">
+              {/* Mobile: ringkasan singkat + Ganti Model */}
+              <div className="lg:hidden flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50/80">
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">{selectedAsset.AssetName}</span>
+                  {specs.trimName && <span className="text-gray-500"> · {specs.trimName}</span>}
+                  <span className="text-gray-500"> · {selectedDealer.City}, {selectedDealer.VendorName}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => goToStep(2)}
+                  className="text-sm font-medium text-[#002c5f] hover:underline"
+                >
+                  Ganti Model
+                </button>
+              </div>
+              <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8 shadow-lg">
+                {currentStep === 3 && (
+                  <SpecificationStep
+                    modelCode={selectedAsset.AssetCode}
+                    dealerCode={selectedDealer.VendorCode}
+                    onComplete={handleSpecsComplete}
+                    initialSpecs={specs}
+                  />
+                )}
+                {currentStep === 4 && (
+                  <PriceStep
+                    modelName={selectedAsset.AssetName}
+                    suggestedPrice={selectedAsset.Price}
+                    onComplete={handlePriceComplete}
+                  />
+                )}
+                {currentStep === 5 && (
+                  <ResultStep
+                    leadNo={leadNo || undefined}
+                    otrPrice={otrPrice ?? undefined}
+                    vehicle={
+                      specs.trimName || specs.exteriorColorName || specs.interiorColorName
+                        ? {
+                            modelName: specs.manufacturingYear
+                              ? `${specs.manufacturingYear} ${selectedAsset.AssetName}`
+                              : selectedAsset.AssetName,
+                            trimName: specs.trimName,
+                            exteriorColor: specs.exteriorColorName,
+                            interiorColor: specs.interiorColorName,
+                          }
+                        : undefined
                     }
-                  : undefined
-              }
-              onSelectProduct={handleProductSelect}
-            />
-          )}
-        </div>
-
-        {/* Navigation Buttons */}
-        {currentStep > 1 && (
-          <div className="mt-6 flex justify-between">
-            <button
-              type="button"
-              onClick={() => setCurrentStep((currentStep - 1) as Step)}
-              className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
-            >
-              Kembali
-            </button>
-            {currentStep < 5 && (
-              <div className="text-sm text-[var(--muted)] flex items-center">
-                Langkah {currentStep} dari 5
+                    onSelectProduct={handleProductSelect}
+                  />
+                )}
+              </div>
+              {currentStep > 1 && (
+                <div className="flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep((currentStep - 1) as Step)}
+                    className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
+                  >
+                    Kembali
+                  </button>
+                  {currentStep < 5 && (
+                    <div className="text-sm text-[var(--muted)] flex items-center">
+                      Langkah {currentStep} dari 5
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8 shadow-lg">
+              {currentStep === 1 && (
+                <DealerStep
+                  onSelect={handleDealerSelect}
+                  selectedDealer={selectedDealer || undefined}
+                />
+              )}
+              {currentStep === 2 && selectedDealer && (
+                <ModelStep
+                  dealerCode={selectedDealer.VendorCode}
+                  onSelect={handleAssetSelect}
+                  selectedAsset={selectedAsset || undefined}
+                />
+              )}
+            </div>
+            {currentStep > 1 && (
+              <div className="mt-6 flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep((currentStep - 1) as Step)}
+                  className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
+                >
+                  Kembali
+                </button>
+                {currentStep < 5 && (
+                  <div className="text-sm text-[var(--muted)] flex items-center">
+                    Langkah {currentStep} dari 5
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </Container>
     </div>
