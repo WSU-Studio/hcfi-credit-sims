@@ -52,6 +52,34 @@ export type CompanyInfo = {
   copyright?: string;
 };
 
+// Static page layout (widget-based)
+export type LayoutCell = {
+  id: string;
+  widgetType: 'text' | 'text_image';
+  payload: Record<string, unknown>;
+};
+
+export type LayoutRow = {
+  id: string;
+  gridCols: 1 | 2 | 3;
+  cells: LayoutCell[];
+};
+
+export type PageLayout = {
+  rows: LayoutRow[];
+};
+
+export type TextWidgetPayload = {
+  content: string;
+};
+
+export type TextImageWidgetPayload = {
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  imagePosition?: 'left' | 'right';
+};
+
 // Re-export credit simulation types
 export type {
   ApiResponse,
