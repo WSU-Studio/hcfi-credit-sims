@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import type { Benefit, Slide } from "@/app/types";
+import type { Slide } from "@/app/types";
 import { Container } from "../ui/Container";
-import { BenefitCard } from "../ui/BenefitCard";
 import Image from "next/image";
+import { IconArrowBadgeUpFilled } from "@tabler/icons-react";
 
 type HeroSliderProps = {
   slides: Slide[];
-  benefits: Benefit[];
   /** 'slide' = horizontal slide, 'fade' = crossfade */
   transition?: 'slide' | 'fade';
 };
@@ -18,7 +17,7 @@ const AUTO_SLIDE_INTERVAL_MS = 7000;
 const TRANSITION_DURATION_MS = 600;
 
 const ctaButtonClass =
-  "inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008AEC] focus:ring-offset-2 focus:ring-offset-slate-800";
+  "w-fit inline-flex self-end items-center justify-center align-baseline gap-1 px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008AEC] focus:ring-offset-2 focus:ring-offset-slate-800";
 
 function CTAButton({ label, href }: { label: string; href: string }) {
   const isInternal = href.startsWith("/");
@@ -26,17 +25,23 @@ function CTAButton({ label, href }: { label: string; href: string }) {
     return (
       <Link href={href} className={ctaButtonClass}>
         {label}
+        <span className="animate-bounce rotate-90">
+          <IconArrowBadgeUpFilled size={16} />
+        </span>
       </Link>
     );
   }
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={ctaButtonClass}>
-      {label}
-    </a>
+    <Link href={href} target="_blank" rel="noopener noreferrer" className={ctaButtonClass}>
+      {label} 
+      <span className="animate-bounce rotate-90">
+        <IconArrowBadgeUpFilled size={16} />
+      </span>
+    </Link>
   );
 }
 
-export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSliderProps) {
+export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
@@ -209,10 +214,10 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
                     />
                   )}
                   <Container className="relative flex h-full items-end pb-8 md:pb-12">
-                    <div className="w-full max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl">
+                    <div className="w-full flex flex-col max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl">
                       <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
                         {slide.title}{" "}
-                        <span className="text-sky-500/90">{slide.highlight}</span>
+                        <span className="text-[#2966FF]">{slide.highlight}</span>
                       </p>
                       <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
                         {slide.description}
@@ -220,11 +225,6 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
                       {slide.ctaLabel && slide.ctaUrl ? (
                         <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
                       ) : null}
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {benefits.map((item) => (
-                          <BenefitCard key={item.title} {...item} />
-                        ))}
-                      </div>
                     </div>
                   </Container>
                 </div>
@@ -279,11 +279,6 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
                       {slide.ctaLabel && slide.ctaUrl ? (
                         <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
                       ) : null}
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {benefits.map((item) => (
-                          <BenefitCard key={item.title} {...item} />
-                        ))}
-                      </div>
                     </div>
                   </Container>
                 </div>
