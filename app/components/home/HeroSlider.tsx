@@ -69,13 +69,13 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
         )}
         {/* <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" /> */}
 
-        <Container className="relative flex h-full items-end pb-12 md:pb-16">
-          <div className="max-w-2xl space-y-5">
+        <Container className="relative flex h-full items-end pb-8 md:pb-12">
+          <div className="w-full max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl transition-all duration-300">
             <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
               {current.title}{" "}
-              <span className="text-[#002c5f]">{current.highlight}</span>
+              <span className="text-sky-500/90">{current.highlight}</span>
             </p>
-            <p className="max-w-xl text-base leading-relaxed text-white/90 md:text-lg">
+            <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
               {current.description}
             </p>
 
@@ -100,9 +100,9 @@ export function HeroSlider({ slides, benefits }: HeroSliderProps) {
                 setIndex(idx);
                 setImageError(false); // Reset error state when changing slide
               }}
-              className={`h-2 w-8 rounded-full transition ${
+              className={`h-2 w-8 rounded-full transition cursor-pointer duration-300 ${
                 idx === index
-                  ? "bg-[#002c5f] shadow-[0_0_0_4px_rgba(0,138,236,0.25)]"
+                  ? "bg-gray-100 shadow-[0_0_0_4px_rgba(0,138,236,0.25)]"
                   : "bg-white/30 hover:bg-white/60"
               }`}
             />
