@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Benefit, Slide } from "@/app/types";
 import { Container } from "../ui/Container";
 import { BenefitCard } from "../ui/BenefitCard";
@@ -19,21 +19,101 @@ const TRANSITION_DURATION_MS = 600;
 export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartX = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const fallbackImage = "/images/main-banner.jpg";
 
-  // Auto-slide every 7 seconds; timer resets when index changes (e.g. manual click)
+  // Auto-slide every 7 seconds; pause while dragging
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (slides.length <= 1 || isDragging) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % slides.length);
     }, AUTO_SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [slides.length, index]);
+  }, [slides.length, index, isDragging]);
 
-  const goTo = (idx: number) => {
+  const goTo = useCallback((idx: number) => {
     setIndex(idx);
     setImageError((prev) => ({ ...prev, [idx]: false }));
-  };
+  }, []);
+
+  const getSlideWidthPx = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || !slides.length) return 0;
+    return el.offsetWidth / slides.length;
+  }, [slides.length]);
+
+  const snapFromDrag = useCallback(() => {
+    const slideWidth = getSlideWidthPx();
+    if (!slideWidth) {
+      setDragOffset(0);
+      return;
+    }
+    const effectiveIndex = index - dragOffset / slideWidth;
+    const newIndex = Math.max(0, Math.min(slides.length - 1, Math.round(effectiveIndex)));
+    setIndex(newIndex);
+    setDragOffset(0);
+    setIsDragging(false);
+    setImageError((prev) => ({ ...prev, [newIndex]: false }));
+  }, [index, dragOffset, slides.length, getSlideWidthPx]);
+
+  const handleDragMove = useCallback((clientX: number) => {
+    setDragOffset(clientX - dragStartX.current);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging) return;
+    snapFromDrag();
+  }, [isDragging, snapFromDrag]);
+
+  // Touch: swipe on mobile
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (transition !== 'slide' || slides.length <= 1) return;
+      dragStartX.current = e.touches[0].clientX;
+      setIsDragging(true);
+      setDragOffset(0);
+    },
+    [transition, slides.length]
+  );
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      handleDragMove(e.touches[0].clientX);
+    },
+    [isDragging, handleDragMove]
+  );
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    handleDragEnd();
+  }, [isDragging, handleDragEnd]);
+
+  // Mouse: click and hold to drag on desktop
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (transition !== 'slide' || slides.length <= 1) return;
+      e.preventDefault();
+      dragStartX.current = e.clientX;
+      setIsDragging(true);
+      setDragOffset(0);
+    },
+    [transition, slides.length]
+  );
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseMove = (e: MouseEvent) => handleDragMove(e.clientX);
+    const onMouseUp = () => handleDragEnd();
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging, handleDragMove, handleDragEnd]);
 
   const getImageUrl = (url: string) => {
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -44,17 +124,33 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
 
   if (!slides.length) return null;
 
+  const slidePercent = 100 / slides.length;
+  const baseTranslate = -index * slidePercent;
+  const transformPx = isDragging ? `${dragOffset}px` : '0px';
+  const stripTransform = `translateX(calc(${baseTranslate}% + ${transformPx}))`;
+
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-black">
-      <div className="relative w-full h-[376px] md:h-[480px] lg:h-[640px] overflow-hidden">
+      <div
+        ref={containerRef}
+        className="relative w-full h-[376px] md:h-[480px] lg:h-[640px] overflow-hidden touch-pan-y select-none"
+        style={{ touchAction: transition === 'slide' ? 'pan-y' : 'auto' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        onMouseDown={onMouseDown}
+      >
         {transition === 'slide' ? (
-          /* Horizontal slide: strip of slides with translateX */
+          /* Horizontal slide: strip of slides with translateX; draggable */
           <div
             className="flex h-full ease-out"
             style={{
               width: `${slides.length * 100}%`,
-              transform: `translateX(-${index * (100 / slides.length)}%)`,
+              transform: stripTransform,
+              transitionProperty: isDragging ? 'none' : 'transform',
               transitionDuration: `${TRANSITION_DURATION_MS}ms`,
+              cursor: slides.length > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
             }}
           >
             {slides.map((slide, i) => {
@@ -167,7 +263,7 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
       </div>
 
       {slides.length > 1 ? (
-        <Container className="relative -mt-6 flex justify-center gap-2 pb-8 md:-mt-8">
+        <Container className="relative -mt-6 flex justify-center gap-2 pb-4 md:-mt-6">
           {slides.map((slide, idx) => (
             <button
               key={`${slide.title}-${idx}`}
