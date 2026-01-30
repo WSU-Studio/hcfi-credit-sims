@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import type { Benefit, Slide } from "@/app/types";
 import { Container } from "../ui/Container";
 import { BenefitCard } from "../ui/BenefitCard";
@@ -16,23 +17,44 @@ type HeroSliderProps = {
 const AUTO_SLIDE_INTERVAL_MS = 7000;
 const TRANSITION_DURATION_MS = 600;
 
+const ctaButtonClass =
+  "inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008AEC] focus:ring-offset-2 focus:ring-offset-slate-800";
+
+function CTAButton({ label, href }: { label: string; href: string }) {
+  const isInternal = href.startsWith("/");
+  if (isInternal) {
+    return (
+      <Link href={href} className={ctaButtonClass}>
+        {label}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={ctaButtonClass}>
+      {label}
+    </a>
+  );
+}
+
 export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const dragStartX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const fallbackImage = "/images/main-banner.jpg";
 
-  // Auto-slide every 7 seconds; pause while dragging
+  // Auto-slide every 7 seconds; pause while hovering or dragging
+  const pauseAutoSlide = isHovering || isDragging;
   useEffect(() => {
-    if (slides.length <= 1 || isDragging) return;
+    if (slides.length <= 1 || pauseAutoSlide) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % slides.length);
     }, AUTO_SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [slides.length, index, isDragging]);
+  }, [slides.length, index, pauseAutoSlide]);
 
   const goTo = useCallback((idx: number) => {
     setIndex(idx);
@@ -130,7 +152,12 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
   const stripTransform = `translateX(calc(${baseTranslate}% + ${transformPx}))`;
 
   return (
-    <section id="hero" className="relative isolate overflow-hidden bg-black">
+    <section
+      id="hero"
+      className="relative isolate overflow-hidden bg-black"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
       <div
         ref={containerRef}
         className="relative w-full h-[376px] md:h-[480px] lg:h-[640px] overflow-hidden touch-pan-y select-none"
@@ -142,7 +169,6 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
         onMouseDown={onMouseDown}
       >
         {transition === 'slide' ? (
-          /* Horizontal slide: strip of slides with translateX; draggable */
           <div
             className="flex h-full ease-out"
             style={{
@@ -191,6 +217,9 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
                       <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
                         {slide.description}
                       </p>
+                      {slide.ctaLabel && slide.ctaUrl ? (
+                        <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
+                      ) : null}
                       <div className="grid gap-3 sm:grid-cols-2">
                         {benefits.map((item) => (
                           <BenefitCard key={item.title} {...item} />
@@ -203,7 +232,6 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
             })}
           </div>
         ) : (
-          /* Fade: stacked slides, only current visible */
           <>
             {slides.map((slide, i) => {
               const src = imageError[i] || !slide.image ? fallbackImage : slide.image;
@@ -248,6 +276,9 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
                       <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
                         {slide.description}
                       </p>
+                      {slide.ctaLabel && slide.ctaUrl ? (
+                        <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
+                      ) : null}
                       <div className="grid gap-3 sm:grid-cols-2">
                         {benefits.map((item) => (
                           <BenefitCard key={item.title} {...item} />
@@ -263,7 +294,7 @@ export function HeroSlider({ slides, benefits, transition = 'slide' }: HeroSlide
       </div>
 
       {slides.length > 1 ? (
-        <Container className="relative -mt-6 flex justify-center gap-2 pb-4 md:-mt-6">
+        <Container className="relative -mt-6 flex justify-center gap-2 pb-4">
           {slides.map((slide, idx) => (
             <button
               key={`${slide.title}-${idx}`}

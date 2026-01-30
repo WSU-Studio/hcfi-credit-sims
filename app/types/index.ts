@@ -25,6 +25,8 @@ export type Slide = {
   highlight: string;
   description: string;
   image: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
 };
 
 export type ContactItem = {

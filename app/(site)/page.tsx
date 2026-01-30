@@ -38,6 +38,8 @@ async function getBanners() {
       highlight: banner.highlight || '',
       description: banner.description || '',
       image: banner.imageUrl,
+      ctaLabel: banner.ctaLabel ?? undefined,
+      ctaUrl: banner.ctaUrl ?? undefined,
     })) as Slide[];
   } catch (error) {
     console.error('Error fetching banners:', error);
@@ -48,6 +50,8 @@ async function getBanners() {
         description:
           "Rasakan kemudahan proses kredit dengan layanan profesional dan penawaran yang terjaga keasliannya.",
         image: "/images/main-banner.jpg",
+        ctaLabel: "Simulasi Kredit",
+        ctaUrl: "/simulasi-kredit",
       },
     ];
   }
