@@ -149,7 +149,7 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSlider slides={slides} benefits={benefits} />
+      <HeroSlider slides={slides} />
       
       <BenefitSection benefits={benefits} />
 
