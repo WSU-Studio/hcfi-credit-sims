@@ -7,6 +7,18 @@ type TextImageWidgetProps = {
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
+const TEXT_SIZE_CLASSES: Record<string, string> = {
+  '12': 'text-[12px]',
+  '16': 'text-[16px]',
+  '20': 'text-[20px]',
+  '24': 'text-[24px]',
+  '32': 'text-[32px]',
+  '40': 'text-[40px]',
+  '48': 'text-[48px]',
+  '56': 'text-[56px]',
+  '64': 'text-[64px]',
+};
+
 const TEXT_COLOR_CLASSES: Record<string, string> = {
   'slate-900': 'text-slate-900',
   'slate-700': 'text-slate-700',
@@ -97,6 +109,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     textColor?: string;
     textPlacement?: 'inside' | 'outside';
     textAlign?: 'left' | 'center' | 'right' | 'justify';
+    textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
   };
   const {
     title,
@@ -107,8 +120,10 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     textColor = 'slate-900',
     textPlacement = 'outside',
     textAlign = 'left',
+    textSize = '16',
   } = payload ?? {};
   const textAlignClass = { left: 'text-left', center: 'text-center', right: 'text-right', justify: 'text-justify' }[textAlign];
+  const textSizeClass = TEXT_SIZE_CLASSES[textSize] ?? TEXT_SIZE_CLASSES['16'];
   const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
   const textColorClass = !isHexColor
     ? (TEXT_COLOR_CLASSES[textColor] ?? TEXT_COLOR_CLASSES['slate-900'])
@@ -146,14 +161,14 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
 
   const textBlockContent = hasText ? (
     <div
-      className={`flex flex-col min-w-0 max-w-full ${textAlignClass} ${textColorClass ?? ''}`.trim()}
+      className={`flex flex-col min-w-0 max-w-full ${textSizeClass} ${textAlignClass} ${textColorClass ?? ''}`.trim()}
       style={textColorStyle}
     >
       {title?.trim() && (
-        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <h3 className="font-semibold mb-2">{title}</h3>
       )}
       {body?.trim() && (
-        <div className="text-sm leading-relaxed whitespace-pre-wrap opacity-90">
+        <div className="leading-relaxed whitespace-pre-wrap opacity-90">
           {body}
         </div>
       )}

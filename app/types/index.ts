@@ -91,6 +91,8 @@ export type TextImageWidgetPayload = {
   textPlacement?: 'inside' | 'outside';
   /** Perataan teks (default: left) */
   textAlign?: 'left' | 'center' | 'right' | 'justify';
+  /** Ukuran teks dalam px: 12, 16, 20, 24, 32, 40, 48, 56, 64 (default: 16) */
+  textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
 };
 
 // Re-export credit simulation types

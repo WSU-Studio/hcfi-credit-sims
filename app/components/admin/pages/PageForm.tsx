@@ -41,6 +41,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
       textColor: '#0f172a',
       textPlacement: 'outside',
       textAlign: 'left',
+      textSize: '16',
     },
   };
 }
@@ -548,6 +549,29 @@ export function PageForm({ pageId }: PageFormProps) {
                             <option value="center">Tengah</option>
                             <option value="right">Kanan</option>
                             <option value="justify">Rata kanan-kiri (justify)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Ukuran teks</label>
+                          <select
+                            value={(cell.payload?.textSize as string) ?? '16'}
+                            onChange={(e) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                textSize: e.target.value as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64',
+                              })
+                            }
+                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+                          >
+                            <option value="12">12px</option>
+                            <option value="16">16px</option>
+                            <option value="20">20px</option>
+                            <option value="24">24px</option>
+                            <option value="32">32px</option>
+                            <option value="40">40px</option>
+                            <option value="48">48px</option>
+                            <option value="56">56px</option>
+                            <option value="64">64px</option>
                           </select>
                         </div>
                         <div>
