@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
+import { WhatsappFAB } from "../components/layout/WhatsappFAB";
 import { CompanyInfo, NavItem } from "../types";
 import { IconBrandWhatsapp, IconPhone, IconMail } from "@tabler/icons-react";
 import { prisma } from "@/lib/prisma";
@@ -129,6 +130,9 @@ export default async function SiteLayout({
       <main className="pt-14 pb-16">
         {children}
       </main>
+
+      <WhatsappFAB />
+
       <div id="footer">
         <Footer company={companyInfo} />
       </div>
