@@ -57,8 +57,8 @@ export default async function StaticPageBySlug({
       : null;
 
   return (
-    <section className="py-12 md:py-16 bg-[var(--background)] min-h-[60vh]">
-      <Container className="space-y-6">
+    <section className="min-h-[60vh]">
+      <Container className="">
         <div className="space-y-2">
           {/* <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">
             Informasi
@@ -68,7 +68,7 @@ export default async function StaticPageBySlug({
           </h1>
         </div>
 
-        <div className="rounded-2xl bg-slate-800/90 text-white p-6 md:p-8 shadow-lg border border-slate-700/50">
+        <div className="">
           {hasLayout ? (
             <div className="space-y-8">
               {layout.rows.map((row) => (
@@ -92,7 +92,7 @@ export default async function StaticPageBySlug({
             </div>
           ) : page.content ? (
             <div
-              className="prose prose-invert prose-sm max-w-none text-white/90"
+              className="prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(page.content, {
                   ALLOWED_TAGS: [
@@ -124,21 +124,6 @@ export default async function StaticPageBySlug({
           </div>
         </div>
       </Container>
-
-      <div className="fixed right-4 bottom-6 z-10 md:right-6 md:bottom-8">
-        <button
-          type="button"
-          className="flex flex-col items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors"
-          aria-label="Chat sekarang"
-        >
-          <span className="text-[10px] md:text-xs font-semibold leading-tight">
-            CHAT
-          </span>
-          <span className="text-[10px] md:text-xs font-semibold leading-tight">
-            SEKARANG
-          </span>
-        </button>
-      </div>
     </section>
   );
 }
