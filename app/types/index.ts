@@ -65,6 +65,10 @@ export type LayoutRow = {
   cells: LayoutCell[];
   /** Jika true (default), row dibungkus Container; jika false, row full width sampai tepi layar */
   useContainer?: boolean;
+  /** Margin top 16px (mt-4) bila true */
+  marginTop?: boolean;
+  /** Margin bottom 16px (mb-4) bila true */
+  marginBottom?: boolean;
 };
 
 export type PageLayout = {

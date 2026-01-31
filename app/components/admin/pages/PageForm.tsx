@@ -52,6 +52,8 @@ function createEmptyRow(gridCols: 1 | 2 | 3 = 1): LayoutRow {
     gridCols,
     cells,
     useContainer: true,
+    marginTop: false,
+    marginBottom: false,
   };
 }
 
@@ -151,6 +153,26 @@ export function PageForm({ pageId }: PageFormProps) {
       const row = rows[rowIndex];
       if (!row) return prev;
       rows[rowIndex] = { ...row, useContainer };
+      return { ...prev, rows };
+    });
+  };
+
+  const setRowMarginTop = (rowIndex: number, marginTop: boolean) => {
+    setLayout((prev) => {
+      const rows = [...prev.rows];
+      const row = rows[rowIndex];
+      if (!row) return prev;
+      rows[rowIndex] = { ...row, marginTop };
+      return { ...prev, rows };
+    });
+  };
+
+  const setRowMarginBottom = (rowIndex: number, marginBottom: boolean) => {
+    setLayout((prev) => {
+      const rows = [...prev.rows];
+      const row = rows[rowIndex];
+      if (!row) return prev;
+      rows[rowIndex] = { ...row, marginBottom };
       return { ...prev, rows };
     });
   };
@@ -323,6 +345,24 @@ export function PageForm({ pageId }: PageFormProps) {
                       className="rounded border-gray-300"
                     />
                     Gunakan Container
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={row.marginTop === true}
+                      onChange={(e) => setRowMarginTop(rowIndex, e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Margin top (16px)
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={row.marginBottom === true}
+                      onChange={(e) => setRowMarginBottom(rowIndex, e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Margin bottom (16px)
                   </label>
                   <span className="text-gray-300">|</span>
                   <label className="text-xs text-gray-500">Grid:</label>
