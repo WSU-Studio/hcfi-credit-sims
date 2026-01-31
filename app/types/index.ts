@@ -89,6 +89,8 @@ export type TextImageWidgetPayload = {
   textColor?: string;
   /** Teks di dalam gambar (overlay) atau di luar gambar (default: outside) */
   textPlacement?: 'inside' | 'outside';
+  /** Perataan teks (default: left) */
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
 };
 
 // Re-export credit simulation types

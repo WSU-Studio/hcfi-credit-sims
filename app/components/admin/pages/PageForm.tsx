@@ -40,6 +40,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
       imageRatio: 'default',
       textColor: '#0f172a',
       textPlacement: 'outside',
+      textAlign: 'left',
     },
   };
 }
@@ -530,6 +531,24 @@ export function PageForm({ pageId }: PageFormProps) {
                               ? 'Posisi teks di dalam area gambar'
                               : 'Posisi teks di samping/atas/bawah gambar'}
                           </p>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Perataan teks</label>
+                          <select
+                            value={(cell.payload?.textAlign as string) ?? 'left'}
+                            onChange={(e) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                textAlign: e.target.value as 'left' | 'center' | 'right' | 'justify',
+                              })
+                            }
+                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+                          >
+                            <option value="left">Kiri</option>
+                            <option value="center">Tengah</option>
+                            <option value="right">Kanan</option>
+                            <option value="justify">Rata kanan-kiri (justify)</option>
+                          </select>
                         </div>
                         <div>
                           <label className="text-xs text-gray-500 block mb-1">Warna teks</label>

@@ -96,6 +96,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
     textColor?: string;
     textPlacement?: 'inside' | 'outside';
+    textAlign?: 'left' | 'center' | 'right' | 'justify';
   };
   const {
     title,
@@ -105,7 +106,9 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imageRatio = 'default',
     textColor = 'slate-900',
     textPlacement = 'outside',
+    textAlign = 'left',
   } = payload ?? {};
+  const textAlignClass = { left: 'text-left', center: 'text-center', right: 'text-right', justify: 'text-justify' }[textAlign];
   const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
   const textColorClass = !isHexColor
     ? (TEXT_COLOR_CLASSES[textColor] ?? TEXT_COLOR_CLASSES['slate-900'])
@@ -143,7 +146,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
 
   const textBlockContent = hasText ? (
     <div
-      className={`flex flex-col min-w-0 max-w-full ${textColorClass ?? ''}`.trim()}
+      className={`flex flex-col min-w-0 max-w-full ${textAlignClass} ${textColorClass ?? ''}`.trim()}
       style={textColorStyle}
     >
       {title?.trim() && (
