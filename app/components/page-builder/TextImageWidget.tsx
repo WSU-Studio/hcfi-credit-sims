@@ -5,6 +5,18 @@ type TextImageWidgetProps = {
   cell: LayoutCell;
 };
 
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
+const TEXT_COLOR_CLASSES: Record<string, string> = {
+  'slate-900': 'text-slate-900',
+  'slate-700': 'text-slate-700',
+  'slate-600': 'text-slate-600',
+  'gray-900': 'text-gray-900',
+  'gray-800': 'text-gray-800',
+  'gray-700': 'text-gray-700',
+  white: 'text-white',
+};
+
 const RATIO_CLASSES: Record<string, string> = {
   default: '',
   '1:1': 'aspect-square',
@@ -82,6 +94,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imageUrl?: string;
     imagePosition?: 'left' | 'right' | 'above' | 'below';
     imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
+    textColor?: string;
   };
   const {
     title,
@@ -89,7 +102,13 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imageUrl,
     imagePosition = 'left',
     imageRatio = 'default',
+    textColor = 'slate-900',
   } = payload ?? {};
+  const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
+  const textColorClass = !isHexColor
+    ? (TEXT_COLOR_CLASSES[textColor] ?? TEXT_COLOR_CLASSES['slate-900'])
+    : undefined;
+  const textColorStyle = isHexColor ? { color: textColor } : undefined;
   const hasImage = imageUrl && imageUrl.trim().length > 0;
   const hasText = (title && title.trim()) || (body && body.trim());
   const isVertical = imagePosition === 'above' || imagePosition === 'below';
@@ -118,12 +137,15 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     ) : null;
 
   const textBlock = hasText ? (
-    <div className="flex-1 min-w-0">
+    <div
+      className={`flex-1 min-w-0 ${textColorClass ?? ''}`.trim()}
+      style={textColorStyle}
+    >
       {title?.trim() && (
-        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
       )}
       {body?.trim() && (
-        <div className="text-white/90 text-sm leading-relaxed whitespace-pre-wrap">
+        <div className="text-sm leading-relaxed whitespace-pre-wrap opacity-90">
           {body}
         </div>
       )}

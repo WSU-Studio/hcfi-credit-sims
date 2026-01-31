@@ -85,6 +85,8 @@ export type TextImageWidgetPayload = {
   imageUrl?: string;
   imagePosition?: 'left' | 'right' | 'above' | 'below';
   imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
+  /** Warna teks: hex (#xxxxxx) atau nama preset (slate-900 default) */
+  textColor?: string;
 };
 
 // Re-export credit simulation types

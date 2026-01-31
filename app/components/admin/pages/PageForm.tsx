@@ -38,6 +38,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
       imageUrl: '',
       imagePosition: 'left',
       imageRatio: 'default',
+      textColor: '#0f172a',
     },
   };
 }
@@ -507,6 +508,66 @@ export function PageForm({ pageId }: PageFormProps) {
                             <option value="above">Di bawah gambar</option>
                             <option value="below">Di atas gambar</option>
                           </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">Warna teks</label>
+                          {(() => {
+                            const raw = (cell.payload?.textColor as string) ?? '#0f172a';
+                            const isHex = /^#[0-9A-Fa-f]{6}$/.test(raw);
+                            const displayHex = isHex ? raw : ({ 'slate-900': '#0f172a', 'slate-700': '#334155', 'slate-600': '#475569', 'gray-900': '#111827', 'gray-800': '#1f2937', 'gray-700': '#374151', white: '#ffffff' } as Record<string, string>)[raw] ?? '#0f172a';
+                            return (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={displayHex}
+                                  onChange={(e) =>
+                                    setCellPayload(rowIndex, cellIndex, {
+                                      ...cell.payload,
+                                      textColor: e.target.value,
+                                    })
+                                  }
+                                  className="h-9 w-14 cursor-pointer rounded border border-gray-300 bg-white p-0.5"
+                                  aria-label="Pilih warna teks"
+                                />
+                                <input
+                                  type="text"
+                                  value={displayHex}
+                                  onChange={(e) => {
+                                    const v = e.target.value.trim();
+                                    if (/^#[0-9A-Fa-f]{6}$/.test(v) || v === '')
+                                      setCellPayload(rowIndex, cellIndex, {
+                                        ...cell.payload,
+                                        textColor: v || '#0f172a',
+                                      });
+                                  }}
+                                  placeholder="#0f172a"
+                                  className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm font-mono"
+                                />
+                                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                                  <span>Preset:</span>
+                                  {[
+                                    { label: 'Slate', hex: '#0f172a' },
+                                    { label: 'Biru', hex: '#1956FF' },
+                                    { label: 'Putih', hex: '#ffffff' },
+                                  ].map(({ label, hex }) => (
+                                    <button
+                                      key={hex}
+                                      type="button"
+                                      onClick={() =>
+                                        setCellPayload(rowIndex, cellIndex, {
+                                          ...cell.payload,
+                                          textColor: hex,
+                                        })
+                                      }
+                                      className="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
+                                    >
+                                      {label}
+                                    </button>
+                                  ))}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     )}
