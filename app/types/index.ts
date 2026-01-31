@@ -75,24 +75,25 @@ export type PageLayout = {
   rows: LayoutRow[];
 };
 
-export type TextWidgetPayload = {
+/** Pengaturan teks bersama untuk widget (TextWidget, TextImageWidget) */
+export type SharedTextSettings = {
+  textColor?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+  textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
+};
+
+export type TextWidgetPayload = SharedTextSettings & {
   content: string;
 };
 
-export type TextImageWidgetPayload = {
+export type TextImageWidgetPayload = SharedTextSettings & {
   title?: string;
   body?: string;
   imageUrl?: string;
   imagePosition?: 'left' | 'right' | 'above' | 'below';
   imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
-  /** Warna teks: hex (#xxxxxx) atau nama preset (slate-900 default) */
-  textColor?: string;
   /** Teks di dalam gambar (overlay) atau di luar gambar (default: outside) */
   textPlacement?: 'inside' | 'outside';
-  /** Perataan teks (default: left) */
-  textAlign?: 'left' | 'center' | 'right' | 'justify';
-  /** Ukuran teks dalam px: 12, 16, 20, 24, 32, 40, 48, 56, 64 (default: 16) */
-  textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
 };
 
 // Re-export credit simulation types

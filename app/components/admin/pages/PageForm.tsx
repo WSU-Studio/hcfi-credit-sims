@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
+import { TextSettingsFields } from '@/app/components/admin/pages/TextSettingsFields';
 import type { PageLayout, LayoutRow, LayoutCell } from '@/app/types';
 
 type StaticPage = {
@@ -27,7 +28,16 @@ function generateId(): string {
 function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell {
   const id = generateId();
   if (widgetType === 'text') {
-    return { id, widgetType: 'text', payload: { content: '' } };
+    return {
+      id,
+      widgetType: 'text',
+      payload: {
+        content: '',
+        textColor: '#0f172a',
+        textAlign: 'left',
+        textSize: '16',
+      },
+    };
   }
   return {
     id,
@@ -410,18 +420,36 @@ export function PageForm({ pageId }: PageFormProps) {
                       <option value="text_image">Text + Image</option>
                     </select>
                     {cell.widgetType === 'text' && (
-                      <textarea
-                        value={(cell.payload?.content as string) ?? ''}
-                        onChange={(e) =>
-                          setCellPayload(rowIndex, cellIndex, {
-                            ...cell.payload,
-                            content: e.target.value,
-                          })
-                        }
-                        rows={4}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                        placeholder="HTML or plain text"
-                      />
+                      <>
+                        <textarea
+                          value={(cell.payload?.content as string) ?? ''}
+                          onChange={(e) =>
+                            setCellPayload(rowIndex, cellIndex, {
+                              ...cell.payload,
+                              content: e.target.value,
+                            })
+                          }
+                          rows={4}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                          placeholder="HTML or plain text"
+                        />
+                        <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
+                          <p className="text-xs font-medium text-gray-600">Pengaturan teks</p>
+                          <TextSettingsFields
+                            value={{
+                              textColor: cell.payload?.textColor as string | undefined,
+                              textAlign: cell.payload?.textAlign as 'left' | 'center' | 'right' | 'justify' | undefined,
+                              textSize: cell.payload?.textSize as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64' | undefined,
+                            }}
+                            onChange={(patch) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                ...patch,
+                              })
+                            }
+                          />
+                        </div>
+                      </>
                     )}
                     {cell.widgetType === 'text_image' && (
                       <div className="space-y-2 text-sm">
@@ -533,107 +561,19 @@ export function PageForm({ pageId }: PageFormProps) {
                               : 'Posisi teks di samping/atas/bawah gambar'}
                           </p>
                         </div>
-                        <div>
-                          <label className="text-xs text-gray-500">Perataan teks</label>
-                          <select
-                            value={(cell.payload?.textAlign as string) ?? 'left'}
-                            onChange={(e) =>
-                              setCellPayload(rowIndex, cellIndex, {
-                                ...cell.payload,
-                                textAlign: e.target.value as 'left' | 'center' | 'right' | 'justify',
-                              })
-                            }
-                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
-                          >
-                            <option value="left">Kiri</option>
-                            <option value="center">Tengah</option>
-                            <option value="right">Kanan</option>
-                            <option value="justify">Rata kanan-kiri (justify)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500">Ukuran teks</label>
-                          <select
-                            value={(cell.payload?.textSize as string) ?? '16'}
-                            onChange={(e) =>
-                              setCellPayload(rowIndex, cellIndex, {
-                                ...cell.payload,
-                                textSize: e.target.value as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64',
-                              })
-                            }
-                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
-                          >
-                            <option value="12">12px</option>
-                            <option value="16">16px</option>
-                            <option value="20">20px</option>
-                            <option value="24">24px</option>
-                            <option value="32">32px</option>
-                            <option value="40">40px</option>
-                            <option value="48">48px</option>
-                            <option value="56">56px</option>
-                            <option value="64">64px</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">Warna teks</label>
-                          {(() => {
-                            const raw = (cell.payload?.textColor as string) ?? '#0f172a';
-                            const isHex = /^#[0-9A-Fa-f]{6}$/.test(raw);
-                            const displayHex = isHex ? raw : ({ 'slate-900': '#0f172a', 'slate-700': '#334155', 'slate-600': '#475569', 'gray-900': '#111827', 'gray-800': '#1f2937', 'gray-700': '#374151', white: '#ffffff' } as Record<string, string>)[raw] ?? '#0f172a';
-                            return (
-                              <div className="flex flex-wrap items-center gap-2">
-                                <input
-                                  type="color"
-                                  value={displayHex}
-                                  onChange={(e) =>
-                                    setCellPayload(rowIndex, cellIndex, {
-                                      ...cell.payload,
-                                      textColor: e.target.value,
-                                    })
-                                  }
-                                  className="h-9 w-14 cursor-pointer rounded border border-gray-300 bg-white p-0.5"
-                                  aria-label="Pilih warna teks"
-                                />
-                                <input
-                                  type="text"
-                                  value={displayHex}
-                                  onChange={(e) => {
-                                    const v = e.target.value.trim();
-                                    if (/^#[0-9A-Fa-f]{6}$/.test(v) || v === '')
-                                      setCellPayload(rowIndex, cellIndex, {
-                                        ...cell.payload,
-                                        textColor: v || '#0f172a',
-                                      });
-                                  }}
-                                  placeholder="#0f172a"
-                                  className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm font-mono"
-                                />
-                                <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                                  <span>Preset:</span>
-                                  {[
-                                    { label: 'Slate', hex: '#0f172a' },
-                                    { label: 'Biru', hex: '#1956FF' },
-                                    { label: 'Putih', hex: '#ffffff' },
-                                  ].map(({ label, hex }) => (
-                                    <button
-                                      key={hex}
-                                      type="button"
-                                      onClick={() =>
-                                        setCellPayload(rowIndex, cellIndex, {
-                                          ...cell.payload,
-                                          textColor: hex,
-                                        })
-                                      }
-                                      className="px-2 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs"
-                                    >
-                                      {label}
-                                    </button>
-                                  ))}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                        <TextSettingsFields
+                          value={{
+                            textColor: cell.payload?.textColor as string | undefined,
+                            textAlign: cell.payload?.textAlign as 'left' | 'center' | 'right' | 'justify' | undefined,
+                            textSize: cell.payload?.textSize as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64' | undefined,
+                          }}
+                          onChange={(patch) =>
+                            setCellPayload(rowIndex, cellIndex, {
+                              ...cell.payload,
+                              ...patch,
+                            })
+                          }
+                        />
                       </div>
                     )}
                   </div>

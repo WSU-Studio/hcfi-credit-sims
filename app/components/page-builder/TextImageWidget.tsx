@@ -1,32 +1,9 @@
 import Image from 'next/image';
 import type { LayoutCell } from '@/app/types';
+import { getTextSettingsClasses } from './textSettings';
 
 type TextImageWidgetProps = {
   cell: LayoutCell;
-};
-
-const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
-
-const TEXT_SIZE_CLASSES: Record<string, string> = {
-  '12': 'text-[12px]',
-  '16': 'text-[16px]',
-  '20': 'text-[20px]',
-  '24': 'text-[24px]',
-  '32': 'text-[32px]',
-  '40': 'text-[40px]',
-  '48': 'text-[48px]',
-  '56': 'text-[56px]',
-  '64': 'text-[64px]',
-};
-
-const TEXT_COLOR_CLASSES: Record<string, string> = {
-  'slate-900': 'text-slate-900',
-  'slate-700': 'text-slate-700',
-  'slate-600': 'text-slate-600',
-  'gray-900': 'text-gray-900',
-  'gray-800': 'text-gray-800',
-  'gray-700': 'text-gray-700',
-  white: 'text-white',
 };
 
 const RATIO_CLASSES: Record<string, string> = {
@@ -117,18 +94,10 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imageUrl,
     imagePosition = 'left',
     imageRatio = 'default',
-    textColor = 'slate-900',
     textPlacement = 'outside',
-    textAlign = 'left',
-    textSize = '16',
   } = payload ?? {};
-  const textAlignClass = { left: 'text-left', center: 'text-center', right: 'text-right', justify: 'text-justify' }[textAlign];
-  const textSizeClass = TEXT_SIZE_CLASSES[textSize] ?? TEXT_SIZE_CLASSES['16'];
-  const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
-  const textColorClass = !isHexColor
-    ? (TEXT_COLOR_CLASSES[textColor] ?? TEXT_COLOR_CLASSES['slate-900'])
-    : undefined;
-  const textColorStyle = isHexColor ? { color: textColor } : undefined;
+  const { className: textSettingsClassName, style: textSettingsStyle } =
+    getTextSettingsClasses(payload);
   const hasImage = imageUrl && imageUrl.trim().length > 0;
   const hasText = (title && title.trim()) || (body && body.trim());
   const isVertical = imagePosition === 'above' || imagePosition === 'below';
@@ -161,8 +130,8 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
 
   const textBlockContent = hasText ? (
     <div
-      className={`flex flex-col min-w-0 max-w-full ${textSizeClass} ${textAlignClass} ${textColorClass ?? ''}`.trim()}
-      style={textColorStyle}
+      className={`flex flex-col min-w-0 max-w-full ${textSettingsClassName}`.trim()}
+      style={textSettingsStyle}
     >
       {title?.trim() && (
         <h3 className="font-semibold mb-2">{title}</h3>
