@@ -95,6 +95,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imagePosition?: 'left' | 'right' | 'above' | 'below';
     imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
     textColor?: string;
+    textPlacement?: 'inside' | 'outside';
   };
   const {
     title,
@@ -103,6 +104,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
     imagePosition = 'left',
     imageRatio = 'default',
     textColor = 'slate-900',
+    textPlacement = 'outside',
   } = payload ?? {};
   const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
   const textColorClass = !isHexColor
@@ -112,33 +114,36 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
   const hasImage = imageUrl && imageUrl.trim().length > 0;
   const hasText = (title && title.trim()) || (body && body.trim());
   const isVertical = imagePosition === 'above' || imagePosition === 'below';
-  const imageFirst = imagePosition === 'above' || imagePosition === 'left';
+  // "Di kiri gambar" = teks di kiri → [Teks, Gambar]. "Di kanan gambar" = teks di kanan → [Gambar, Teks].
+  const imageFirst = imagePosition === 'right' || imagePosition === 'below';
   const imageOnly = hasImage && !hasText;
+  const textInside = textPlacement === 'inside' && hasImage && hasText;
 
   const wrapperClass = isVertical
     ? 'flex flex-col gap-4'
-    : imagePosition === 'right'
-      ? 'flex flex-col md:flex-row-reverse md:items-start md:gap-6'
-      : 'flex flex-col md:flex-row md:items-start md:gap-6';
+    : 'flex flex-col md:flex-row md:items-start md:gap-6';
 
-  // When only image (no text), image occupies row fully; otherwise side-by-side uses 1/3
+  // Teks di dalam gambar atau hanya gambar: gambar penuh lebar; teks di luar + kiri/kanan: gambar 1/3
   const imageWidthClass =
-    isVertical || imageOnly ? 'w-full' : 'w-full md:w-1/3';
+    textInside || isVertical || imageOnly ? 'w-full' : 'w-full md:w-1/3';
 
-  const imageBlock =
-    hasImage && imageUrl ? (
-      <div className={imageWidthClass}>
-        <ImageBlock
-          imageUrl={imageUrl}
-          alt={title?.trim() ?? 'Image'}
-          imageRatio={imageRatio}
-        />
-      </div>
-    ) : null;
+  const overlayPositionClass = {
+    left: 'justify-start items-center',
+    right: 'justify-end items-center',
+    above: 'justify-center items-start',
+    below: 'justify-center items-end',
+  }[imagePosition];
 
-  const textBlock = hasText ? (
+  const overlayGradientClass = {
+    left: 'bg-gradient-to-r from-black/50 to-transparent',
+    right: 'bg-gradient-to-l from-black/50 to-transparent',
+    above: 'bg-gradient-to-b from-black/50 to-transparent',
+    below: 'bg-gradient-to-t from-black/50 to-transparent',
+  }[imagePosition];
+
+  const textBlockContent = hasText ? (
     <div
-      className={`flex-1 min-w-0 ${textColorClass ?? ''}`.trim()}
+      className={`flex flex-col min-w-0 max-w-full ${textColorClass ?? ''}`.trim()}
       style={textColorStyle}
     >
       {title?.trim() && (
@@ -151,6 +156,40 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
       )}
     </div>
   ) : null;
+
+  const textBlock =
+    !textInside && hasText ? (
+      <div className="flex-1 min-w-0">
+        {textBlockContent}
+      </div>
+    ) : null;
+
+  const imageBlock =
+    hasImage && imageUrl ? (
+      <div className={imageWidthClass}>
+        {textInside ? (
+          <div className="relative w-full">
+            <ImageBlock
+              imageUrl={imageUrl}
+              alt={title?.trim() ?? 'Image'}
+              imageRatio={imageRatio}
+            />
+            <div
+              className={`absolute inset-0 flex p-4 md:p-6 ${overlayPositionClass} ${overlayGradientClass}`}
+              aria-hidden={false}
+            >
+              <div className="max-w-full">{textBlockContent}</div>
+            </div>
+          </div>
+        ) : (
+          <ImageBlock
+            imageUrl={imageUrl}
+            alt={title?.trim() ?? 'Image'}
+            imageRatio={imageRatio}
+          />
+        )}
+      </div>
+    ) : null;
 
   return (
     <div className={`${wrapperClass} w-full`}>

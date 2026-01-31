@@ -39,6 +39,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
       imagePosition: 'left',
       imageRatio: 'default',
       textColor: '#0f172a',
+      textPlacement: 'outside',
     },
   };
 }
@@ -492,6 +493,22 @@ export function PageForm({ pageId }: PageFormProps) {
                           </select>
                         </div>
                         <div>
+                          <label className="text-xs text-gray-500">Teks di dalam / di luar gambar</label>
+                          <select
+                            value={(cell.payload?.textPlacement as string) ?? 'outside'}
+                            onChange={(e) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                textPlacement: e.target.value as 'inside' | 'outside',
+                              })
+                            }
+                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+                          >
+                            <option value="outside">Di luar gambar</option>
+                            <option value="inside">Di dalam gambar (overlay)</option>
+                          </select>
+                        </div>
+                        <div>
                           <label className="text-xs text-gray-500">Posisi teks</label>
                           <select
                             value={(cell.payload?.imagePosition as string) ?? 'left'}
@@ -505,9 +522,14 @@ export function PageForm({ pageId }: PageFormProps) {
                           >
                             <option value="left">Di kiri gambar</option>
                             <option value="right">Di kanan gambar</option>
-                            <option value="above">Di bawah gambar</option>
-                            <option value="below">Di atas gambar</option>
+                            <option value="above">Di atas gambar</option>
+                            <option value="below">Di bawah gambar</option>
                           </select>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {((cell.payload?.textPlacement as string) ?? 'outside') === 'inside'
+                              ? 'Posisi teks di dalam area gambar'
+                              : 'Posisi teks di samping/atas/bawah gambar'}
+                          </p>
                         </div>
                         <div>
                           <label className="text-xs text-gray-500 block mb-1">Warna teks</label>
