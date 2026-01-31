@@ -77,7 +77,8 @@ export type TextImageWidgetPayload = {
   title?: string;
   body?: string;
   imageUrl?: string;
-  imagePosition?: 'left' | 'right';
+  imagePosition?: 'left' | 'right' | 'above' | 'below';
+  imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
 };
 
 // Re-export credit simulation types

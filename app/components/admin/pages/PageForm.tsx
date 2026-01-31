@@ -32,7 +32,13 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
   return {
     id,
     widgetType: 'text_image',
-    payload: { title: '', body: '', imageUrl: '', imagePosition: 'left' },
+    payload: {
+      title: '',
+      body: '',
+      imageUrl: '',
+      imagePosition: 'left',
+      imageRatio: 'default',
+    },
   };
 }
 
@@ -354,6 +360,7 @@ export function PageForm({ pageId }: PageFormProps) {
                     )}
                     {cell.widgetType === 'text_image' && (
                       <div className="space-y-2 text-sm">
+                        <p className="text-xs text-gray-500">Text (opsional)</p>
                         <input
                           type="text"
                           value={(cell.payload?.title as string) ?? ''}
@@ -378,6 +385,7 @@ export function PageForm({ pageId }: PageFormProps) {
                           className="w-full px-2 py-1.5 border border-gray-300 rounded"
                           placeholder="Body"
                         />
+                        <p className="text-xs text-gray-500 mt-2">Gambar</p>
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -400,19 +408,45 @@ export function PageForm({ pageId }: PageFormProps) {
                             }
                           />
                         </div>
-                        <select
-                          value={(cell.payload?.imagePosition as string) ?? 'left'}
-                          onChange={(e) =>
-                            setCellPayload(rowIndex, cellIndex, {
-                              ...cell.payload,
-                              imagePosition: e.target.value as 'left' | 'right',
-                            })
-                          }
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded"
-                        >
-                          <option value="left">Image left</option>
-                          <option value="right">Image right</option>
-                        </select>
+                        <div>
+                          <label className="text-xs text-gray-500">Rasio gambar</label>
+                          <select
+                            value={(cell.payload?.imageRatio as string) ?? 'default'}
+                            onChange={(e) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                imageRatio: e.target.value as 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1',
+                              })
+                            }
+                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+                          >
+                            <option value="default">Default (rasio asli)</option>
+                            <option value="1:1">1:1</option>
+                            <option value="4:3">4:3</option>
+                            <option value="16:9">16:9</option>
+                            <option value="3:1">3:1 (banner)</option>
+                            <option value="4:1">4:1 (banner)</option>
+                            <option value="5:1">5:1 (banner)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Posisi teks</label>
+                          <select
+                            value={(cell.payload?.imagePosition as string) ?? 'left'}
+                            onChange={(e) =>
+                              setCellPayload(rowIndex, cellIndex, {
+                                ...cell.payload,
+                                imagePosition: e.target.value as 'left' | 'right' | 'above' | 'below',
+                              })
+                            }
+                            className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+                          >
+                            <option value="left">Di kiri gambar</option>
+                            <option value="right">Di kanan gambar</option>
+                            <option value="above">Di bawah gambar</option>
+                            <option value="below">Di atas gambar</option>
+                          </select>
+                        </div>
                       </div>
                     )}
                   </div>
