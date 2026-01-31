@@ -22,7 +22,12 @@ export function WhatsappFAB({ phone = DEFAULT_PHONE, message }: WhatsappFABProps
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors"
+        className="
+          flex flex-col items-center justify-center 
+          w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 
+          text-white shadow-lg block
+          opacity-70 hover:opacity-100 transition-opacity duration-300
+        "
         aria-label="Chat sekarang via WhatsApp"
       >
         <IconBrandWhatsapp size={32} />
