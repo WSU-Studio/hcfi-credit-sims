@@ -51,6 +51,7 @@ function createEmptyRow(gridCols: 1 | 2 | 3 = 1): LayoutRow {
     id: generateId(),
     gridCols,
     cells,
+    useContainer: true,
   };
 }
 
@@ -140,6 +141,16 @@ export function PageForm({ pageId }: PageFormProps) {
         }
       }
       rows[rowIndex] = { ...row, gridCols, cells: newCells };
+      return { ...prev, rows };
+    });
+  };
+
+  const setRowUseContainer = (rowIndex: number, useContainer: boolean) => {
+    setLayout((prev) => {
+      const rows = [...prev.rows];
+      const row = rows[rowIndex];
+      if (!row) return prev;
+      rows[rowIndex] = { ...row, useContainer };
       return { ...prev, rows };
     });
   };
@@ -303,7 +314,17 @@ export function PageForm({ pageId }: PageFormProps) {
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-medium text-gray-700">Row {rowIndex + 1}</span>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={row.useContainer !== false}
+                      onChange={(e) => setRowUseContainer(rowIndex, e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Gunakan Container
+                  </label>
+                  <span className="text-gray-300">|</span>
                   <label className="text-xs text-gray-500">Grid:</label>
                   {([1, 2, 3] as const).map((n) => (
                     <button

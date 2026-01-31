@@ -4,7 +4,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
-import type { PageLayout } from '@/app/types';
+import type { PageLayout, LayoutRow } from '@/app/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,41 +56,73 @@ export default async function StaticPageBySlug({
       ? slugs[currentIndex + 1]
       : null;
 
+  function RowGrid({ row }: { row: LayoutRow }) {
+    return (
+      <div
+        className={`grid gap-6 ${
+          row.gridCols === 1
+            ? 'grid-cols-1'
+            : row.gridCols === 2
+              ? 'grid-cols-1 md:grid-cols-2'
+              : 'grid-cols-1 md:grid-cols-3'
+        }`}
+      >
+        {row.cells.map((cell) => (
+          <div key={cell.id} className="min-w-0">
+            <WidgetRenderer cell={cell} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const bottomNav = (
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-600/50">
+      <Link
+        href="/"
+        className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-slate-600 rounded-lg hover:bg-slate-500 transition-colors"
+      >
+        Kembali ke Beranda
+      </Link>
+      {nextSlug && (
+        <Link
+          href={`/${nextSlug}`}
+          className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors"
+        >
+          Berikutnya
+        </Link>
+      )}
+    </div>
+  );
+
   return (
     <section className="min-h-[60vh]">
-      <Container className="">
+      <Container>
         <div className="space-y-2">
-          {/* <p className="text-sm uppercase tracking-[0.18em] text-[var(--muted)]">
-            Informasi
-          </p> */}
           <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
             {page.title}
           </h1>
         </div>
+      </Container>
 
-        <div className="">
-          {hasLayout ? (
-            <div className="space-y-8">
-              {layout.rows.map((row) => (
-                <div
-                  key={row.id}
-                  className={`grid gap-6 ${
-                    row.gridCols === 1
-                      ? 'grid-cols-1'
-                      : row.gridCols === 2
-                        ? 'grid-cols-1 md:grid-cols-2'
-                        : 'grid-cols-1 md:grid-cols-3'
-                  }`}
-                >
-                  {row.cells.map((cell) => (
-                    <div key={cell.id} className="min-w-0">
-                      <WidgetRenderer cell={cell} />
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : page.content ? (
+      {hasLayout ? (
+        <div className="space-y-8">
+          {layout.rows.map((row) =>
+            row.useContainer !== false ? (
+              <Container key={row.id} className="py-0">
+                <RowGrid row={row} />
+              </Container>
+            ) : (
+              <div key={row.id} className="w-full">
+                <RowGrid row={row} />
+              </div>
+            )
+          )}
+          <Container>{bottomNav}</Container>
+        </div>
+      ) : (
+        <Container>
+          {page.content ? (
             <div
               className="prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{
@@ -105,25 +137,9 @@ export default async function StaticPageBySlug({
           ) : (
             <p className="text-white/70">Belum ada konten.</p>
           )}
-
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-600/50">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-slate-600 rounded-lg hover:bg-slate-500 transition-colors"
-            >
-              Kembali ke Beranda
-            </Link>
-            {nextSlug && (
-              <Link
-                href={`/${nextSlug}`}
-                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors"
-              >
-                Berikutnya
-              </Link>
-            )}
-          </div>
-        </div>
-      </Container>
+          {bottomNav}
+        </Container>
+      )}
     </section>
   );
 }

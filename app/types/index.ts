@@ -63,6 +63,8 @@ export type LayoutRow = {
   id: string;
   gridCols: 1 | 2 | 3;
   cells: LayoutCell[];
+  /** Jika true (default), row dibungkus Container; jika false, row full width sampai tepi layar */
+  useContainer?: boolean;
 };
 
 export type PageLayout = {
