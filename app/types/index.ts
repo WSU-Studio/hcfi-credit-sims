@@ -25,6 +25,8 @@ export type Slide = {
   highlight: string;
   description: string;
   image: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
 };
 
 export type ContactItem = {
@@ -48,6 +50,50 @@ export type CompanyInfo = {
   apps: AppLink[];
   disclaimer?: string;
   copyright?: string;
+};
+
+// Static page layout (widget-based)
+export type LayoutCell = {
+  id: string;
+  widgetType: 'text' | 'text_image';
+  payload: Record<string, unknown>;
+};
+
+export type LayoutRow = {
+  id: string;
+  gridCols: 1 | 2 | 3;
+  cells: LayoutCell[];
+  /** Jika true (default), row dibungkus Container; jika false, row full width sampai tepi layar */
+  useContainer?: boolean;
+  /** Margin top 16px (mt-4) bila true */
+  marginTop?: boolean;
+  /** Margin bottom 16px (mb-4) bila true */
+  marginBottom?: boolean;
+};
+
+export type PageLayout = {
+  rows: LayoutRow[];
+};
+
+/** Pengaturan teks bersama untuk widget (TextWidget, TextImageWidget) */
+export type SharedTextSettings = {
+  textColor?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+  textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
+};
+
+export type TextWidgetPayload = SharedTextSettings & {
+  content: string;
+};
+
+export type TextImageWidgetPayload = SharedTextSettings & {
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+  imagePosition?: 'left' | 'right' | 'above' | 'below';
+  imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
+  /** Teks di dalam gambar (overlay) atau di luar gambar (default: outside) */
+  textPlacement?: 'inside' | 'outside';
 };
 
 // Re-export credit simulation types

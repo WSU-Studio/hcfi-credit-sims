@@ -8,6 +8,8 @@ type Page = {
   id: string;
   title: string;
   slug: string;
+  showInMenu: boolean;
+  menuOrder: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -55,6 +57,12 @@ export function PagesTable() {
                 Slug
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Menu
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Order
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Updated
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -70,6 +78,18 @@ export function PagesTable() {
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {page.slug}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {page.showInMenu ? (
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                      Ya
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {page.menuOrder}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(page.updatedAt).toLocaleDateString()}

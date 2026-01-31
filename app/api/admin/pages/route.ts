@@ -41,8 +41,44 @@ export async function POST(request: NextRequest) {
     await requirePermission('PAGES', 'create');
 
     const body = await request.json();
+    const { title, slug, content, layout, showInMenu, menuOrder } = body;
+    if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
+      return NextResponse.json(
+        { error: 'Title and slug are required' },
+        { status: 400 }
+      );
+    }
+    const slugTaken = await prisma.staticPage.findUnique({
+      where: { slug: String(slug).trim() },
+    });
+    if (slugTaken) {
+      return NextResponse.json(
+        { error: 'Slug already in use' },
+        { status: 400 }
+      );
+    }
+    if (layout !== undefined && layout !== null) {
+      const valid =
+        typeof layout === 'object' &&
+        layout !== null &&
+        'rows' in layout &&
+        Array.isArray((layout as { rows: unknown[] }).rows);
+      if (!valid) {
+        return NextResponse.json(
+          { error: 'Invalid layout structure' },
+          { status: 400 }
+        );
+      }
+    }
     const page = await prisma.staticPage.create({
-      data: body,
+      data: {
+        title: String(title).trim(),
+        slug: String(slug).trim(),
+        content: content ?? null,
+        layout: layout ?? undefined,
+        showInMenu: Boolean(showInMenu ?? false),
+        menuOrder: Number(menuOrder ?? 0),
+      },
     });
 
     return NextResponse.json({ page });

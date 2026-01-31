@@ -1,108 +1,305 @@
 'use client';
 
-import { useState } from "react";
-import type { Benefit, Slide } from "@/app/types";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import type { Slide } from "@/app/types";
 import { Container } from "../ui/Container";
-import { BenefitCard } from "../ui/BenefitCard";
 import Image from "next/image";
+import { IconArrowBadgeUpFilled } from "@tabler/icons-react";
 
 type HeroSliderProps = {
   slides: Slide[];
-  benefits: Benefit[];
+  /** 'slide' = horizontal slide, 'fade' = crossfade */
+  transition?: 'slide' | 'fade';
 };
 
-export function HeroSlider({ slides, benefits }: HeroSliderProps) {
+const AUTO_SLIDE_INTERVAL_MS = 7000;
+const TRANSITION_DURATION_MS = 600;
+
+const ctaButtonClass =
+  "w-fit inline-flex self-end items-center justify-center align-baseline gap-1 px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors focus:outline-none focus:ring-2 focus:ring-[#008AEC] focus:ring-offset-2 focus:ring-offset-slate-800";
+
+function CTAButton({ label, href }: { label: string; href: string }) {
+  const isInternal = href.startsWith("/");
+  if (isInternal) {
+    return (
+      <Link href={href} className={ctaButtonClass}>
+        {label}
+        <span className="animate-bounce rotate-90">
+          <IconArrowBadgeUpFilled size={16} />
+        </span>
+      </Link>
+    );
+  }
+  return (
+    <Link href={href} target="_blank" rel="noopener noreferrer" className={ctaButtonClass}>
+      {label} 
+      <span className="animate-bounce rotate-90">
+        <IconArrowBadgeUpFilled size={16} />
+      </span>
+    </Link>
+  );
+}
+
+export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
-  const [imageError, setImageError] = useState(false);
+  const [imageError, setImageError] = useState<Record<number, boolean>>({});
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragStartX = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const fallbackImage = "/images/main-banner.jpg";
-  const current = slides[index] ?? slides[0] ?? { image: fallbackImage, title: "", highlight: "", description: "" };
 
-  if (!current) return null;
+  // Auto-slide every 7 seconds; pause while hovering or dragging
+  const pauseAutoSlide = isHovering || isDragging;
+  useEffect(() => {
+    if (slides.length <= 1 || pauseAutoSlide) return;
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % slides.length);
+    }, AUTO_SLIDE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [slides.length, index, pauseAutoSlide]);
 
-  // Get the current image source, fallback if error occurred
-  const imageSrc = imageError || !current.image ? fallbackImage : current.image;
-  
-  // Check if image is external URL (starts with http/https)
-  const isExternalUrl = imageSrc.startsWith('http://') || imageSrc.startsWith('https://');
-  
-  // Add cache busting for local images - use URL as key to force reload when URL changes
-  const getImageUrl = (url: string) => {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
+  const goTo = useCallback((idx: number) => {
+    setIndex(idx);
+    setImageError((prev) => ({ ...prev, [idx]: false }));
+  }, []);
+
+  const getSlideWidthPx = useCallback(() => {
+    const el = containerRef.current;
+    if (!el || !slides.length) return 0;
+    return el.offsetWidth / slides.length;
+  }, [slides.length]);
+
+  const snapFromDrag = useCallback(() => {
+    const slideWidth = getSlideWidthPx();
+    if (!slideWidth) {
+      setDragOffset(0);
+      return;
     }
-    // For local images, add a hash-based cache buster that changes when URL changes
-    // This ensures browser reloads when image is updated even with same filename
-    const urlHash = url.split('').reduce((acc, char) => {
-      return ((acc << 5) - acc) + char.charCodeAt(0);
-    }, 0);
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}cb=${Math.abs(urlHash)}`;
+    const effectiveIndex = index - dragOffset / slideWidth;
+    const newIndex = Math.max(0, Math.min(slides.length - 1, Math.round(effectiveIndex)));
+    setIndex(newIndex);
+    setDragOffset(0);
+    setIsDragging(false);
+    setImageError((prev) => ({ ...prev, [newIndex]: false }));
+  }, [index, dragOffset, slides.length, getSlideWidthPx]);
+
+  const handleDragMove = useCallback((clientX: number) => {
+    setDragOffset(clientX - dragStartX.current);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    if (!isDragging) return;
+    snapFromDrag();
+  }, [isDragging, snapFromDrag]);
+
+  // Touch: swipe on mobile
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (transition !== 'slide' || slides.length <= 1) return;
+      dragStartX.current = e.touches[0].clientX;
+      setIsDragging(true);
+      setDragOffset(0);
+    },
+    [transition, slides.length]
+  );
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      handleDragMove(e.touches[0].clientX);
+    },
+    [isDragging, handleDragMove]
+  );
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging) return;
+    handleDragEnd();
+  }, [isDragging, handleDragEnd]);
+
+  // Mouse: click and hold to drag on desktop
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (transition !== 'slide' || slides.length <= 1) return;
+      e.preventDefault();
+      dragStartX.current = e.clientX;
+      setIsDragging(true);
+      setDragOffset(0);
+    },
+    [transition, slides.length]
+  );
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMouseMove = (e: MouseEvent) => handleDragMove(e.clientX);
+    const onMouseUp = () => handleDragEnd();
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
+  const getImageUrl = (url: string) => {
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    const urlHash = url.split("").reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0);
+    const sep = url.includes("?") ? "&" : "?";
+    return `${url}${sep}cb=${Math.abs(urlHash)}`;
   };
-  
-  const finalImageSrc = getImageUrl(imageSrc);
+
+  if (!slides.length) return null;
+
+  const slidePercent = 100 / slides.length;
+  const baseTranslate = -index * slidePercent;
+  const transformPx = isDragging ? `${dragOffset}px` : '0px';
+  const stripTransform = `translateX(calc(${baseTranslate}% + ${transformPx}))`;
 
   return (
-    <section id="hero" className="relative isolate overflow-hidden bg-black">
-      <div className="relative w-full h-[376px] md:h-[480px] lg:h-[640px]">
-        {isExternalUrl ? (
-          // Use regular img tag for external URLs to avoid Next.js Image optimization issues
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={finalImageSrc}
-            alt={current.title}
-            className="md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
-            onError={() => setImageError(true)}
-            aria-hidden="true"
-            key={finalImageSrc}
-          />
-        ) : (
-          <Image
-            src={finalImageSrc}
-            alt={current.title}
-            width={1000}
-            height={1000}
-            className="min-h-full min-w-full md:absolute left-0 right-0 bottom-0 w-full h-full object-cover"
-            aria-hidden="true"
-            key={finalImageSrc}
-            unoptimized
-          />
-        )}
-        {/* <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" /> */}
-
-        <Container className="relative flex h-full items-end pb-12 md:pb-16">
-          <div className="max-w-2xl space-y-5">
-            <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
-              {current.title}{" "}
-              <span className="text-[#002c5f]">{current.highlight}</span>
-            </p>
-            <p className="max-w-xl text-base leading-relaxed text-white/90 md:text-lg">
-              {current.description}
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {benefits.map((item) => (
-                <BenefitCard key={item.title} {...item} />
-              ))}
-            </div>
+    <section
+      id="hero"
+      className="relative isolate overflow-hidden bg-black"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      <div
+        ref={containerRef}
+        className="relative w-full h-[376px] md:h-[480px] lg:h-[640px] overflow-hidden touch-pan-y select-none"
+        style={{ touchAction: transition === 'slide' ? 'pan-y' : 'auto' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+        onMouseDown={onMouseDown}
+      >
+        {transition === 'slide' ? (
+          <div
+            className="flex h-full ease-out"
+            style={{
+              width: `${slides.length * 100}%`,
+              transform: stripTransform,
+              transitionProperty: isDragging ? 'none' : 'transform',
+              transitionDuration: `${TRANSITION_DURATION_MS}ms`,
+              cursor: slides.length > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+            }}
+          >
+            {slides.map((slide, i) => {
+              const src = imageError[i] || !slide.image ? fallbackImage : slide.image;
+              const isExternal = src.startsWith("http://") || src.startsWith("https://");
+              const finalSrc = getImageUrl(src);
+              return (
+                <div
+                  key={`${slide.title}-${i}`}
+                  className="relative flex-shrink-0 w-full h-full"
+                  style={{ width: `${100 / slides.length}%` }}
+                >
+                  {isExternal ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={finalSrc}
+                      alt={slide.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={() => setImageError((p) => ({ ...p, [i]: true }))}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Image
+                      src={finalSrc}
+                      alt={slide.title}
+                      fill
+                      className="object-cover"
+                      aria-hidden="true"
+                      unoptimized
+                    />
+                  )}
+                  <Container className="relative flex h-full items-end pb-8 md:pb-12">
+                    <div className="w-full flex flex-col max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl">
+                      <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
+                        {slide.title}{" "}
+                        <span className="text-[#2966FF]">{slide.highlight}</span>
+                      </p>
+                      <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
+                        {slide.description}
+                      </p>
+                      {slide.ctaLabel && slide.ctaUrl ? (
+                        <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
+                      ) : null}
+                    </div>
+                  </Container>
+                </div>
+              );
+            })}
           </div>
-        </Container>
+        ) : (
+          <>
+            {slides.map((slide, i) => {
+              const src = imageError[i] || !slide.image ? fallbackImage : slide.image;
+              const isExternal = src.startsWith("http://") || src.startsWith("https://");
+              const finalSrc = getImageUrl(src);
+              const isActive = i === index;
+              return (
+                <div
+                  key={`${slide.title}-${i}`}
+                  className="absolute inset-0 transition-opacity ease-out"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    pointerEvents: isActive ? "auto" : "none",
+                    zIndex: isActive ? 1 : 0,
+                    transitionDuration: `${TRANSITION_DURATION_MS}ms`,
+                  }}
+                  aria-hidden={!isActive}
+                >
+                  {isExternal ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={finalSrc}
+                      alt={slide.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={() => setImageError((p) => ({ ...p, [i]: true }))}
+                    />
+                  ) : (
+                    <Image
+                      src={finalSrc}
+                      alt={slide.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  )}
+                  <Container className="relative flex h-full items-end pb-8 md:pb-12">
+                    <div className="w-full max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl">
+                      <p className="text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
+                        {slide.title}{" "}
+                        <span className="text-sky-500/90">{slide.highlight}</span>
+                      </p>
+                      <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
+                        {slide.description}
+                      </p>
+                      {slide.ctaLabel && slide.ctaUrl ? (
+                        <CTAButton label={slide.ctaLabel} href={slide.ctaUrl} />
+                      ) : null}
+                    </div>
+                  </Container>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
 
       {slides.length > 1 ? (
-        <Container className="relative -mt-6 flex justify-center gap-2 pb-8 md:-mt-8">
+        <Container className="relative -mt-6 flex justify-center gap-2 pb-4">
           {slides.map((slide, idx) => (
             <button
               key={`${slide.title}-${idx}`}
               type="button"
               aria-label={`Slide ${idx + 1}`}
               aria-pressed={idx === index}
-              onClick={() => {
-                setIndex(idx);
-                setImageError(false); // Reset error state when changing slide
-              }}
-              className={`h-2 w-8 rounded-full transition ${
+              onClick={() => goTo(idx)}
+              className={`h-2 w-8 rounded-full transition cursor-pointer duration-300 ${
                 idx === index
-                  ? "bg-[#002c5f] shadow-[0_0_0_4px_rgba(0,138,236,0.25)]"
+                  ? "bg-gray-100 shadow-[0_0_0_4px_rgba(0,138,236,0.25)]"
                   : "bg-white/30 hover:bg-white/60"
               }`}
             />
