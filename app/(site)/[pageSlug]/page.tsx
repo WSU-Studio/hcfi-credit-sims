@@ -34,6 +34,19 @@ async function getAllSlugs() {
   }
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ pageSlug: string }> | { pageSlug: string };
+}) {
+  const { pageSlug } = await Promise.resolve(params);
+  const page = await getPageBySlug(pageSlug);
+  if (!page) return { title: 'Hyundai Capital' };
+  return {
+    title: `Hyundai Capital - ${page.title}`,
+  };
+}
+
 export default async function StaticPageBySlug({
   params,
 }: {
@@ -97,13 +110,13 @@ export default async function StaticPageBySlug({
 
   return (
     <section className="min-h-[60vh]">
-      <Container>
+      {/* <Container>
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
             {page.title}
           </h1>
         </div>
-      </Container>
+      </Container> */}
 
       {hasLayout ? (
         <div className="space-y-8">
