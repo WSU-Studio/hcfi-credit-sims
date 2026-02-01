@@ -70,6 +70,7 @@ export default async function StaticPageBySlug({
       : null;
 
   function RowGrid({ row }: { row: LayoutRow }) {
+    const fullWidth = row.useContainer === false;
     return (
       <div
         className={`grid gap-6 ${
@@ -82,7 +83,7 @@ export default async function StaticPageBySlug({
       >
         {row.cells.map((cell) => (
           <div key={cell.id} className="min-w-0">
-            <WidgetRenderer cell={cell} />
+            <WidgetRenderer cell={cell} fullWidth={fullWidth} />
           </div>
         ))}
       </div>

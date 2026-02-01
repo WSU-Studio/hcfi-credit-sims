@@ -4,6 +4,7 @@ import { getTextSettingsClasses } from './textSettings';
 
 type TextImageWidgetProps = {
   cell: LayoutCell;
+  fullWidth?: boolean;
 };
 
 const RATIO_CLASSES: Record<string, string> = {
@@ -20,15 +21,23 @@ function ImageBlock({
   imageUrl,
   alt,
   imageRatio,
+  fullWidth,
 }: {
   imageUrl: string;
   alt: string;
   imageRatio: string;
+  fullWidth?: boolean;
 }) {
   const ratioClass = RATIO_CLASSES[imageRatio] ?? '';
   const isDefaultRatio = imageRatio === 'default' || !ratioClass;
+  const roundedClass = fullWidth ? '' : 'rounded-xl';
 
-  const wrapperClass = `relative flex-shrink-0 overflow-hidden rounded-lg bg-white/10 w-full ${ratioClass}`;
+  const wrapperClass = [
+    'relative flex-shrink-0 overflow-hidden',
+    roundedClass,
+    'bg-white/10 w-full',
+    ratioClass,
+  ].filter(Boolean).join(' ');
 
   if (isDefaultRatio) {
     return (
@@ -76,7 +85,7 @@ function ImageBlock({
   );
 }
 
-export function TextImageWidget({ cell }: TextImageWidgetProps) {
+export function TextImageWidget({ cell, fullWidth }: TextImageWidgetProps) {
   const payload = cell.payload as {
     title?: string;
     body?: string;
@@ -160,6 +169,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
               imageUrl={imageUrl}
               alt={title?.trim() ?? 'Image'}
               imageRatio={imageRatio}
+              fullWidth={fullWidth}
             />
             <div
               className={`absolute inset-0 flex p-4 md:p-6 ${overlayPositionClass} ${overlayGradientClass}`}
@@ -173,6 +183,7 @@ export function TextImageWidget({ cell }: TextImageWidgetProps) {
             imageUrl={imageUrl}
             alt={title?.trim() ?? 'Image'}
             imageRatio={imageRatio}
+            fullWidth={fullWidth}
           />
         )}
       </div>

@@ -36,16 +36,26 @@ export const TEXT_ALIGN_CLASSES: Record<string, string> = {
   justify: 'text-justify',
 };
 
+/** Sesuai font HyundaiSans di public/fonts: Light 300, Regular 400, Medium 500, Bold 700 */
+export const TEXT_WEIGHT_CLASSES: Record<string, string> = {
+  light: 'font-light',
+  normal: 'font-normal',
+  medium: 'font-medium',
+  bold: 'font-bold',
+};
+
 export type TextSettingsPayload = {
   textColor?: string;
   textAlign?: 'left' | 'center' | 'right' | 'justify';
   textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
+  textWeight?: 'light' | 'normal' | 'medium' | 'bold';
 };
 
 const DEFAULTS: Required<TextSettingsPayload> = {
   textColor: 'slate-900',
   textAlign: 'left',
   textSize: '16',
+  textWeight: 'normal',
 };
 
 export type TextSettingsResult = {
@@ -63,16 +73,18 @@ export function getTextSettingsClasses(
   const textColor = p.textColor ?? DEFAULTS.textColor;
   const textAlign = p.textAlign ?? DEFAULTS.textAlign;
   const textSize = p.textSize ?? DEFAULTS.textSize;
+  const textWeight = p.textWeight ?? DEFAULTS.textWeight;
 
   const textSizeClass = TEXT_SIZE_CLASSES[textSize] ?? TEXT_SIZE_CLASSES['16'];
   const textAlignClass = TEXT_ALIGN_CLASSES[textAlign] ?? TEXT_ALIGN_CLASSES.left;
+  const textWeightClass = TEXT_WEIGHT_CLASSES[textWeight] ?? TEXT_WEIGHT_CLASSES.normal;
 
   const isHexColor = typeof textColor === 'string' && HEX_COLOR_REGEX.test(textColor);
   const textColorClass = !isHexColor
     ? (TEXT_COLOR_CLASSES[textColor] ?? TEXT_COLOR_CLASSES['slate-900'])
     : '';
 
-  const className = [textSizeClass, textAlignClass, textColorClass].filter(Boolean).join(' ');
+  const className = [textSizeClass, textAlignClass, textWeightClass, textColorClass].filter(Boolean).join(' ');
   const style: CSSProperties = isHexColor ? { color: textColor } : {};
 
   return { className, style };
