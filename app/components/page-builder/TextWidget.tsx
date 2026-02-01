@@ -4,6 +4,7 @@ import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 
 type TextWidgetProps = {
   cell: LayoutCell;
+  fullWidth?: boolean;
 };
 
 export function TextWidget({ cell }: TextWidgetProps) {
