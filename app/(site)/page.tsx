@@ -9,6 +9,13 @@ import { prisma } from "@/lib/prisma";
 // Tanpa ini, halaman di-static generate saat deploy dan update DB lewat admin tidak muncul di home.
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata() {
+  return {
+    title: "Hyundai Capital",
+    description: "Hyundai Capital adalah perusahaan kredit yang menyediakan kredit untuk pembelian mobil Hyundai.",
+  };
+}
+
 async function getBanners() {
   try {
     const now = new Date();
