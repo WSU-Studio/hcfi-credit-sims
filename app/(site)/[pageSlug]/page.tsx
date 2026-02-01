@@ -90,12 +90,14 @@ export default async function StaticPageBySlug({
   }
 
   const bottomNav = (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-600/50">
+    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-300/50">
       <Link
         href="/"
-        className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-slate-600 rounded-lg hover:bg-slate-500 transition-colors"
+        className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
       >
-        Kembali ke Beranda
+        <span className="text-sm font-semibold text-slate-700">
+          Kembali ke Beranda
+        </span>
       </Link>
       {nextSlug && (
         <Link
@@ -109,7 +111,7 @@ export default async function StaticPageBySlug({
   );
 
   return (
-    <section className="min-h-[60vh]">
+    <section className="min-h-[40vh]">
       {/* <Container>
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
