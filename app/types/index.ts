@@ -75,11 +75,12 @@ export type PageLayout = {
   rows: LayoutRow[];
 };
 
-/** Pengaturan teks bersama untuk widget (TextWidget, TextImageWidget) */
+/** Pengaturan teks bersama untuk widget (TextWidget, TextImageWidget). Weight sesuai HyundaiSans: Light 300, Regular 400, Medium 500, Bold 700 */
 export type SharedTextSettings = {
   textColor?: string;
   textAlign?: 'left' | 'center' | 'right' | 'justify';
   textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
+  textWeight?: 'light' | 'normal' | 'medium' | 'bold';
 };
 
 export type TextWidgetPayload = SharedTextSettings & {

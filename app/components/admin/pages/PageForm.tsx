@@ -36,6 +36,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
         textColor: '#0f172a',
         textAlign: 'left',
         textSize: '16',
+        textWeight: 'normal',
       },
     };
   }
@@ -52,6 +53,7 @@ function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell
       textPlacement: 'outside',
       textAlign: 'left',
       textSize: '16',
+      textWeight: 'normal',
     },
   };
 }
@@ -456,6 +458,7 @@ export function PageForm({ pageId }: PageFormProps) {
                               textColor: cell.payload?.textColor as string | undefined,
                               textAlign: cell.payload?.textAlign as 'left' | 'center' | 'right' | 'justify' | undefined,
                               textSize: cell.payload?.textSize as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64' | undefined,
+                              textWeight: cell.payload?.textWeight as 'light' | 'normal' | 'medium' | 'bold' | undefined,
                             }}
                             onChange={(patch) =>
                               setCellPayload(rowIndex, cellIndex, {
@@ -582,6 +585,7 @@ export function PageForm({ pageId }: PageFormProps) {
                             textColor: cell.payload?.textColor as string | undefined,
                             textAlign: cell.payload?.textAlign as 'left' | 'center' | 'right' | 'justify' | undefined,
                             textSize: cell.payload?.textSize as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64' | undefined,
+                            textWeight: cell.payload?.textWeight as 'light' | 'normal' | 'medium' | 'bold' | undefined,
                           }}
                           onChange={(patch) =>
                             setCellPayload(rowIndex, cellIndex, {

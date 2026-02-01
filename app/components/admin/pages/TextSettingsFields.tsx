@@ -37,6 +37,23 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
         </select>
       </div>
       <div>
+        <label className="text-xs text-gray-500">Ketebalan teks (font weight)</label>
+        <select
+          value={value.textWeight ?? 'normal'}
+          onChange={(e) =>
+            onChange({
+              textWeight: e.target.value as 'light' | 'normal' | 'medium' | 'bold',
+            })
+          }
+          className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+        >
+          <option value="light">Light (300)</option>
+          <option value="normal">Regular (400)</option>
+          <option value="medium">Medium (500)</option>
+          <option value="bold">Bold (700)</option>
+        </select>
+      </div>
+      <div>
         <label className="text-xs text-gray-500">Ukuran teks</label>
         <select
           value={value.textSize ?? '16'}
