@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import DOMPurify from 'isomorphic-dompurify';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
+import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
 
@@ -127,16 +127,9 @@ export default async function StaticPageBySlug({
       ) : (
         <Container>
           {page.content ? (
-            <div
+            <SanitizedHtml
+              html={page.content}
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(page.content, {
-                  ALLOWED_TAGS: [
-                    'p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'a', 'h2', 'h3', 'span',
-                  ],
-                  ALLOWED_ATTR: ['href', 'target', 'rel'],
-                }),
-              }}
             />
           ) : (
             <p className="text-white/70">Belum ada konten.</p>
