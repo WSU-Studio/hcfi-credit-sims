@@ -8,7 +8,7 @@ import type { PageLayout, LayoutRow } from '@/app/types';
 
 export const dynamic = 'force-dynamic';
 
-const RESERVED_SLUGS = ['simulasi-kredit', 'admin', 'auth', 'api'];
+const RESERVED_SLUGS = ['credit-simulation', 'admin', 'auth', 'api'];
 
 async function getPageBySlug(slug: string) {
   if (RESERVED_SLUGS.includes(slug)) return null;
