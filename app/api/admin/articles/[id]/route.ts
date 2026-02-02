@@ -82,6 +82,7 @@ export async function PUT(
       ...(rest.layout !== undefined && { layout: rest.layout }),
       ...(rest.bannerImageRatio !== undefined && { bannerImageRatio: rest.bannerImageRatio }),
       ...(rest.bannerUseContainer !== undefined && { bannerUseContainer: Boolean(rest.bannerUseContainer) }),
+      ...(rest.showBannerImage !== undefined && { showBannerImage: Boolean(rest.showBannerImage) }),
     };
     const article = await prisma.article.update({
       where: { id },

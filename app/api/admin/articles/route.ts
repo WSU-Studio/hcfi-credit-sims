@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       layout: body.layout ?? undefined,
       bannerImageRatio: body.bannerImageRatio ?? undefined,
       bannerUseContainer: body.bannerUseContainer !== undefined ? Boolean(body.bannerUseContainer) : undefined,
+      showBannerImage: body.showBannerImage !== undefined ? Boolean(body.showBannerImage) : undefined,
     };
     const article = await prisma.article.create({
       data,

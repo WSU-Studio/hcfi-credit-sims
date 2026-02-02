@@ -28,6 +28,7 @@ type Article = {
   imageUrl: string | null;
   bannerImageRatio: string | null;
   bannerUseContainer: boolean;
+  showBannerImage: boolean;
   metaDescription: string | null;
   category: string | null;
   tags: string[];
@@ -75,6 +76,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     isPublished: false,
     bannerImageRatio: 'default',
     bannerUseContainer: true,
+    showBannerImage: true,
   });
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               isPublished: a.isPublished ?? false,
               bannerImageRatio: a.bannerImageRatio ?? 'default',
               bannerUseContainer: a.bannerUseContainer ?? true,
+              showBannerImage: a.showBannerImage ?? true,
             });
             const l = a.layout;
             if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
@@ -156,6 +159,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         layout,
         bannerImageRatio: (formData.bannerImageRatio as string) || 'default',
         bannerUseContainer: Boolean(formData.bannerUseContainer),
+        showBannerImage: formData.showBannerImage !== false,
       };
 
       const url = articleId ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
@@ -330,7 +334,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               </select>
               <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
             </div>
-            <div className="flex items-end pb-2">
+            <div className="flex flex-col gap-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -344,10 +348,23 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
                   Gunakan Container
                 </span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.showBannerImage ?? true}
+                  onChange={(e) =>
+                    setFormData({ ...formData, showBannerImage: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Tampilkan banner image
+                </span>
+              </label>
             </div>
           </div>
           <p className="text-xs text-gray-500">
-            Sama seperti row di widget: tidak dicentang = banner sampai tepi halaman (tanpa rounded).
+            Gunakan Container: tidak dicentang = banner sampai tepi halaman (tanpa rounded). Tampilkan banner: tidak dicentang = gambar banner disembunyikan di halaman artikel.
           </p>
         </div>
 

@@ -56,6 +56,7 @@ export default async function ArticleDetailPage({
   const imageUrl = article.imageUrl?.trim() || null;
   const bannerImageRatio = article.bannerImageRatio ?? 'default';
   const bannerUseContainer = (article as { bannerUseContainer?: boolean }).bannerUseContainer ?? true;
+  const showBannerImage = (article as { showBannerImage?: boolean }).showBannerImage !== false;
 
   const BANNER_RATIO_CLASSES: Record<string, string> = {
     default: '',
@@ -121,7 +122,7 @@ export default async function ArticleDetailPage({
   if (hasLayout) {
     return (
       <section className="min-h-[40vh] py-8 md:py-12">
-        {imageUrl && !bannerUseContainer && (
+        {imageUrl && showBannerImage && !bannerUseContainer && (
           <div className="w-full">
             <div className={bannerWrapperClass}>
               <Image
@@ -154,7 +155,7 @@ export default async function ArticleDetailPage({
                 )}
               </div>
             )}
-            {imageUrl && bannerUseContainer && (
+            {imageUrl && showBannerImage && bannerUseContainer && (
               <div className={bannerWrapperClass}>
                 <Image
                   src={imageUrl}
@@ -201,7 +202,7 @@ export default async function ArticleDetailPage({
 
   return (
     <section className="min-h-[40vh] py-8 md:py-12">
-      {imageUrl && !bannerUseContainer && (
+      {imageUrl && showBannerImage && !bannerUseContainer && (
         <div className="w-full">
           <div className={bannerWrapperClass}>
             <Image
@@ -235,7 +236,7 @@ export default async function ArticleDetailPage({
                 )}
               </div>
             )}
-            {imageUrl && bannerUseContainer && (
+            {imageUrl && showBannerImage && bannerUseContainer && (
               <div className={bannerWrapperClass}>
                 <Image
                   src={imageUrl}
