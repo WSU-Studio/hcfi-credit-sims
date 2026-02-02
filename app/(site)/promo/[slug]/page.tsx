@@ -5,6 +5,7 @@ import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
+import { getActivePromos } from '../page';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,18 @@ export default async function PromoDetailPage({
     Array.isArray(layout?.rows) &&
     layout.rows.length > 0;
 
+  const promos = await getActivePromos();
+
+  const currentIndex = promos.findIndex((p) => p.slug === slug);
+  const nextSlug =
+    currentIndex >= 0 && currentIndex < promos.length - 1
+      ? promos[currentIndex + 1].slug
+      : null;
+  const previousSlug =
+    currentIndex >= 0 && currentIndex > 0
+      ? promos[currentIndex - 1].slug
+      : null;
+
   function RowGrid({ row }: { row: LayoutRow }) {
     const fullWidth = row.useContainer === false;
     return (
@@ -73,15 +86,48 @@ export default async function PromoDetailPage({
   }
 
   const bottomNav = (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-300/50">
-      <Link
-        href="/"
-        className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
-      >
-        <span className="text-sm font-semibold text-slate-700">
-          Kembali ke Beranda
-        </span>
-      </Link>
+    <div className="mt-8 flex flex-wrap items-center justify-between pt-6 border-t border-slate-300/50">
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
+        >
+          <span className="text-sm font-semibold text-slate-700">
+            Kembali ke Beranda
+          </span>
+        </Link>
+        <Link
+          href="/promo"
+          className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
+        >
+          <span className="text-sm font-semibold text-slate-700">
+            Lihat Semua Promo
+          </span>
+        </Link>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {nextSlug && (
+          <Link
+            href={`/promo/${nextSlug}`}
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
+          >
+            <span className="text-sm font-semibold text-slate-700">
+              Lihat Promo Berikutnya
+            </span>
+          </Link>
+        )}
+        {previousSlug && (
+          <Link
+            href={`/promo/${previousSlug}`}
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
+          >
+            <span className="text-sm font-semibold text-slate-700">
+              Lihat Promo Sebelumnya
+            </span>
+          </Link>
+        )}
+      </div>
     </div>
   );
 
