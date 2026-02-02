@@ -145,9 +145,11 @@ model Product {
 model Promo {
   id          String    @id @default(uuid())
   title       String
+  slug        String?   @unique
   description String?
   imageUrl    String?
   content     String?   @db.Text
+  layout      Json?
   isActive    Boolean   @default(true)
   isHighlight Boolean   @default(false)
   order       Int       @default(0)
