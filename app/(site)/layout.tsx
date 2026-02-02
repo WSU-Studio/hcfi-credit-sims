@@ -22,7 +22,7 @@ function buildNavItems(
 ): NavItem[] {
   const fixed: NavItem[] = [
     { label: "Simulasi Kredit", href: "/simulasi-kredit" },
-    { label: "Promosi", href: "#products" },
+    { label: "Promosi", href: "/promo" },
     { label: "Informasi", href: "/informasi" },
   ];
   const menuPages = pages
