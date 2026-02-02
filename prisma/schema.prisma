@@ -172,6 +172,7 @@ model Article {
   imageUrl        String?
   bannerImageRatio String?  // default | 1:1 | 4:3 | 16:9 | 3:1 | 4:1 | 5:1
   bannerUseContainer Boolean @default(true) // false = image to edge (sama seperti row "Gunakan Container" di widget)
+  showBannerImage   Boolean @default(true)   // false = sembunyikan banner di halaman artikel
   metaDescription String?
   category        String?
   tags            String[]  @default([])
