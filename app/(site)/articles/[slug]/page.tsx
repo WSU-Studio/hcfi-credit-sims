@@ -6,6 +6,7 @@ import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
+import { IconQuoteFilled } from '@tabler/icons-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -250,10 +251,12 @@ export default async function ArticleDetailPage({
               </div>
             )}
             {article.excerpt && (
-              <div className="py-12 px-8">
+              <div className="py-12 px-8 relative border-b border-slate-300/50">
                 <p className="text-lg text-slate-600 leading-relaxed">
                   {article.excerpt}
                 </p>
+                <IconQuoteFilled className="absolute top-0 left-0 text-slate-500/20 size-20" />
+                <IconQuoteFilled className="absolute bottom-0 right-8 text-slate-500/20 size-12" />
               </div>
             )}
           </header>
