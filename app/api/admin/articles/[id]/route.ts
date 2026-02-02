@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { validateLayout } from '@/lib/validate-layout';
 
 export async function GET(
   request: NextRequest,
@@ -57,6 +58,12 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
+    if (body.layout !== undefined && body.layout !== null && !validateLayout(body.layout)) {
+      return NextResponse.json(
+        { error: 'Invalid layout structure' },
+        { status: 400 }
+      );
+    }
     const { authorId: _omit, ...rest } = body;
     const tags =
       rest.tags !== undefined
@@ -72,6 +79,7 @@ export async function PUT(
       ...(tags !== undefined && { tags }),
       ...(rest.readingTime != null && { readingTime: Number(rest.readingTime) }),
       ...(rest.featured !== undefined && { featured: Boolean(rest.featured) }),
+      ...(rest.layout !== undefined && { layout: rest.layout }),
     };
     const article = await prisma.article.update({
       where: { id },

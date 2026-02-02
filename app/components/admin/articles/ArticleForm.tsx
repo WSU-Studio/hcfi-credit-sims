@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
+import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
+import type { PageLayout } from '@/app/types';
 
 type Article = {
   id: string;
@@ -12,6 +14,7 @@ type Article = {
   subtitle: string | null;
   excerpt: string | null;
   content: string;
+  layout: PageLayout | null;
   imageUrl: string | null;
   metaDescription: string | null;
   category: string | null;
@@ -43,6 +46,8 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
   const [loading, setLoading] = useState(!!articleId);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [layout, setLayout] = useState<PageLayout>({ rows: [] });
+  const returnAfterSaveRef = useRef(false);
   const [formData, setFormData] = useState<Partial<Article> & { tagsInput?: string }>({
     title: '',
     slug: '',
@@ -82,6 +87,12 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               featured: a.featured ?? false,
               isPublished: a.isPublished ?? false,
             });
+            const l = a.layout;
+            if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
+              setLayout(l as PageLayout);
+            } else {
+              setLayout({ rows: [] });
+            }
           } else setError('Article not found');
           setLoading(false);
         })
@@ -102,11 +113,9 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveArticle = async (redirectAfterSave: boolean) => {
     setError('');
     setSaving(true);
-
     try {
       const slug =
         formData.slug?.trim() || (formData.title ? slugify(formData.title) : `article-${Date.now()}`);
@@ -120,6 +129,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         slug,
         subtitle: formData.subtitle || null,
         excerpt: formData.excerpt || null,
+        content: (formData.content ?? '').trim() || '',
         imageUrl: formData.imageUrl || null,
         metaDescription: formData.metaDescription || null,
         category: formData.category || null,
@@ -127,6 +137,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         readingTime:
           formData.readingTime != null ? Number(formData.readingTime) : null,
         featured: Boolean(formData.featured),
+        layout,
       };
 
       const url = articleId ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
@@ -141,11 +152,27 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save article');
 
-      router.push('/admin/articles');
-      router.refresh();
+      if (redirectAfterSave) {
+        router.push('/admin/articles');
+        router.refresh();
+      } else {
+        setSaving(false);
+        router.refresh();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (articleId) {
+      const shouldReturn = returnAfterSaveRef.current;
+      returnAfterSaveRef.current = false;
+      saveArticle(shouldReturn);
+    } else {
+      saveArticle(true);
     }
   };
 
@@ -288,18 +315,20 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            Content <span className="text-red-500">*</span>
+            Fallback content (optional)
           </label>
           <textarea
             id="content"
-            required
-            rows={12}
+            rows={4}
             value={formData.content ?? ''}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] font-mono text-sm"
-            placeholder="Isi artikel (bisa HTML atau plain text)"
+            placeholder="Plain HTML used when layout is empty"
           />
+          <p className="mt-1 text-xs text-gray-500">Digunakan jika layout kosong</p>
         </div>
+
+        <LayoutBuilderSection layout={layout} setLayout={setLayout} />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -376,13 +405,34 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         >
           Cancel
         </Link>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Saving...' : articleId ? 'Update Article' : 'Create Article'}
-        </button>
+        {articleId ? (
+          <>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => saveArticle(false)}
+              className="px-4 py-2 border border-[#1956FF] text-[#1956FF] rounded-lg hover:bg-[#1956FF]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Update Article'}
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              onClick={() => { returnAfterSaveRef.current = true; }}
+              className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Update and Return'}
+            </button>
+          </>
+        ) : (
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving...' : 'Create Article'}
+          </button>
+        )}
       </div>
     </form>
   );

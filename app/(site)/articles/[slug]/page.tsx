@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
+import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
+import type { PageLayout, LayoutRow } from '@/app/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +46,13 @@ export default async function ArticleDetailPage({
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
+  const layout = article.layout as PageLayout | null;
+  const hasLayout =
+    layout &&
+    typeof layout === 'object' &&
+    Array.isArray(layout?.rows) &&
+    layout.rows.length > 0;
+
   const imageUrl = article.imageUrl?.trim() || null;
   const publishedLabel = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString('id-ID', {
@@ -54,6 +63,27 @@ export default async function ArticleDetailPage({
     : null;
   const readingLabel =
     article.readingTime != null ? `${article.readingTime} menit baca` : null;
+
+  function RowGrid({ row }: { row: LayoutRow }) {
+    const fullWidth = row.useContainer === false;
+    return (
+      <div
+        className={`grid gap-6 ${
+          row.gridCols === 1
+            ? 'grid-cols-1'
+            : row.gridCols === 2
+              ? 'grid-cols-1 md:grid-cols-2'
+              : 'grid-cols-1 md:grid-cols-3'
+        }`}
+      >
+        {row.cells.map((cell) => (
+          <div key={cell.id} className="min-w-0">
+            <WidgetRenderer cell={cell} fullWidth={fullWidth} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const bottomNav = (
     <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-300/50">
@@ -67,6 +97,72 @@ export default async function ArticleDetailPage({
       </Link>
     </div>
   );
+
+  if (hasLayout) {
+    return (
+      <section className="min-h-[40vh] py-8 md:py-12">
+        <Container>
+          <header className="mb-8 space-y-4">
+            <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl leading-tight">
+              {article.title}
+            </h1>
+            {(article.subtitle ?? publishedLabel ?? readingLabel) && (
+              <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted-foreground)]">
+                {article.subtitle && (
+                  <span className="font-medium">{article.subtitle}</span>
+                )}
+                {publishedLabel && (
+                  <span className="tabular-nums">{publishedLabel}</span>
+                )}
+                {readingLabel && (
+                  <span className="tabular-nums">{readingLabel}</span>
+                )}
+              </div>
+            )}
+            {imageUrl && (
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+                <Image
+                  src={imageUrl}
+                  alt={article.title}
+                  width={800}
+                  height={450}
+                  className="object-cover"
+                  unoptimized
+                  priority
+                />
+              </div>
+            )}
+            {article.excerpt && (
+              <p className="text-lg text-[var(--muted-foreground)] leading-relaxed">
+                {article.excerpt}
+              </p>
+            )}
+          </header>
+        </Container>
+
+        <div className="space-y-8">
+          {layout.rows.map((row) => {
+            const marginClass = [
+              row.marginTop === true ? 'mt-4' : '',
+              row.marginBottom === true ? 'mb-4' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return row.useContainer !== false ? (
+              <Container key={row.id} className={`py-0 ${marginClass}`.trim()}>
+                <RowGrid row={row} />
+              </Container>
+            ) : (
+              <div key={row.id} className={`w-full ${marginClass}`.trim()}>
+                <RowGrid row={row} />
+              </div>
+            );
+          })}
+          <Container>{bottomNav}</Container>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-[40vh] py-8 md:py-12">
@@ -110,7 +206,11 @@ export default async function ArticleDetailPage({
           </header>
 
           <div className="mt-6 prose prose-slate prose-sm max-w-none dark:prose-invert">
-            <SanitizedHtml html={article.content} />
+            {article.content ? (
+              <SanitizedHtml html={article.content} />
+            ) : (
+              <p className="text-[var(--muted-foreground)]">Belum ada konten.</p>
+            )}
           </div>
 
           {bottomNav}
