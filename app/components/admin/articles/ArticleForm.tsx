@@ -189,49 +189,110 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       )}
 
       <div className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={formData.title ?? ''}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Judul artikel"
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              required
+              value={formData.title ?? ''}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Judul artikel"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+              Slug (URL)
+            </label>
+            <input
+              type="text"
+              id="slug"
+              value={formData.slug ?? ''}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-slate-100/80"
+              placeholder="url-friendly-slug"
+              readOnly
+            />
+            <p className="mt-1 text-xs text-gray-500">URL: /articles/[slug] (e.g. /articles/tips-belanja-online)</p>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
-            Subtitle
-          </label>
-          <input
-            type="text"
-            id="subtitle"
-            value={formData.subtitle ?? ''}
-            onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Subjudul (opsional)"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
+              Subtitle
+            </label>
+            <input
+              type="text"
+              id="subtitle"
+              value={formData.subtitle ?? ''}
+              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Subjudul (opsional)"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <input
+                type="text"
+                id="category"
+                value={formData.category ?? ''}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="e.g. Tips, Promo, Berita"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Banner Image
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.imageUrl ?? ''}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                  placeholder="URL gambar atau pilih dari media"
+                />
+                <MediaPicker
+                  onSelect={(media) =>
+                    setFormData({ ...formData, imageUrl: media?.url ?? '' })
+                  }
+                />
+              </div>
+              {formData.imageUrl && (
+                <div className="mt-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={formData.imageUrl}
+                    alt="Banner preview"
+                    className="h-32 w-auto rounded border object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+          </div>
+
         </div>
 
-        <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            Slug (URL)
-          </label>
-          <input
-            type="text"
-            id="slug"
-            value={formData.slug ?? ''}
-            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="url-friendly-slug"
-          />
-          <p className="mt-1 text-xs text-gray-500">Kosongkan untuk auto-generate dari title</p>
-        </div>
+
+
+        
 
         <div>
           <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
@@ -262,56 +323,11 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <input
-              type="text"
-              id="category"
-              value={formData.category ?? ''}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="e.g. Tips, Promo, Berita"
-            />
-          </div>
-          <div>
-            <label htmlFor="tagsInput" className="block text-sm font-medium text-gray-700 mb-1">
-              Tags
-            </label>
-            <input
-              type="text"
-              id="tagsInput"
-              value={formData.tagsInput ?? ''}
-              onChange={(e) => setFormData({ ...formData, tagsInput: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="tag1, tag2, tag3 (pisah dengan koma)"
-            />
-          </div>
+          
+          
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="readingTime" className="block text-sm font-medium text-gray-700 mb-1">
-              Reading Time (menit)
-            </label>
-            <input
-              type="number"
-              id="readingTime"
-              min={1}
-              value={formData.readingTime ?? ''}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  readingTime: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Estimasi menit baca"
-            />
-            <p className="mt-1 text-xs text-gray-500">Estimasi waktu baca artikel</p>
-          </div>
-        </div>
+        
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
@@ -330,72 +346,82 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
         <LayoutBuilderSection layout={layout} setLayout={setLayout} />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Banner Image
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={formData.imageUrl ?? ''}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="URL gambar atau pilih dari media"
-            />
-            <MediaPicker
-              onSelect={(media) =>
-                setFormData({ ...formData, imageUrl: media?.url ?? '' })
-              }
-            />
-          </div>
-          {formData.imageUrl && (
-            <div className="mt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={formData.imageUrl}
-                alt="Banner preview"
-                className="h-32 w-auto rounded border object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+        
+        <hr className="my-6 border-gray-200" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="tagsInput" className="block text-sm font-medium text-gray-700 mb-1">
+                Tags
+              </label>
+              <input
+                type="text"
+                id="tagsInput"
+                value={formData.tagsInput ?? ''}
+                onChange={(e) => setFormData({ ...formData, tagsInput: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="tag1, tag2, tag3 (pisah dengan koma)"
               />
             </div>
-          )}
-        </div>
+            <div>
+              <label htmlFor="readingTime" className="block text-sm font-medium text-gray-700 mb-1">
+                Reading Time (menit)
+              </label>
+              <input
+                type="number"
+                id="readingTime"
+                min={1}
+                value={formData.readingTime ?? ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    readingTime: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="Estimasi menit baca"
+              />
+              <p className="mt-1 text-xs text-gray-500">Estimasi waktu baca artikel</p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isPublished ?? false}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  isPublished: e.target.checked,
-                })
-              }
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Published</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.featured ?? false}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  featured: e.target.checked,
-                })
-              }
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Featured</span>
-          </label>
+          <div className="flex flex-col items-end justify-end">
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isPublished ?? false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      isPublished: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">Published</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.featured ?? false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      featured: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">Featured</span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">
+              Published: tampil di frontend. Featured: tampil di highlight/homepage.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-gray-500">
-          Published: tampil di frontend. Featured: tampil di highlight/homepage.
-        </p>
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
