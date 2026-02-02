@@ -7,6 +7,16 @@ import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
 
+const BANNER_RATIO_OPTIONS = [
+  { value: 'default', label: 'Default (rasio asli)' },
+  { value: '1:1', label: '1:1' },
+  { value: '4:3', label: '4:3' },
+  { value: '16:9', label: '16:9' },
+  { value: '3:1', label: '3:1 (banner)' },
+  { value: '4:1', label: '4:1 (banner)' },
+  { value: '5:1', label: '5:1 (banner)' },
+] as const;
+
 type Article = {
   id: string;
   title: string;
@@ -16,6 +26,8 @@ type Article = {
   content: string;
   layout: PageLayout | null;
   imageUrl: string | null;
+  bannerImageRatio: string | null;
+  bannerUseContainer: boolean;
   metaDescription: string | null;
   category: string | null;
   tags: string[];
@@ -61,6 +73,8 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     readingTime: undefined,
     featured: false,
     isPublished: false,
+    bannerImageRatio: 'default',
+    bannerUseContainer: true,
   });
 
   useEffect(() => {
@@ -86,6 +100,8 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               readingTime: a.readingTime ?? undefined,
               featured: a.featured ?? false,
               isPublished: a.isPublished ?? false,
+              bannerImageRatio: a.bannerImageRatio ?? 'default',
+              bannerUseContainer: a.bannerUseContainer ?? true,
             });
             const l = a.layout;
             if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
@@ -138,6 +154,8 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
           formData.readingTime != null ? Number(formData.readingTime) : null,
         featured: Boolean(formData.featured),
         layout,
+        bannerImageRatio: (formData.bannerImageRatio as string) || 'default',
+        bannerUseContainer: Boolean(formData.bannerUseContainer),
       };
 
       const url = articleId ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
@@ -253,46 +271,85 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Banner Image
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={formData.imageUrl ?? ''}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-                  placeholder="URL gambar atau pilih dari media"
-                />
-                <MediaPicker
-                  onSelect={(media) =>
-                    setFormData({ ...formData, imageUrl: media?.url ?? '' })
-                  }
-                />
-              </div>
-              {formData.imageUrl && (
-                <div className="mt-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={formData.imageUrl}
-                    alt="Banner preview"
-                    className="h-32 w-auto rounded border object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-
           </div>
-
         </div>
 
-
-
-        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Banner Image
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.imageUrl ?? ''}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="URL gambar atau pilih dari media"
+              />
+              <MediaPicker
+                onSelect={(media) =>
+                  setFormData({ ...formData, imageUrl: media?.url ?? '' })
+                }
+              />
+            </div>
+            {formData.imageUrl && (
+              <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.imageUrl}
+                  alt="Banner preview"
+                  className="h-32 w-auto rounded border object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rasio gambar banner
+              </label>
+              <select
+                value={formData.bannerImageRatio ?? 'default'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    bannerImageRatio: e.target.value as (typeof BANNER_RATIO_OPTIONS)[number]['value'],
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              >
+                {BANNER_RATIO_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
+            </div>
+            <div className="flex items-end pb-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.bannerUseContainer ?? true}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bannerUseContainer: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Gunakan Container
+                </span>
+              </label>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            Sama seperti row di widget: tidak dicentang = banner sampai tepi halaman (tanpa rounded).
+          </p>
+        </div>
 
         <div>
           <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
@@ -322,13 +379,6 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          
-        </div>
-
-        
-
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             Fallback content (optional)
@@ -346,7 +396,6 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
         <LayoutBuilderSection layout={layout} setLayout={setLayout} />
 
-        
         <hr className="my-6 border-gray-200" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

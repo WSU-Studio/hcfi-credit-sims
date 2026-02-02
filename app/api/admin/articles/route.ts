@@ -76,6 +76,8 @@ export async function POST(request: NextRequest) {
       readingTime: body.readingTime != null ? Number(body.readingTime) : null,
       featured: Boolean(body.featured),
       layout: body.layout ?? undefined,
+      bannerImageRatio: body.bannerImageRatio ?? undefined,
+      bannerUseContainer: body.bannerUseContainer !== undefined ? Boolean(body.bannerUseContainer) : undefined,
     };
     const article = await prisma.article.create({
       data,

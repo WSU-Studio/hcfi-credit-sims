@@ -54,6 +54,26 @@ export default async function ArticleDetailPage({
     layout.rows.length > 0;
 
   const imageUrl = article.imageUrl?.trim() || null;
+  const bannerImageRatio = article.bannerImageRatio ?? 'default';
+  const bannerUseContainer = (article as { bannerUseContainer?: boolean }).bannerUseContainer ?? true;
+
+  const BANNER_RATIO_CLASSES: Record<string, string> = {
+    default: '',
+    '1:1': 'aspect-square',
+    '4:3': 'aspect-[4/3]',
+    '16:9': 'aspect-video',
+    '3:1': 'aspect-[3/1]',
+    '4:1': 'aspect-[4/1]',
+    '5:1': 'aspect-[5/1]',
+  };
+  const bannerRatioClass = BANNER_RATIO_CLASSES[bannerImageRatio] ?? '';
+  const bannerWrapperClass = [
+    'relative w-full overflow-hidden bg-[var(--card)]',
+    bannerUseContainer ? 'rounded-xl border border-[var(--border)]' : '',
+    bannerRatioClass || 'aspect-video',
+  ].filter(Boolean).join(' ');
+  const bannerImageClass = 'object-cover';
+
   const publishedLabel = article.publishedAt
     ? new Date(article.publishedAt).toLocaleDateString('id-ID', {
         day: 'numeric',
@@ -101,6 +121,21 @@ export default async function ArticleDetailPage({
   if (hasLayout) {
     return (
       <section className="min-h-[40vh] py-8 md:py-12">
+        {imageUrl && !bannerUseContainer && (
+          <div className="w-full">
+            <div className={bannerWrapperClass}>
+              <Image
+                src={imageUrl}
+                alt={article.title}
+                fill
+                className={bannerImageClass}
+                unoptimized
+                priority
+                sizes="100vw"
+              />
+            </div>
+          </div>
+        )}
         <Container>
           <header className="mb-8 space-y-4">
             <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl leading-tight">
@@ -119,16 +154,16 @@ export default async function ArticleDetailPage({
                 )}
               </div>
             )}
-            {imageUrl && (
-              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            {imageUrl && bannerUseContainer && (
+              <div className={bannerWrapperClass}>
                 <Image
                   src={imageUrl}
                   alt={article.title}
-                  width={800}
-                  height={450}
-                  className="object-cover"
+                  fill
+                  className={bannerImageClass}
                   unoptimized
                   priority
+                  sizes="(max-width: 768px) 100vw, 800px"
                 />
               </div>
             )}
@@ -166,6 +201,21 @@ export default async function ArticleDetailPage({
 
   return (
     <section className="min-h-[40vh] py-8 md:py-12">
+      {imageUrl && !bannerUseContainer && (
+        <div className="w-full">
+          <div className={bannerWrapperClass}>
+            <Image
+              src={imageUrl}
+              alt={article.title}
+              fill
+              className={bannerImageClass}
+              unoptimized
+              priority
+              sizes="100vw"
+            />
+          </div>
+        </div>
+      )}
       <Container>
         <article className="max-w-3xl mx-auto">
           <header className="space-y-4">
@@ -185,16 +235,16 @@ export default async function ArticleDetailPage({
                 )}
               </div>
             )}
-            {imageUrl && (
-              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            {imageUrl && bannerUseContainer && (
+              <div className={bannerWrapperClass}>
                 <Image
                   src={imageUrl}
                   alt={article.title}
-                  width={800}
-                  height={450}
-                  className="object-cover"
+                  fill
+                  className={bannerImageClass}
                   unoptimized
                   priority
+                  sizes="(max-width: 768px) 100vw, 800px"
                 />
               </div>
             )}
