@@ -201,7 +201,7 @@ export default async function ArticleDetailPage({
   }
 
   return (
-    <section className="min-h-[40vh] py-8 md:py-12">
+    <section className="min-h-[40vh]">
       {imageUrl && showBannerImage && !bannerUseContainer && (
         <div className="w-full">
           <div className={bannerWrapperClass}>
@@ -218,13 +218,13 @@ export default async function ArticleDetailPage({
         </div>
       )}
       <Container>
-        <article className="max-w-3xl mx-auto">
-          <header className="space-y-4">
+        <article className="w-full pt-8">
+          <header className="space-y-2">
             <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl leading-tight">
               {article.title}
             </h1>
             {(article.subtitle ?? publishedLabel ?? readingLabel) && (
-              <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--muted-foreground)]">
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
                 {article.subtitle && (
                   <span className="font-medium">{article.subtitle}</span>
                 )}
@@ -250,15 +250,17 @@ export default async function ArticleDetailPage({
               </div>
             )}
             {article.excerpt && (
-              <p className="text-lg text-[var(--muted-foreground)] leading-relaxed">
-                {article.excerpt}
-              </p>
+              <div className="py-12 px-8">
+                <p className="text-lg text-slate-600 leading-relaxed">
+                  {article.excerpt}
+                </p>
+              </div>
             )}
           </header>
 
-          <div className="mt-6 prose prose-slate prose-sm max-w-none dark:prose-invert">
+          <div className="mt-6 max-w-none text-slate-600 text-justify">
             {article.content ? (
-              <SanitizedHtml html={article.content} />
+              <SanitizedHtml html={article.content.replace(/\n/g, '<br>')} />
             ) : (
               <p className="text-[var(--muted-foreground)]">Belum ada konten.</p>
             )}

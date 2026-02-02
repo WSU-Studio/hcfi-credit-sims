@@ -398,7 +398,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            Fallback content (optional)
+            Content (optional)
           </label>
           <textarea
             id="content"

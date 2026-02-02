@@ -2,7 +2,6 @@ import type { Article } from "@/app/types";
 import { Container } from "../ui/Container";
 import { ArticleCard } from "../ui/ArticleCard";
 import Link from "next/link";
-import { IconArrowBadgeUpFilled } from "@tabler/icons-react";
 
 type ArticleSectionProps = {
   articles: Article[];
