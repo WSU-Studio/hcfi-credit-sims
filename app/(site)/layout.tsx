@@ -21,7 +21,7 @@ function buildNavItems(
   pages: Awaited<ReturnType<typeof getStaticPages>>
 ): NavItem[] {
   const fixed: NavItem[] = [
-    { label: "Simulasi Kredit", href: "/simulasi-kredit" },
+    { label: "Simulasi Kredit", href: "/credit-simulation" },
     { label: "Promosi", href: "/promo" },
     { label: "Informasi", href: "/informasi" },
   ];
