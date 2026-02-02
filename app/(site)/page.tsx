@@ -58,7 +58,7 @@ async function getBanners() {
           "Rasakan kemudahan proses kredit dengan layanan profesional dan penawaran yang terjaga keasliannya.",
         image: "/images/main-banner.jpg",
         ctaLabel: "Simulasi Kredit",
-        ctaUrl: "/simulasi-kredit",
+        ctaUrl: "/credit-simulation",
       },
     ];
   }

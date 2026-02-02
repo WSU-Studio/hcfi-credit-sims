@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { validateLayout } from '@/lib/validate-layout';
 
 export async function GET() {
   try {
@@ -47,6 +48,12 @@ export async function POST(request: NextRequest) {
     await requirePermission('ARTICLES', 'create');
 
     const body = await request.json();
+    if (body.layout !== undefined && body.layout !== null && !validateLayout(body.layout)) {
+      return NextResponse.json(
+        { error: 'Invalid layout structure' },
+        { status: 400 }
+      );
+    }
     const slug =
       body.slug?.trim() ||
       (body.title || '')
@@ -62,11 +69,16 @@ export async function POST(request: NextRequest) {
       ...body,
       slug: slug || `article-${Date.now()}`,
       authorId: session.user.id,
+      content: typeof body.content === 'string' ? body.content : '',
       metaDescription: body.metaDescription || null,
       category: body.category || null,
       tags,
       readingTime: body.readingTime != null ? Number(body.readingTime) : null,
       featured: Boolean(body.featured),
+      layout: body.layout ?? undefined,
+      bannerImageRatio: body.bannerImageRatio ?? undefined,
+      bannerUseContainer: body.bannerUseContainer !== undefined ? Boolean(body.bannerUseContainer) : undefined,
+      showBannerImage: body.showBannerImage !== undefined ? Boolean(body.showBannerImage) : undefined,
     };
     const article = await prisma.article.create({
       data,

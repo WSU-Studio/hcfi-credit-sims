@@ -8,7 +8,7 @@ import type { PageLayout, LayoutRow } from '@/app/types';
 
 export const dynamic = 'force-dynamic';
 
-const RESERVED_SLUGS = ['simulasi-kredit', 'admin', 'auth', 'api'];
+const RESERVED_SLUGS = ['credit-simulation', 'admin', 'auth', 'api'];
 
 async function getPageBySlug(slug: string) {
   if (RESERVED_SLUGS.includes(slug)) return null;
@@ -22,17 +22,17 @@ async function getPageBySlug(slug: string) {
   }
 }
 
-async function getAllSlugs() {
-  try {
-    const pages = await prisma.staticPage.findMany({
-      select: { slug: true },
-      orderBy: { title: 'asc' },
-    });
-    return pages.map((p) => p.slug);
-  } catch {
-    return [];
-  }
-}
+// async function getAllSlugs() {
+//   try {
+//     const pages = await prisma.staticPage.findMany({
+//       select: { slug: true },
+//       orderBy: { title: 'asc' },
+//     });
+//     return pages.map((p) => p.slug);
+//   } catch {
+//     return [];
+//   }
+// }
 
 export async function generateMetadata({
   params,
@@ -62,12 +62,16 @@ export default async function StaticPageBySlug({
     typeof layout === 'object' &&
     Array.isArray(layout?.rows) &&
     layout.rows.length > 0;
-  const slugs = await getAllSlugs();
-  const currentIndex = slugs.indexOf(pageSlug);
-  const nextSlug =
-    currentIndex >= 0 && currentIndex < slugs.length - 1
-      ? slugs[currentIndex + 1]
-      : null;
+  // const slugs = await getAllSlugs();
+  // const currentIndex = slugs.indexOf(pageSlug);
+  // const nextSlug =
+  //   currentIndex >= 0 && currentIndex < slugs.length - 1
+  //     ? slugs[currentIndex + 1]
+  //     : null;
+  // const previousSlug =
+  //   currentIndex >= 0 && currentIndex > 0
+  //     ? slugs[currentIndex - 1]
+  //     : null;
 
   function RowGrid({ row }: { row: LayoutRow }) {
     const fullWidth = row.useContainer === false;
@@ -100,14 +104,24 @@ export default async function StaticPageBySlug({
           Kembali ke Beranda
         </span>
       </Link>
-      {nextSlug && (
-        <Link
-          href={`/${nextSlug}`}
-          className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors"
-        >
-          Berikutnya
-        </Link>
-      )}
+      {/* <div className="flex flex-wrap items-center gap-3">
+        {nextSlug && (
+          <Link
+            href={`/${nextSlug}`}
+            className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
+          >
+            Berikutnya
+          </Link>
+        )}
+        {previousSlug && (
+          <Link
+            href={`/${previousSlug}`}
+            className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#1956FF] rounded-lg hover:bg-[#1956FF]/90 transition-colors"
+          >
+            Sebelumnya
+          </Link>
+        )}
+      </div> */}
     </div>
   );
 

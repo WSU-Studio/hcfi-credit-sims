@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { validateLayout } from '@/lib/validate-layout';
 
 export async function GET() {
   try {
@@ -42,8 +43,49 @@ export async function POST(request: NextRequest) {
     await requirePermission('PROMOS', 'create');
 
     const body = await request.json();
+    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate } = body;
+
+    if (!title || typeof title !== 'string') {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
+      return NextResponse.json(
+        { error: 'Invalid layout structure' },
+        { status: 400 }
+      );
+    }
+
+    const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : null;
+    if (slugTrimmed) {
+      const slugTaken = await prisma.promo.findUnique({
+        where: { slug: slugTrimmed },
+      });
+      if (slugTaken) {
+        return NextResponse.json(
+          { error: 'Slug already in use' },
+          { status: 400 }
+        );
+      }
+    }
+
     const promo = await prisma.promo.create({
-      data: body,
+      data: {
+        title: title.trim(),
+        slug: slugTrimmed ?? undefined,
+        description: description === null || description === '' ? null : (description ?? undefined),
+        imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
+        content: content === null || content === '' ? null : (content ?? undefined),
+        layout: layout ?? undefined,
+        isActive: isActive !== undefined ? Boolean(isActive) : true,
+        isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,
+        order: order !== undefined ? Number(order) : 0,
+        startDate: startDate === null || startDate === '' ? null : (startDate ? new Date(startDate) : undefined),
+        endDate: endDate === null || endDate === '' ? null : (endDate ? new Date(endDate) : undefined),
+      },
     });
 
     return NextResponse.json({ promo });

@@ -1,9 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
+import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
+import type { PageLayout } from '@/app/types';
+
+const BANNER_RATIO_OPTIONS = [
+  { value: 'default', label: 'Default (rasio asli)' },
+  { value: '1:1', label: '1:1' },
+  { value: '4:3', label: '4:3' },
+  { value: '16:9', label: '16:9' },
+  { value: '3:1', label: '3:1 (banner)' },
+  { value: '4:1', label: '4:1 (banner)' },
+  { value: '5:1', label: '5:1 (banner)' },
+] as const;
 
 type Article = {
   id: string;
@@ -12,7 +24,11 @@ type Article = {
   subtitle: string | null;
   excerpt: string | null;
   content: string;
+  layout: PageLayout | null;
   imageUrl: string | null;
+  bannerImageRatio: string | null;
+  bannerUseContainer: boolean;
+  showBannerImage: boolean;
   metaDescription: string | null;
   category: string | null;
   tags: string[];
@@ -43,6 +59,8 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
   const [loading, setLoading] = useState(!!articleId);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [layout, setLayout] = useState<PageLayout>({ rows: [] });
+  const returnAfterSaveRef = useRef(false);
   const [formData, setFormData] = useState<Partial<Article> & { tagsInput?: string }>({
     title: '',
     slug: '',
@@ -56,6 +74,9 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     readingTime: undefined,
     featured: false,
     isPublished: false,
+    bannerImageRatio: 'default',
+    bannerUseContainer: true,
+    showBannerImage: true,
   });
 
   useEffect(() => {
@@ -81,7 +102,16 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               readingTime: a.readingTime ?? undefined,
               featured: a.featured ?? false,
               isPublished: a.isPublished ?? false,
+              bannerImageRatio: a.bannerImageRatio ?? 'default',
+              bannerUseContainer: a.bannerUseContainer ?? true,
+              showBannerImage: a.showBannerImage ?? true,
             });
+            const l = a.layout;
+            if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
+              setLayout(l as PageLayout);
+            } else {
+              setLayout({ rows: [] });
+            }
           } else setError('Article not found');
           setLoading(false);
         })
@@ -102,11 +132,9 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const saveArticle = async (redirectAfterSave: boolean) => {
     setError('');
     setSaving(true);
-
     try {
       const slug =
         formData.slug?.trim() || (formData.title ? slugify(formData.title) : `article-${Date.now()}`);
@@ -120,6 +148,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         slug,
         subtitle: formData.subtitle || null,
         excerpt: formData.excerpt || null,
+        content: (formData.content ?? '').trim() || '',
         imageUrl: formData.imageUrl || null,
         metaDescription: formData.metaDescription || null,
         category: formData.category || null,
@@ -127,6 +156,10 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         readingTime:
           formData.readingTime != null ? Number(formData.readingTime) : null,
         featured: Boolean(formData.featured),
+        layout,
+        bannerImageRatio: (formData.bannerImageRatio as string) || 'default',
+        bannerUseContainer: Boolean(formData.bannerUseContainer),
+        showBannerImage: formData.showBannerImage !== false,
       };
 
       const url = articleId ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
@@ -141,11 +174,27 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save article');
 
-      router.push('/admin/articles');
-      router.refresh();
+      if (redirectAfterSave) {
+        router.push('/admin/articles');
+        router.refresh();
+      } else {
+        setSaving(false);
+        router.refresh();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (articleId) {
+      const shouldReturn = returnAfterSaveRef.current;
+      returnAfterSaveRef.current = false;
+      saveArticle(shouldReturn);
+    } else {
+      saveArticle(true);
     }
   };
 
@@ -162,48 +211,161 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       )}
 
       <div className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={formData.title ?? ''}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Judul artikel"
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              required
+              value={formData.title ?? ''}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Judul artikel"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+              Slug (URL)
+            </label>
+            <input
+              type="text"
+              id="slug"
+              value={formData.slug ?? ''}
+              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-slate-100/80"
+              placeholder="url-friendly-slug"
+              readOnly
+            />
+            <p className="mt-1 text-xs text-gray-500">URL: /articles/[slug] (e.g. /articles/tips-belanja-online)</p>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
-            Subtitle
-          </label>
-          <input
-            type="text"
-            id="subtitle"
-            value={formData.subtitle ?? ''}
-            onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Subjudul (opsional)"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
+              Subtitle
+            </label>
+            <input
+              type="text"
+              id="subtitle"
+              value={formData.subtitle ?? ''}
+              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Subjudul (opsional)"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <input
+                type="text"
+                id="category"
+                value={formData.category ?? ''}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="e.g. Tips, Promo, Berita"
+              />
+            </div>
+
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            Slug (URL)
-          </label>
-          <input
-            type="text"
-            id="slug"
-            value={formData.slug ?? ''}
-            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="url-friendly-slug"
-          />
-          <p className="mt-1 text-xs text-gray-500">Kosongkan untuk auto-generate dari title</p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Banner Image
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.imageUrl ?? ''}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="URL gambar atau pilih dari media"
+              />
+              <MediaPicker
+                onSelect={(media) =>
+                  setFormData({ ...formData, imageUrl: media?.url ?? '' })
+                }
+              />
+            </div>
+            {formData.imageUrl && (
+              <div className="mt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.imageUrl}
+                  alt="Banner preview"
+                  className="h-32 w-auto rounded border object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rasio gambar banner
+              </label>
+              <select
+                value={formData.bannerImageRatio ?? 'default'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    bannerImageRatio: e.target.value as (typeof BANNER_RATIO_OPTIONS)[number]['value'],
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              >
+                {BANNER_RATIO_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.bannerUseContainer ?? true}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bannerUseContainer: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Gunakan Container
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.showBannerImage ?? true}
+                  onChange={(e) =>
+                    setFormData({ ...formData, showBannerImage: e.target.checked })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Tampilkan banner image
+                </span>
+              </label>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            Gunakan Container: tidak dicentang = banner sampai tepi halaman (tanpa rounded). Tampilkan banner: tidak dicentang = gambar banner disembunyikan di halaman artikel.
+          </p>
         </div>
 
         <div>
@@ -234,139 +396,98 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category
-            </label>
-            <input
-              type="text"
-              id="category"
-              value={formData.category ?? ''}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="e.g. Tips, Promo, Berita"
-            />
-          </div>
-          <div>
-            <label htmlFor="tagsInput" className="block text-sm font-medium text-gray-700 mb-1">
-              Tags
-            </label>
-            <input
-              type="text"
-              id="tagsInput"
-              value={formData.tagsInput ?? ''}
-              onChange={(e) => setFormData({ ...formData, tagsInput: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="tag1, tag2, tag3 (pisah dengan koma)"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="readingTime" className="block text-sm font-medium text-gray-700 mb-1">
-              Reading Time (menit)
-            </label>
-            <input
-              type="number"
-              id="readingTime"
-              min={1}
-              value={formData.readingTime ?? ''}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  readingTime: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Estimasi menit baca"
-            />
-            <p className="mt-1 text-xs text-gray-500">Estimasi waktu baca artikel</p>
-          </div>
-        </div>
-
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            Content <span className="text-red-500">*</span>
+            Content (optional)
           </label>
           <textarea
             id="content"
-            required
-            rows={12}
+            rows={4}
             value={formData.content ?? ''}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] font-mono text-sm"
-            placeholder="Isi artikel (bisa HTML atau plain text)"
+            placeholder="Plain HTML used when layout is empty"
           />
+          <p className="mt-1 text-xs text-gray-500">Digunakan jika layout kosong</p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Banner Image
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={formData.imageUrl ?? ''}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="URL gambar atau pilih dari media"
-            />
-            <MediaPicker
-              onSelect={(media) =>
-                setFormData({ ...formData, imageUrl: media?.url ?? '' })
-              }
-            />
-          </div>
-          {formData.imageUrl && (
-            <div className="mt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={formData.imageUrl}
-                alt="Banner preview"
-                className="h-32 w-auto rounded border object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+        <LayoutBuilderSection layout={layout} setLayout={setLayout} />
+
+        <hr className="my-6 border-gray-200" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="tagsInput" className="block text-sm font-medium text-gray-700 mb-1">
+                Tags
+              </label>
+              <input
+                type="text"
+                id="tagsInput"
+                value={formData.tagsInput ?? ''}
+                onChange={(e) => setFormData({ ...formData, tagsInput: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="tag1, tag2, tag3 (pisah dengan koma)"
               />
             </div>
-          )}
-        </div>
+            <div>
+              <label htmlFor="readingTime" className="block text-sm font-medium text-gray-700 mb-1">
+                Reading Time (menit)
+              </label>
+              <input
+                type="number"
+                id="readingTime"
+                min={1}
+                value={formData.readingTime ?? ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    readingTime: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                placeholder="Estimasi menit baca"
+              />
+              <p className="mt-1 text-xs text-gray-500">Estimasi waktu baca artikel</p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.isPublished ?? false}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  isPublished: e.target.checked,
-                })
-              }
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Published</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.featured ?? false}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  featured: e.target.checked,
-                })
-              }
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Featured</span>
-          </label>
+          <div className="flex flex-col items-end justify-end">
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isPublished ?? false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      isPublished: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">Published</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.featured ?? false}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      featured: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                />
+                <span className="text-sm font-medium text-gray-700">Featured</span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">
+              Published: tampil di frontend. Featured: tampil di highlight/homepage.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-gray-500">
-          Published: tampil di frontend. Featured: tampil di highlight/homepage.
-        </p>
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
@@ -376,13 +497,34 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         >
           Cancel
         </Link>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Saving...' : articleId ? 'Update Article' : 'Create Article'}
-        </button>
+        {articleId ? (
+          <>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => saveArticle(false)}
+              className="px-4 py-2 border border-[#1956FF] text-[#1956FF] rounded-lg hover:bg-[#1956FF]/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Update Article'}
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              onClick={() => { returnAfterSaveRef.current = true; }}
+              className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Update and Return'}
+            </button>
+          </>
+        ) : (
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving...' : 'Create Article'}
+          </button>
+        )}
       </div>
     </form>
   );

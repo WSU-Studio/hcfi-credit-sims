@@ -1,5 +1,6 @@
 import type { Article } from "@/app/types";
 import Image from "next/image";
+import Link from "next/link";
 
 type ArticleCardProps = Article & {
   className?: string;
@@ -44,14 +45,14 @@ export function ArticleCard({ title, image, className, slug }: ArticleCardProps)
 
   if (slug) {
     return (
-      <a
-        href={`/artikel/${slug}`}
+      <Link
+        href={`/articles/${slug}`}
         className={className ? `${base} ${className} block` : `${base} block`}
         role="img"
         aria-label={title}
       >
         {content}
-      </a>
+      </Link>
     );
   }
 
