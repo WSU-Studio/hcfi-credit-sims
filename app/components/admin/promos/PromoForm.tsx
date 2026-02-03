@@ -7,12 +7,25 @@ import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
 
+const BANNER_RATIO_OPTIONS = [
+  { value: 'default', label: 'Default (rasio asli)' },
+  { value: '1:1', label: '1:1' },
+  { value: '4:3', label: '4:3' },
+  { value: '16:9', label: '16:9' },
+  { value: '3:1', label: '3:1 (banner)' },
+  { value: '4:1', label: '4:1 (banner)' },
+  { value: '5:1', label: '5:1 (banner)' },
+] as const;
+
 type Promo = {
   id: string;
   title: string;
   slug: string | null;
   description: string | null;
   imageUrl: string | null;
+  bannerImageRatio: string | null;
+  bannerUseContainer: boolean;
+  showBannerImage: boolean;
   content: string | null;
   layout: PageLayout | null;
   isActive: boolean;
@@ -57,6 +70,9 @@ export function PromoForm({ promoId }: PromoFormProps) {
   const [order, setOrder] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [bannerImageRatio, setBannerImageRatio] = useState('default');
+  const [bannerUseContainer, setBannerUseContainer] = useState(true);
+  const [showBannerImage, setShowBannerImage] = useState(true);
   const returnAfterSaveRef = useRef(false);
 
   useEffect(() => {
@@ -79,6 +95,9 @@ export function PromoForm({ promoId }: PromoFormProps) {
             setOrder(p.order ?? 0);
             setStartDate(toDateInput(p.startDate));
             setEndDate(toDateInput(p.endDate));
+            setBannerImageRatio((p as Promo).bannerImageRatio ?? 'default');
+            setBannerUseContainer((p as Promo).bannerUseContainer ?? true);
+            setShowBannerImage((p as Promo).showBannerImage ?? true);
             const l = p.layout;
             if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
               setLayout(l as PageLayout);
@@ -119,6 +138,9 @@ export function PromoForm({ promoId }: PromoFormProps) {
         order: Number(order) || 0,
         startDate: startDate ? new Date(startDate).toISOString() : null,
         endDate: endDate ? new Date(endDate).toISOString() : null,
+        bannerImageRatio: bannerImageRatio || 'default',
+        bannerUseContainer,
+        showBannerImage,
       };
       const url = promoId ? `/api/admin/promos/${promoId}` : '/api/admin/promos';
       const method = promoId ? 'PUT' : 'POST';
@@ -166,122 +188,202 @@ export function PromoForm({ promoId }: PromoFormProps) {
       )}
 
       <div className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Promo title"
-          />
-        </div>
-        <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            Slug (URL)
-          </label>
-          <input
-            type="text"
-            id="slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="url-friendly-slug"
-          />
-          <p className="mt-1 text-xs text-gray-500">URL: /promo/[slug] (e.g. /promo/cashback-2025)</p>
-        </div>
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description (short)
-          </label>
-          <input
-            type="text"
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Short description for listing"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Cover image URL</label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Image URL"
-            />
-            <MediaPicker onSelect={(m) => setImageUrl(m?.url ?? '')} />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Active</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isHighlight}
-              onChange={(e) => setIsHighlight(e.target.checked)}
-              className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-            />
-            <span className="text-sm font-medium text-gray-700">Highlight</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <label htmlFor="order" className="text-sm font-medium text-gray-700">
-              Order
-            </label>
-            <input
-              type="number"
-              id="order"
-              min={0}
-              value={order}
-              onChange={(e) => setOrder(Number(e.target.value) || 0)}
-              className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
-            />
-          </div>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Start date
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
             </label>
             <input
-              type="datetime-local"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              type="text"
+              id="title"
+              required
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Promo title"
             />
           </div>
+
           <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-              End date
+            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+              Slug (URL)
             </label>
             <input
-              type="datetime-local"
-              id="endDate"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              type="text"
+              id="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-slate-100/80"
+              placeholder="url-friendly-slug"
+              readOnly
+            />
+            <p className="mt-1 text-xs text-gray-500">URL: /promo/[slug] (e.g. /promo/cashback-2025)</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Description (short)
+            </label>
+            <input
+              type="text"
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Short description for listing"
             />
           </div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cover image URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="flex-1 px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                  placeholder="Image URL"
+                />
+                <MediaPicker onSelect={(m) => setImageUrl(m?.url ?? '')} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rasio gambar cover
+                </label>
+                <select
+                  value={bannerImageRatio}
+                  onChange={(e) => setBannerImageRatio(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                >
+                  {BANNER_RATIO_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
+              </div>
+              <div className="flex flex-col gap-2 justify-end">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bannerUseContainer}
+                    onChange={(e) => setBannerUseContainer(e.target.checked)}
+                    className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Gunakan Container
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showBannerImage}
+                    onChange={(e) => setShowBannerImage(e.target.checked)}
+                    className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Tampilkan cover image
+                  </span>
+                </label>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 my-0">
+              Gunakan Container: tidak dicentang = cover sampai tepi halaman (tanpa rounded). 
+            </p>
+            <p className="text-xs text-gray-500 my-0">
+              Tampilkan cover: tidak dicentang = gambar cover disembunyikan di halaman promo.
+            </p>
+          </div>
+
+          {imageUrl && (
+            <div className="mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl}
+                alt="Cover preview"
+                className="h-32 max-h-56 w-auto rounded border object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                Start date
+              </label>
+              <input
+                type="datetime-local"
+                id="startDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              />
+            </div>
+            <div>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                End date
+              </label>
+              <input
+                type="datetime-local"
+                id="endDate"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+              />
+              <span className="text-sm font-medium text-gray-700">Active</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isHighlight}
+                onChange={(e) => setIsHighlight(e.target.checked)}
+                className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+              />
+              <span className="text-sm font-medium text-gray-700">Highlight</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <label htmlFor="order" className="text-sm font-medium text-gray-700">
+                Order
+              </label>
+              <input
+                type="number"
+                id="order"
+                min={0}
+                value={order}
+                onChange={(e) => setOrder(Number(e.target.value) || 0)}
+                className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            Fallback content (optional)
+            Content (optional)
           </label>
           <textarea
             id="content"

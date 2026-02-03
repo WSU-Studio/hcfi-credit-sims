@@ -322,7 +322,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
                 </select>
                 <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 justify-end">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -351,10 +351,10 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
                 </label>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mb-0">
+            <p className="text-xs text-gray-500 my-0">
               Gunakan Container: tidak dicentang = banner sampai tepi halaman (tanpa rounded). 
             </p>
-            <p className="text-xs text-gray-500 mt-0">
+            <p className="text-xs text-gray-500 my-0">
               Tampilkan banner: tidak dicentang = gambar banner disembunyikan di halaman artikel.
             </p>
           </div>

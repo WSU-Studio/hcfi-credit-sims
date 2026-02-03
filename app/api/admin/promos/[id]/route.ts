@@ -52,7 +52,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate } = body;
+    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -102,6 +102,9 @@ export async function PUT(
         order: order !== undefined ? Number(order) : existing.order,
         startDate: startDate !== undefined ? (startDate === null || startDate === '' ? null : new Date(startDate)) : existing.startDate,
         endDate: endDate !== undefined ? (endDate === null || endDate === '' ? null : new Date(endDate)) : existing.endDate,
+        bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existing.bannerImageRatio,
+        bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existing.bannerUseContainer,
+        showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existing.showBannerImage,
       },
     });
 
