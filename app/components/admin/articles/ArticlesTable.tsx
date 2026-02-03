@@ -104,7 +104,7 @@ export function ArticlesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {articles.map((article) => (
               <tr key={article.id}>
-                <td className="px-3 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100">
                     {article.imageUrl ? (
                       article.imageUrl.includes('cloudinary') ? (
@@ -131,7 +131,7 @@ export function ArticlesTable() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-4">
+                <td className="px-3 py-2">
                   <div className="text-xs font-medium text-gray-900">{article.title}</div>
                   {article.excerpt && (
                     <div className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
@@ -142,18 +142,18 @@ export function ArticlesTable() {
                 {/* <td className="px-3 py-4 text-sm text-gray-500 max-w-[200px] truncate">
                   {article.subtitle || '-'}
                 </td> */}
-                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                   {article.author?.name ?? '-'}
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                   {article.category ?? '-'}
                 </td>
-                <td className="px-3 py-4 text-xs text-gray-600 max-w-[180px]">
+                <td className="px-3 py-2 text-xs text-gray-600 max-w-[180px]">
                   {article.tags?.length
                     ? article.tags.slice(0, 3).join(', ') + (article.tags.length > 3 ? '…' : '')
                     : '-'}
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                   {article.readingTime != null ? `${article.readingTime} m` : '-'}
                 </td>
                 {/* <td className="px-3 py-4 whitespace-nowrap">
@@ -165,7 +165,7 @@ export function ArticlesTable() {
                     <span className="text-gray-400">-</span>
                   )}
                 </td> */}
-                <td className="px-3 py-4 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       article.isPublished
@@ -176,24 +176,24 @@ export function ArticlesTable() {
                     {article.isPublished ? 'Published' : 'Draft'}
                   </span>
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                   {new Date(article.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
                   {new Date(article.updatedAt).toLocaleDateString()}
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                  <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/articles/${article.id}/edit`}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[#008AEC] hover:bg-[#008AEC]/10 hover:text-[#1956FF] transition-colors"
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
                       title="Edit Article"
                     >
-                      <IconEdit size={18} className="text-[#008AEC]" />
+                      <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
                       type="button"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
                       title="Delete Article"
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this article?')) {
@@ -205,7 +205,7 @@ export function ArticlesTable() {
                         }
                       }}
                     >
-                      <IconTrash size={18} />
+                      <IconTrash size={18} className="text-red-500" />
                     </button>
                   </div>
                 </td>
