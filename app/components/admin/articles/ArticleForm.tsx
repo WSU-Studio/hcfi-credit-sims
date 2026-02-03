@@ -223,7 +223,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               required
               value={formData.title ?? ''}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
               placeholder="Judul artikel"
             />
           </div>
@@ -237,7 +237,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               id="slug"
               value={formData.slug ?? ''}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-slate-100/80"
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-slate-100/80"
               placeholder="url-friendly-slug"
               readOnly
             />
@@ -255,7 +255,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
               id="subtitle"
               value={formData.subtitle ?? ''}
               onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
               placeholder="Subjudul (opsional)"
             />
           </div>
@@ -270,102 +270,109 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
                 id="category"
                 value={formData.category ?? ''}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
                 placeholder="e.g. Tips, Promo, Berita"
               />
             </div>
-
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Banner Image
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={formData.imageUrl ?? ''}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-                placeholder="URL gambar atau pilih dari media"
-              />
-              <MediaPicker
-                onSelect={(media) =>
-                  setFormData({ ...formData, imageUrl: media?.url ?? '' })
-                }
-              />
-            </div>
-            {formData.imageUrl && (
-              <div className="mt-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={formData.imageUrl}
-                  alt="Banner preview"
-                  className="h-32 w-auto rounded border object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rasio gambar banner
+                Banner Image
               </label>
-              <select
-                value={formData.bannerImageRatio ?? 'default'}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    bannerImageRatio: e.target.value as (typeof BANNER_RATIO_OPTIONS)[number]['value'],
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              >
-                {BANNER_RATIO_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex gap-2">
                 <input
-                  type="checkbox"
-                  checked={formData.bannerUseContainer ?? true}
-                  onChange={(e) =>
-                    setFormData({ ...formData, bannerUseContainer: e.target.checked })
-                  }
-                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                  type="text"
+                  value={formData.imageUrl ?? ''}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="flex-1 px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                  placeholder="URL gambar atau pilih dari media"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Gunakan Container
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.showBannerImage ?? true}
-                  onChange={(e) =>
-                    setFormData({ ...formData, showBannerImage: e.target.checked })
+                <MediaPicker
+                  onSelect={(media) =>
+                    setFormData({ ...formData, imageUrl: media?.url ?? '' })
                   }
-                  className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Tampilkan banner image
-                </span>
-              </label>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rasio gambar banner
+                </label>
+                <select
+                  value={formData.bannerImageRatio ?? 'default'}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bannerImageRatio: e.target.value as (typeof BANNER_RATIO_OPTIONS)[number]['value'],
+                    })
+                  }
+                  className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+                >
+                  {BANNER_RATIO_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">Sama seperti widget Text + Image</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.bannerUseContainer ?? true}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bannerUseContainer: e.target.checked })
+                    }
+                    className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Gunakan Container
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.showBannerImage ?? true}
+                    onChange={(e) =>
+                      setFormData({ ...formData, showBannerImage: e.target.checked })
+                    }
+                    className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Tampilkan banner image
+                  </span>
+                </label>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mb-0">
+              Gunakan Container: tidak dicentang = banner sampai tepi halaman (tanpa rounded). 
+            </p>
+            <p className="text-xs text-gray-500 mt-0">
+              Tampilkan banner: tidak dicentang = gambar banner disembunyikan di halaman artikel.
+            </p>
           </div>
-          <p className="text-xs text-gray-500">
-            Gunakan Container: tidak dicentang = banner sampai tepi halaman (tanpa rounded). Tampilkan banner: tidak dicentang = gambar banner disembunyikan di halaman artikel.
-          </p>
+
+          {formData.imageUrl && (
+            <div className="mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={formData.imageUrl}
+                alt="Banner preview"
+                className="h-32 max-h-56 w-auto rounded border object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+
         </div>
 
         <div>
@@ -405,7 +412,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
             rows={4}
             value={formData.content ?? ''}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] font-mono text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] text-sm"
             placeholder="Plain HTML used when layout is empty"
           />
           <p className="mt-1 text-xs text-gray-500">Digunakan jika layout kosong</p>
