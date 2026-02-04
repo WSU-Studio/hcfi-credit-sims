@@ -47,7 +47,7 @@ export default async function ArticleDetailPage({
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
-  const layout = article.layout as PageLayout | null;
+  const layout = (article as { layout?: unknown }).layout as PageLayout | null;
   const hasLayout =
     layout &&
     typeof layout === 'object' &&
