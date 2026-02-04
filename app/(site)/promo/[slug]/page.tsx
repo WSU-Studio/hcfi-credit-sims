@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
@@ -12,12 +13,8 @@ export const dynamic = 'force-dynamic';
 
 async function getPromoBySlug(slug: string) {
   try {
-    return await prisma.promo.findFirst({
-      where: {
-        slug,
-        isActive: true,
-      },
-    });
+    const where = { slug, isActive: true } as Prisma.PromoWhereInput;
+    return await prisma.promo.findFirst({ where });
   } catch (error) {
     console.error('Error fetching promo:', error);
     return null;
@@ -46,7 +43,7 @@ export default async function PromoDetailPage({
   const promo = await getPromoBySlug(slug);
   if (!promo) notFound();
 
-  const layout = promo.layout as PageLayout | null;
+  const layout = (promo as { layout?: unknown }).layout as PageLayout | null;
   const hasLayout =
     layout &&
     typeof layout === 'object' &&
