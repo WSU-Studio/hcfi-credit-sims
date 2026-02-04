@@ -4,8 +4,19 @@ import { useState } from 'react';
 import { CldUploadButton, CldImage } from 'next-cloudinary';
 import { IconUpload, IconX } from '@tabler/icons-react';
 
+type Media = {
+  id: string;
+  filename: string;
+  url: string;
+  cloudinaryId: string;
+  mimeType: string;
+  size: number;
+  width: number;
+  height: number;
+};
+
 export function MediaLibrary() {
-  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Media[]>([]);
 
   const handleUpload = (result: any) => {
     if (result?.info) {
