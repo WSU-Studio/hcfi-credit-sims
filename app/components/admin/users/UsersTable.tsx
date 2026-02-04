@@ -20,18 +20,33 @@ type User = {
 export function UsersTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const loadUsers = () => {
+    return fetch('/api/admin/users')
+      .then((res) => res.json())
+      .then((data) => setUsers(data.users || []));
+  };
 
   useEffect(() => {
-    fetch('/api/admin/users')
-      .then((res) => res.json())
-      .then((data) => {
-        setUsers(data.users || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
+    loadUsers()
+      .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (user: User) => {
+    if (!confirm(`Yakin ingin menghapus user "${user.name}"?`)) return;
+    setDeletingId(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menghapus user');
+      await loadUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus user');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
@@ -97,17 +112,17 @@ export function UsersTable() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/users/${user.id}/edit`}
-                      className="h-5 w-5 flex items-center justify-center"
+                      className="h-8 w-8 flex items-center justify-center hover:bg-blue-100/80 rounded-lg border border-blue-200/80"
+                      title="Edit User"
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
-                      className="h-5 w-5 flex items-center justify-center cursor-pointer"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this user?')) {
-                          // Handle delete
-                        }
-                      }}
+                      type="button"
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-red-100/80 rounded-lg border border-red-200/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete User"
+                      disabled={deletingId === user.id}
+                      onClick={() => handleDelete(user)}
                     >
                       <IconTrash size={18} className="text-red-500" />
                     </button>
