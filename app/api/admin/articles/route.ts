@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       showBannerImage: body.showBannerImage !== undefined ? Boolean(body.showBannerImage) : undefined,
     };
     const article = await prisma.article.create({
-      data,
+      data: data as unknown as Prisma.ArticleCreateInput,
       include: {
         author: {
           select: { id: true, name: true, email: true },

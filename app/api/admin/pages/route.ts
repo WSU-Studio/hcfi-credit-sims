@@ -71,16 +71,15 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    const page = await prisma.staticPage.create({
-      data: {
-        title: String(title).trim(),
-        slug: String(slug).trim(),
-        content: content ?? null,
-        layout: layout ?? undefined,
-        showInMenu: Boolean(showInMenu ?? false),
-        menuOrder: Number(menuOrder ?? 0),
-      },
-    });
+    const createData = {
+      title: String(title).trim(),
+      slug: String(slug).trim(),
+      content: content ?? null,
+      layout: layout ?? undefined,
+      showInMenu: Boolean(showInMenu ?? false),
+      menuOrder: Number(menuOrder ?? 0),
+    } as unknown as Prisma.StaticPageCreateInput;
+    const page = await prisma.staticPage.create({ data: createData });
 
     return NextResponse.json({ page });
   } catch (error: any) {

@@ -95,17 +95,15 @@ export async function PUT(
       }
     }
 
-    const page = await prisma.staticPage.update({
-      where: { id },
-      data: {
-        title: title.trim(),
-        slug: slug.trim(),
-        content: content ?? existingFields.content,
-        layout: layout ?? existingFields.layout,
-        showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
-        menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,
-      },
-    });
+    const updateData = {
+      title: title.trim(),
+      slug: slug.trim(),
+      content: content ?? existingFields.content,
+      layout: layout ?? existingFields.layout,
+      showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
+      menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,
+    } as unknown as Prisma.StaticPageUpdateInput;
+    const page = await prisma.staticPage.update({ where: { id }, data: updateData });
 
     return NextResponse.json({ page });
   } catch (error: unknown) {

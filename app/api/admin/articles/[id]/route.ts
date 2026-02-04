@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -86,7 +87,7 @@ export async function PUT(
     };
     const article = await prisma.article.update({
       where: { id },
-      data,
+      data: data as unknown as Prisma.ArticleUpdateInput,
       include: {
         author: {
           select: { id: true, name: true, email: true },
