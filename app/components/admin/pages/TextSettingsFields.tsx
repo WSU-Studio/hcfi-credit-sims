@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  IconAlignLeft,
+  IconAlignCenter,
+  IconAlignRight,
+  IconAlignJustified,
+} from '@tabler/icons-react';
 import type { SharedTextSettings } from '@/app/types';
 import {
   HEX_COLOR_REGEX,
@@ -12,29 +18,41 @@ type TextSettingsFieldsProps = {
   onChange: (patch: Partial<SharedTextSettings>) => void;
 };
 
+const ALIGN_OPTIONS: { value: 'left' | 'center' | 'right' | 'justify'; icon: React.ComponentType<{ size?: number }>; label: string }[] = [
+  { value: 'left', icon: IconAlignLeft, label: 'Kiri' },
+  { value: 'center', icon: IconAlignCenter, label: 'Tengah' },
+  { value: 'right', icon: IconAlignRight, label: 'Kanan' },
+  { value: 'justify', icon: IconAlignJustified, label: 'Rata kanan-kiri' },
+];
+
 export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps) {
   const raw = value.textColor ?? DEFAULT_TEXT_COLOR_HEX;
   const isHex = HEX_COLOR_REGEX.test(raw);
   const displayHex = isHex ? raw : (PRESET_HEX[raw] ?? DEFAULT_TEXT_COLOR_HEX);
+  const currentAlign = value.textAlign ?? 'left';
 
   return (
     <>
       <div>
-        <label className="text-xs text-gray-500">Perataan teks</label>
-        <select
-          value={value.textAlign ?? 'left'}
-          onChange={(e) =>
-            onChange({
-              textAlign: e.target.value as 'left' | 'center' | 'right' | 'justify',
-            })
-          }
-          className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
-        >
-          <option value="left">Kiri</option>
-          <option value="center">Tengah</option>
-          <option value="right">Kanan</option>
-          <option value="justify">Rata kanan-kiri (justify)</option>
-        </select>
+        <label className="text-xs text-gray-500 block mb-1">Perataan teks</label>
+        <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
+          {ALIGN_OPTIONS.map(({ value: alignValue, icon: Icon, label }) => (
+            <button
+              key={alignValue}
+              type="button"
+              onClick={() => onChange({ textAlign: alignValue })}
+              title={label}
+              aria-label={label}
+              className={`flex items-center justify-center w-10 h-9 border-r border-gray-300 last:border-r-0 transition-colors ${
+                currentAlign === alignValue
+                  ? 'bg-[#008AEC] text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Icon size={18} />
+            </button>
+          ))}
+        </div>
       </div>
       <div>
         <label className="text-xs text-gray-500">Ketebalan teks (font weight)</label>
