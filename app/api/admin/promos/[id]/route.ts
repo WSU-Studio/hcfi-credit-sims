@@ -76,8 +76,18 @@ export async function PUT(
       return NextResponse.json({ error: 'Promo not found' }, { status: 404 });
     }
 
-    const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : existing.slug;
-    if (slugTrimmed && slugTrimmed !== existing.slug) {
+    const existingFields = existing as typeof existing & {
+      slug?: string | null;
+      description?: string | null;
+      imageUrl?: string | null;
+      content?: string | null;
+      layout?: unknown;
+      bannerImageRatio?: string | null;
+      bannerUseContainer?: boolean;
+      showBannerImage?: boolean;
+    };
+    const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : existingFields.slug;
+    if (slugTrimmed && slugTrimmed !== existingFields.slug) {
       const slugTaken = await prisma.promo.findUnique({
         where: { slug: slugTrimmed },
       });
@@ -92,18 +102,18 @@ export async function PUT(
     const updateData = {
       title: title.trim(),
       slug: slugTrimmed ?? undefined,
-      description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existing.description,
-      imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existing.imageUrl,
-      content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existing.content,
-      layout: layout !== undefined ? layout : existing.layout,
+      description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existingFields.description,
+      imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existingFields.imageUrl,
+      content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existingFields.content,
+      layout: layout !== undefined ? layout : existingFields.layout,
       isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
       isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,
       order: order !== undefined ? Number(order) : existing.order,
       startDate: startDate !== undefined ? (startDate === null || startDate === '' ? null : new Date(startDate)) : existing.startDate,
       endDate: endDate !== undefined ? (endDate === null || endDate === '' ? null : new Date(endDate)) : existing.endDate,
-      bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existing.bannerImageRatio,
-      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existing.bannerUseContainer,
-      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existing.showBannerImage,
+      bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existingFields.bannerImageRatio,
+      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existingFields.bannerUseContainer,
+      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existingFields.showBannerImage,
     } as Prisma.PromoUpdateInput;
 
     const promo = await prisma.promo.update({
