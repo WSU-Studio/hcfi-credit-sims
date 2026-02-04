@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const slugTaken = await prisma.staticPage.findUnique({
-      where: { slug: String(slug).trim() },
+      where: { slug: String(slug).trim() } as Prisma.StaticPageWhereUniqueInput,
     });
     if (slugTaken) {
       return NextResponse.json(

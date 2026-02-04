@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : null;
     if (slugTrimmed) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed },
+        where: { slug: slugTrimmed } as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(
