@@ -233,7 +233,11 @@ export function UserForm({ userId }: UserFormProps) {
             )}
           </div>
         </div>
+      </div>
 
+      <hr className="my-4 border-gray-200" />
+
+      <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
         <div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -246,22 +250,22 @@ export function UserForm({ userId }: UserFormProps) {
           </label>
           <p className="mt-1 text-xs text-gray-500">User inactive tidak dapat login.</p>
         </div>
-      </div>
 
-      <div className="mt-6 flex items-center justify-end gap-3">
-        <Link
-          href="/admin/users"
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          Cancel
-        </Link>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Saving...' : userId ? 'Update User' : 'Create User'}
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/users"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Saving...' : userId ? 'Update User' : 'Create User'}
+          </button>
+        </div>
       </div>
     </form>
   );
