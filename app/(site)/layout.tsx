@@ -3,7 +3,7 @@ import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { WhatsappFAB } from "../components/layout/WhatsappFAB";
 import { CompanyInfo, NavItem } from "../types";
-import { IconBrandWhatsapp, IconPhone, IconMail } from "@tabler/icons-react";
+import { IconBrandWhatsapp, IconBrandInstagram, IconPhone, IconMail } from "@tabler/icons-react";
 import { prisma } from "@/lib/prisma";
 
 async function getStaticPages() {
@@ -61,13 +61,86 @@ async function getFooterData(
     ];
     const defaultContact: CompanyInfo["contact"] = [
       { label: "Call", icon: <IconPhone size={16} />, text: "1500708", href: "tel:1500708" },
-      { label: "WhatsApp", icon: <IconBrandWhatsapp size={16} />, text: "08111500708", href: "tel:08111500708" },
+      { label: "WhatsApp", icon: <IconBrandWhatsapp size={16} />, text: "08111500708", href: "https://wa.me/628111500708" },
       { label: "Email", icon: <IconMail size={16} />, text: "contactus@hyundaicapital.co.id", href: "mailto:contactus@hyundaicapital.co.id" },
     ];
     const defaultApps: CompanyInfo["apps"] = [
       { label: "Google Play", src: "/images/play-store.png", href: "#" },
       { label: "App Store", src: "/images/app-store.png", href: "#" },
     ];
+
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+    const hasNewFields = str(data.phoneDisplay) || str(data.phoneHref) || str(data.whatsappDisplay) || str(data.whatsappHref) || str(data.emailDisplay) || str(data.emailHref);
+    const contactFromOld = Array.isArray(data.contact)
+      ? (data.contact as { label?: string; text?: string; href?: string }[]).map((item) => {
+          const labelLower = (item.label || "").toLowerCase();
+          const icon =
+            labelLower.includes("whatsapp") ? <IconBrandWhatsapp size={16} /> :
+            labelLower.includes("instagram") ? <IconBrandInstagram size={16} /> :
+            labelLower.includes("call") || labelLower.includes("tel") ? <IconPhone size={16} /> :
+            labelLower.includes("email") || labelLower.includes("mail") ? <IconMail size={16} /> :
+            null;
+          return {
+            label: item.label || "",
+            text: item.text || "",
+            href: item.href || "",
+            icon: icon ?? undefined,
+          };
+        })
+      : [];
+
+    let contact: CompanyInfo["contact"];
+    if (hasNewFields) {
+      const contactFromFields: CompanyInfo["contact"] = [];
+      if (str(data.phoneDisplay) || str(data.phoneHref)) {
+        contactFromFields.push({
+          label: "Call",
+          icon: <IconPhone size={16} />,
+          text: str(data.phoneDisplay) || str(data.phoneHref),
+          href: str(data.phoneHref) || (str(data.phoneDisplay) ? `tel:${str(data.phoneDisplay).replace(/\s/g, "")}` : ""),
+        });
+      }
+      if (str(data.whatsappDisplay) || str(data.whatsappHref)) {
+        const raw = str(data.whatsappHref) || str(data.whatsappDisplay);
+        const digits = raw.replace(/\D/g, "");
+        const waNum = digits ? (digits.startsWith("0") ? "62" + digits.slice(1) : digits.startsWith("62") ? digits : "62" + digits) : "";
+        const waHref = raw.toLowerCase().startsWith("http") ? raw : (waNum ? `https://wa.me/${waNum}` : "");
+        contactFromFields.push({
+          label: "WhatsApp",
+          icon: <IconBrandWhatsapp size={16} />,
+          text: str(data.whatsappDisplay) || raw,
+          href: waHref,
+        });
+      }
+      if (str(data.emailDisplay) || str(data.emailHref)) {
+        const emailAddr = str(data.emailHref) || str(data.emailDisplay);
+        const mailto = emailAddr ? (emailAddr.toLowerCase().startsWith("mailto:") ? emailAddr : `mailto:${emailAddr.trim()}`) : "";
+        contactFromFields.push({
+          label: "Email",
+          icon: <IconMail size={16} />,
+          text: str(data.emailDisplay) || emailAddr,
+          href: mailto,
+        });
+      }
+      contact = contactFromFields.length > 0 ? contactFromFields : defaultContact;
+    } else {
+      contact = contactFromOld.length > 0 ? contactFromOld : defaultContact;
+    }
+
+    const playStoreHref = str(data.playStoreHref);
+    const appStoreHref = str(data.appStoreHref);
+    const appsFromData = Array.isArray(data.apps) ? data.apps as { label?: string; src?: string; href?: string }[] : [];
+    const apps: CompanyInfo["apps"] =
+      playStoreHref || appStoreHref
+        ? [
+            { label: "Google Play", src: "/images/play-store.png", href: playStoreHref || (appsFromData[0]?.href as string) || "#" },
+            { label: "App Store", src: "/images/app-store.png", href: appStoreHref || (appsFromData[1]?.href as string) || "#" },
+          ]
+        : appsFromData.length > 0
+          ? appsFromData.map((a) => ({ label: a.label || "", src: a.src || "", href: a.href || "#" }))
+          : defaultApps;
+
     return {
       name: "Hyundai Capital",
       address: Array.isArray(data.address) ? data.address : defaultAddress,
@@ -75,11 +148,16 @@ async function getFooterData(
         { label: "Privacy Policy", href: "#" },
         { label: "Terms & Condition", href: "#" },
       ],
-      contact: Array.isArray(data.contact) ? data.contact : defaultContact,
-      apps: Array.isArray(data.apps) ? data.apps : defaultApps,
+      contact,
+      apps,
       disclaimer:
-        "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
-      copyright: "Copyright © 2025 - All Right Reserved",
+        typeof data.disclaimer === "string" && data.disclaimer.trim()
+          ? data.disclaimer
+          : "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
+      copyright:
+        typeof data.copyright === "string" && data.copyright.trim()
+          ? data.copyright
+          : "Copyright © 2025 - All Right Reserved",
     };
   } catch {
     // Fallback to default
