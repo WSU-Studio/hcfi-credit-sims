@@ -30,7 +30,7 @@ export async function getActivePromos() {
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     select,
   });
-  return promos.filter((p): p is typeof p & { slug: string } => p.slug != null);
+  return promos.filter((p): p is typeof p & { slug: string } => (p as { slug?: string | null }).slug != null);
 }
 
 export async function generateMetadata() {
