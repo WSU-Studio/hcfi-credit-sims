@@ -16,7 +16,7 @@ export async function getActivePromos() {
         OR: [{ endDate: null }, { endDate: { gte: now } }],
       },
     ],
-  } as Prisma.PromoWhereInput;
+  } as unknown as Prisma.PromoWhereInput;
   const select = {
     id: true,
     title: true,
@@ -24,7 +24,7 @@ export async function getActivePromos() {
     description: true,
     imageUrl: true,
     isHighlight: true,
-  } as Prisma.PromoSelect;
+  } as unknown as Prisma.PromoSelect;
   const promos = await prisma.promo.findMany({
     where,
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],

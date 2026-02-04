@@ -85,7 +85,7 @@ export async function PUT(
     };
     if (slug !== existingFields.slug) {
       const slugTaken = await prisma.staticPage.findUnique({
-        where: { slug: slug.trim() } as Prisma.StaticPageWhereUniqueInput,
+        where: { slug: slug.trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(

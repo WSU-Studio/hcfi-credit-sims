@@ -19,7 +19,7 @@ export async function GET() {
           ],
         },
       ],
-    } as Prisma.PromoWhereInput;
+    } as unknown as Prisma.PromoWhereInput;
     const promos = await prisma.promo.findMany({
       where,
       orderBy: {

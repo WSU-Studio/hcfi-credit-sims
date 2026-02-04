@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : null;
     if (slugTrimmed) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed } as Prisma.PromoWhereUniqueInput,
+        where: { slug: slugTrimmed } as unknown as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(

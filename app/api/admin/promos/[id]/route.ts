@@ -89,7 +89,7 @@ export async function PUT(
     const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : existingFields.slug;
     if (slugTrimmed && slugTrimmed !== existingFields.slug) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed } as Prisma.PromoWhereUniqueInput,
+        where: { slug: slugTrimmed } as unknown as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(
@@ -114,7 +114,7 @@ export async function PUT(
       bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existingFields.bannerImageRatio,
       bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existingFields.bannerUseContainer,
       showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existingFields.showBannerImage,
-    } as Prisma.PromoUpdateInput;
+    } as unknown as Prisma.PromoUpdateInput;
 
     const promo = await prisma.promo.update({
       where: { id },

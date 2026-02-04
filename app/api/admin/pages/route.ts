@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const slugTaken = await prisma.staticPage.findUnique({
-      where: { slug: String(slug).trim() } as Prisma.StaticPageWhereUniqueInput,
+      where: { slug: String(slug).trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
     });
     if (slugTaken) {
       return NextResponse.json(

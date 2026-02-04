@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 async function getPromoBySlug(slug: string) {
   try {
-    const where = { slug, isActive: true } as Prisma.PromoWhereInput;
+    const where = { slug, isActive: true } as unknown as Prisma.PromoWhereInput;
     return await prisma.promo.findFirst({ where });
   } catch (error) {
     console.error('Error fetching promo:', error);
