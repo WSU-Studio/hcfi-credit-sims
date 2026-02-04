@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { CldUploadButton, CldImage } from 'next-cloudinary';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { IconUpload, IconCopy, IconCheck, IconLink, IconCloudDownload, IconTrash } from '@tabler/icons-react';
 
 type Media = {
@@ -50,6 +50,9 @@ export function MediaLibrary() {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMedia = useCallback(() => {
     setLoading(true);
@@ -61,24 +64,40 @@ export function MediaLibrary() {
   }, []);
 
   useEffect(() => {
-    loadMedia();
-  }, [loadMedia]);
+    let cancelled = false;
+    fetch('/api/admin/media')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setMediaList(data.media || []);
+      })
+      .catch(() => {
+        if (!cancelled) setMediaList([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
-  const handleUploadSuccess = (result: any) => {
+  const handleUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
     setSaveError(null);
-    const info = result?.info ?? result;
-    if (!info?.secure_url) return;
-    saveMediaToApi({
-      filename: info.original_filename ?? info.filename ?? 'image',
-      url: info.secure_url,
-      cloudinaryId: info.public_id ?? null,
-      mimeType: info.format ?? null,
-      size: info.bytes ?? null,
-      width: info.width ?? null,
-      height: info.height ?? null,
-    })
-      .then(() => loadMedia())
-      .catch((err) => setSaveError(err?.message ?? 'Gagal menyimpan ke database'));
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/api/admin/media/upload', { method: 'POST', body: formData })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        loadMedia();
+      })
+      .catch((err) => setUploadError(err?.message ?? 'Gagal upload'))
+      .finally(() => {
+        setUploading(false);
+        e.target.value = '';
+      });
   };
 
   const handleAddByUrl = (e: React.FormEvent) => {
@@ -145,35 +164,27 @@ export function MediaLibrary() {
       .finally(() => setSyncing(false));
   };
 
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset =
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'hcfi_media';
-
-  if (!cloudName) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4">
-        <p className="font-medium">Konfigurasi Cloudinary belum lengkap</p>
-        <p className="text-sm mt-1">
-          Tambahkan <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME</code> di file .env
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <CldUploadButton
-            uploadPreset={uploadPreset}
-            config={{ cloud: { cloudName } }}
-            onSuccess={handleUploadSuccess}
-            onUpload={handleUploadSuccess}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUploadFile}
+            disabled={uploading}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <IconUpload size={20} />
-            Upload Media
-          </CldUploadButton>
+            {uploading ? 'Mengunggah...' : 'Upload Media'}
+          </button>
           <button
             type="button"
             onClick={() => { setAddUrlOpen((v) => !v); setAddUrlError(null); }}
@@ -202,9 +213,9 @@ export function MediaLibrary() {
             {syncError}
           </div>
         )}
-        {saveError && (
+        {(saveError || uploadError) && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {saveError}
+            {uploadError ?? saveError}
           </div>
         )}
         {addUrlOpen && (
@@ -250,7 +261,7 @@ export function MediaLibrary() {
           </form>
         )}
         <p className="text-xs text-gray-500">
-          Jika muncul &quot;Upload preset not found&quot;, buat preset di Cloudinary: Settings → Upload → Add upload preset, nama <strong>{uploadPreset}</strong>, Signing mode: <strong>Unsigned</strong>. Untuk <strong>Import dari Cloudinary</strong> butuh API Key &amp; Secret di .env: <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_KEY</code>, <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_SECRET</code>.
+          Upload dan Import dari Cloudinary memakai env server-only (aman): <code className="bg-gray-100 px-1 rounded">CLOUDINARY_CLOUD_NAME</code>, <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_KEY</code>, <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_SECRET</code> — jangan pakai <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_</code>.
         </p>
       </div>
 
@@ -268,21 +279,13 @@ export function MediaLibrary() {
               className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden relative group"
             >
               <div className="aspect-video bg-gray-200 relative">
-                {item.cloudinaryId ? (
-                  <CldImage
-                    src={item.cloudinaryId}
-                    width={400}
-                    height={225}
-                    alt={item.filename}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img
-                    src={item.url}
-                    alt={item.filename}
-                    className="w-full h-full object-contain"
-                  />
-                )}
+                <Image
+                  src={item.url}
+                  alt={item.filename}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
                 <button
                   type="button"
                   onClick={() => handleDelete(item)}
