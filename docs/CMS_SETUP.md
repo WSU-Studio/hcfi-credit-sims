@@ -25,9 +25,10 @@ DATABASE_URL="postgresql://username:password@localhost:5432/hcfi_credit?schema=p
 NEXTAUTH_URL="http://localhost:3070"
 NEXTAUTH_SECRET="your-secret-key-here" # Generate dengan: openssl rand -base64 32
 
-# Cloudinary (optional, untuk media upload)
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="hcfi_media"
+# Cloudinary (optional, untuk media upload & import - pakai server-only, jangan NEXT_PUBLIC)
+CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
 ```
 
 ### 2. Database Setup
@@ -57,10 +58,13 @@ npm run db:seed
 ### 3. Cloudinary Setup (Optional)
 
 1. Daftar di [Cloudinary](https://cloudinary.com) (free tier available)
-2. Buat upload preset dengan nama `hcfi_media`
-3. Tambahkan environment variables di `.env`
+2. Dari Dashboard: Cloud name, API Key, API Secret (Settings → Access keys)
+3. Tambahkan di `.env` **tanpa prefix NEXT_PUBLIC** (agar credential tidak terbuka di browser):
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
 
-Jika tidak menggunakan Cloudinary, media akan disimpan di local storage.
+Upload media dilakukan di server; Import dari Cloudinary juga memakai env ini. Jangan pakai `NEXT_PUBLIC_CLOUDINARY_*` untuk keamanan.
 
 ## Struktur CMS Modules
 
