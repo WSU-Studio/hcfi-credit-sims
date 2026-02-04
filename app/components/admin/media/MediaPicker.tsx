@@ -61,7 +61,7 @@ export function MediaPicker({ onSelect, currentMediaId }: MediaPickerProps) {
         <IconFileMinus size={20} />
         {/* <span className="text-sm text-gray-500">None</span> */}
       </div>
-      {media.map((item) => (
+      {/* {media.map((item) => (
         <div
           key={item.id}
           className="relative cursor-pointer group"
@@ -86,7 +86,7 @@ export function MediaPicker({ onSelect, currentMediaId }: MediaPickerProps) {
             </div>
           )}
         </div>
-      ))}
+      ))} */}
     </div>
   );
 }
