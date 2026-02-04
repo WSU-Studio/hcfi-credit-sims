@@ -97,18 +97,18 @@ export function RolesTable() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/roles/${role.id}/edit`}
-                      className="inline-flex items-center justify-center text-blue-600 hover:text-blue-700"
+                      className="inline-flex items-center justify-center h-8 w-8 hover:bg-blue-100/80 rounded-lg border border-blue-200/80"
                       aria-label="Edit"
                     >
-                      <IconEdit size={18} />
+                      <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
                       type="button"
                       onClick={() => handleDelete(role.id, role.name)}
-                      className="inline-flex items-center justify-center text-red-600 hover:text-red-700"
+                      className="inline-flex items-center justify-center h-8 w-8 hover:bg-red-100/80 rounded-lg border border-red-200/80"
                       aria-label="Delete"
                     >
-                      <IconTrash size={18} />
+                      <IconTrash size={18} className="text-red-500" />
                     </button>
                   </div>
                 </td>
