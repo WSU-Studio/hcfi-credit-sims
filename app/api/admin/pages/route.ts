@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const slugTaken = await prisma.staticPage.findUnique({
-      where: { slug: String(slug).trim() },
+      where: { slug: String(slug).trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
     });
     if (slugTaken) {
       return NextResponse.json(
@@ -70,16 +71,15 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    const page = await prisma.staticPage.create({
-      data: {
-        title: String(title).trim(),
-        slug: String(slug).trim(),
-        content: content ?? null,
-        layout: layout ?? undefined,
-        showInMenu: Boolean(showInMenu ?? false),
-        menuOrder: Number(menuOrder ?? 0),
-      },
-    });
+    const createData = {
+      title: String(title).trim(),
+      slug: String(slug).trim(),
+      content: content ?? null,
+      layout: layout ?? undefined,
+      showInMenu: Boolean(showInMenu ?? false),
+      menuOrder: Number(menuOrder ?? 0),
+    } as unknown as Prisma.StaticPageCreateInput;
+    const page = await prisma.staticPage.create({ data: createData });
 
     return NextResponse.json({ page });
   } catch (error: any) {

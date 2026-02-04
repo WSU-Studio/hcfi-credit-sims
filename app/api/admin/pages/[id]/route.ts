@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -75,9 +76,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    if (slug !== existing.slug) {
+    const existingFields = existing as typeof existing & {
+      slug?: string;
+      content?: string | null;
+      layout?: unknown;
+      showInMenu?: boolean;
+      menuOrder?: number;
+    };
+    if (slug !== existingFields.slug) {
       const slugTaken = await prisma.staticPage.findUnique({
-        where: { slug: slug.trim() },
+        where: { slug: slug.trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(
@@ -87,17 +95,15 @@ export async function PUT(
       }
     }
 
-    const page = await prisma.staticPage.update({
-      where: { id },
-      data: {
-        title: title.trim(),
-        slug: slug.trim(),
-        content: content ?? existing.content,
-        layout: layout ?? existing.layout,
-        showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existing.showInMenu,
-        menuOrder: menuOrder !== undefined ? Number(menuOrder) : existing.menuOrder,
-      },
-    });
+    const updateData = {
+      title: title.trim(),
+      slug: slug.trim(),
+      content: content ?? existingFields.content,
+      layout: layout ?? existingFields.layout,
+      showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
+      menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,
+    } as unknown as Prisma.StaticPageUpdateInput;
+    const page = await prisma.staticPage.update({ where: { id }, data: updateData });
 
     return NextResponse.json({ page });
   } catch (error: unknown) {

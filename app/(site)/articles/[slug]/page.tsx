@@ -47,17 +47,23 @@ export default async function ArticleDetailPage({
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
-  const layout = article.layout as PageLayout | null;
+  const layout = (article as { layout?: unknown }).layout as PageLayout | null;
   const hasLayout =
     layout &&
     typeof layout === 'object' &&
     Array.isArray(layout?.rows) &&
     layout.rows.length > 0;
 
-  const imageUrl = article.imageUrl?.trim() || null;
-  const bannerImageRatio = article.bannerImageRatio ?? 'default';
-  const bannerUseContainer = (article as { bannerUseContainer?: boolean }).bannerUseContainer ?? true;
-  const showBannerImage = (article as { showBannerImage?: boolean }).showBannerImage !== false;
+  const articleWithBanner = article as {
+    imageUrl?: string | null;
+    bannerImageRatio?: string | null;
+    bannerUseContainer?: boolean;
+    showBannerImage?: boolean;
+  };
+  const imageUrl = articleWithBanner.imageUrl?.trim() || null;
+  const bannerImageRatio = articleWithBanner.bannerImageRatio ?? 'default';
+  const bannerUseContainer = articleWithBanner.bannerUseContainer ?? true;
+  const showBannerImage = articleWithBanner.showBannerImage !== false;
 
   const BANNER_RATIO_CLASSES: Record<string, string> = {
     default: '',

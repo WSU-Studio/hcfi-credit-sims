@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { PromoCard } from '@/app/components/ui/PromoCard';
@@ -6,28 +7,30 @@ export const dynamic = 'force-dynamic';
 
 export async function getActivePromos() {
   const now = new Date();
+  const where = {
+    isActive: true,
+    slug: { not: null },
+    OR: [{ startDate: null }, { startDate: { lte: now } }],
+    AND: [
+      {
+        OR: [{ endDate: null }, { endDate: { gte: now } }],
+      },
+    ],
+  } as unknown as Prisma.PromoWhereInput;
+  const select = {
+    id: true,
+    title: true,
+    slug: true,
+    description: true,
+    imageUrl: true,
+    isHighlight: true,
+  } as unknown as Prisma.PromoSelect;
   const promos = await prisma.promo.findMany({
-    where: {
-      isActive: true,
-      slug: { not: null },
-      OR: [{ startDate: null }, { startDate: { lte: now } }],
-      AND: [
-        {
-          OR: [{ endDate: null }, { endDate: { gte: now } }],
-        },
-      ],
-    },
+    where,
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      description: true,
-      imageUrl: true,
-      isHighlight: true,
-    },
+    select,
   });
-  return promos.filter((p): p is typeof p & { slug: string } => p.slug != null);
+  return promos.filter((p): p is typeof p & { slug: string } => (p as { slug?: string | null }).slug != null);
 }
 
 export async function generateMetadata() {

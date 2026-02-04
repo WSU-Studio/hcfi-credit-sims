@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : null;
     if (slugTrimmed) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed },
+        where: { slug: slugTrimmed } as unknown as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
         return NextResponse.json(
@@ -72,24 +73,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const promo = await prisma.promo.create({
-      data: {
-        title: title.trim(),
-        slug: slugTrimmed ?? undefined,
-        description: description === null || description === '' ? null : (description ?? undefined),
-        imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
-        content: content === null || content === '' ? null : (content ?? undefined),
-        layout: layout ?? undefined,
-        isActive: isActive !== undefined ? Boolean(isActive) : true,
-        isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,
-        order: order !== undefined ? Number(order) : 0,
-        startDate: startDate === null || startDate === '' ? null : (startDate ? new Date(startDate) : undefined),
-        endDate: endDate === null || endDate === '' ? null : (endDate ? new Date(endDate) : undefined),
-        bannerImageRatio: bannerImageRatio ?? undefined,
-        bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : undefined,
-        showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : undefined,
-      },
-    });
+    const createData = {
+      title: title.trim(),
+      slug: slugTrimmed ?? undefined,
+      description: description === null || description === '' ? null : (description ?? undefined),
+      imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
+      content: content === null || content === '' ? null : (content ?? undefined),
+      layout: layout ?? undefined,
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
+      isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,
+      order: order !== undefined ? Number(order) : 0,
+      startDate: startDate === null || startDate === '' ? null : (startDate ? new Date(startDate) : undefined),
+      endDate: endDate === null || endDate === '' ? null : (endDate ? new Date(endDate) : undefined),
+      bannerImageRatio: bannerImageRatio ?? undefined,
+      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : undefined,
+      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : undefined,
+    } as unknown as Prisma.PromoCreateInput;
+    const promo = await prisma.promo.create({ data: createData });
 
     return NextResponse.json({ promo });
   } catch (error: unknown) {
