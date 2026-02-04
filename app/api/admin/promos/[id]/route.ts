@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
@@ -88,24 +89,26 @@ export async function PUT(
       }
     }
 
+    const updateData = {
+      title: title.trim(),
+      slug: slugTrimmed ?? undefined,
+      description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existing.description,
+      imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existing.imageUrl,
+      content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existing.content,
+      layout: layout !== undefined ? layout : existing.layout,
+      isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
+      isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,
+      order: order !== undefined ? Number(order) : existing.order,
+      startDate: startDate !== undefined ? (startDate === null || startDate === '' ? null : new Date(startDate)) : existing.startDate,
+      endDate: endDate !== undefined ? (endDate === null || endDate === '' ? null : new Date(endDate)) : existing.endDate,
+      bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existing.bannerImageRatio,
+      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existing.bannerUseContainer,
+      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existing.showBannerImage,
+    } as Prisma.PromoUpdateInput;
+
     const promo = await prisma.promo.update({
       where: { id },
-      data: {
-        title: title.trim(),
-        slug: slugTrimmed ?? undefined,
-        description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existing.description,
-        imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existing.imageUrl,
-        content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existing.content,
-        layout: layout !== undefined ? layout : existing.layout,
-        isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
-        isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,
-        order: order !== undefined ? Number(order) : existing.order,
-        startDate: startDate !== undefined ? (startDate === null || startDate === '' ? null : new Date(startDate)) : existing.startDate,
-        endDate: endDate !== undefined ? (endDate === null || endDate === '' ? null : new Date(endDate)) : existing.endDate,
-        bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existing.bannerImageRatio,
-        bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existing.bannerUseContainer,
-        showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existing.showBannerImage,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ promo });
