@@ -32,7 +32,7 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
   const currentAlign = value.textAlign ?? 'left';
 
   return (
-    <>
+    <div className="flex gap-4 flex-wrap">
       <div>
         <label className="text-xs text-gray-500 block mb-1">Perataan teks</label>
         <div className="flex rounded-lg border border-gray-300 overflow-hidden w-fit">
@@ -54,25 +54,9 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
           ))}
         </div>
       </div>
+
       <div>
-        <label className="text-xs text-gray-500">Ketebalan teks (font weight)</label>
-        <select
-          value={value.textWeight ?? 'normal'}
-          onChange={(e) =>
-            onChange({
-              textWeight: e.target.value as 'light' | 'normal' | 'medium' | 'bold',
-            })
-          }
-          className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
-        >
-          <option value="light">Light (300)</option>
-          <option value="normal">Regular (400)</option>
-          <option value="medium">Medium (500)</option>
-          <option value="bold">Bold (700)</option>
-        </select>
-      </div>
-      <div>
-        <label className="text-xs text-gray-500">Ukuran teks</label>
+        <label className="text-xs text-gray-500 block mb-1">Ukuran teks</label>
         <select
           value={value.textSize ?? '16'}
           onChange={(e) =>
@@ -89,7 +73,7 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
                 | '64',
             })
           }
-          className="w-full mt-0.5 px-2 py-1.5 border border-gray-300 rounded"
+          className="w-full px-2 h-9 border border-gray-300 rounded"
         >
           <option value="12">12px</option>
           <option value="16">16px</option>
@@ -102,6 +86,25 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
           <option value="64">64px</option>
         </select>
       </div>
+
+      <div>
+        <label className="text-xs text-gray-500 block mb-1">Ketebalan teks (font weight)</label>
+        <select
+          value={value.textWeight ?? 'normal'}
+          onChange={(e) =>
+            onChange({
+              textWeight: e.target.value as 'light' | 'normal' | 'medium' | 'bold',
+            })
+          }
+          className="w-full px-2 h-9 border border-gray-300 rounded"
+        >
+          <option value="light">Light (300)</option>
+          <option value="normal">Regular (400)</option>
+          <option value="medium">Medium (500)</option>
+          <option value="bold">Bold (700)</option>
+        </select>
+      </div>
+      
       <div>
         <label className="text-xs text-gray-500 block mb-1">Warna teks</label>
         <div className="flex flex-wrap items-center gap-2">
@@ -142,6 +145,6 @@ export function TextSettingsFields({ value, onChange }: TextSettingsFieldsProps)
           </span>
         </div>
       </div>
-    </>
+    </div>
   );
 }
