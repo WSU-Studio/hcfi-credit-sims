@@ -36,11 +36,11 @@ export function PagesTable() {
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="px-3 py-3 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Pages</h2>
         <Link
           href="/admin/pages/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 h-10 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
         >
           <IconPlus size={20} />
           Add Page
@@ -50,22 +50,22 @@ export function PagesTable() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Title
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Slug
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Menu
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Order
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Last Updated
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -73,13 +73,13 @@ export function PagesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {pages.map((page) => (
               <tr key={page.id}>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <td className="px-3 py-2 text-sm font-medium text-gray-900">
                   {page.title}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-3 py-2 text-sm text-gray-500">
                   {page.slug}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {page.showInMenu ? (
                     <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                       Ya
@@ -88,33 +88,35 @@ export function PagesTable() {
                     <span className="text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {page.menuOrder}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {new Date(page.updatedAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Link
-                    href={`/admin/pages/${page.id}/edit`}
-                    className="h-5 w-5 flex items-center justify-center"
-                  >
-                    <IconEdit size={18} className="text-blue-500" title="Edit Page" />
-                  </Link>
-                  <button
-                    className="h-5 w-5 flex items-center justify-center cursor-pointer"
-                    onClick={() => {
-                      if (confirm('Are you sure you want to delete this page?')) {
-                        fetch(`/api/admin/pages/${page.id}`, {
-                          method: 'DELETE',
-                        }).then(() => {
-                          setPages((prev) => prev.filter((p) => p.id !== page.id));
-                        });
-                      }
-                    }}
-                  >
-                    <IconTrash size={18} className="text-red-500" title="Delete Page" />
-                  </button>
+                <td className="px-3 py-2 text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/pages/${page.id}/edit`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                    >
+                      <IconEdit size={18} className="text-blue-500" title="Edit Page" />
+                    </Link>
+                    <button
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this page?')) {
+                          fetch(`/api/admin/pages/${page.id}`, {
+                            method: 'DELETE',
+                          }).then(() => {
+                            setPages((prev) => prev.filter((p) => p.id !== page.id));
+                          });
+                        }
+                      }}
+                    >
+                      <IconTrash size={18} className="text-red-500" title="Delete Page" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

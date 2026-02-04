@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { CldImage } from 'next-cloudinary';
-import { IconCheck } from '@tabler/icons-react';
+import { IconCheck, IconFileMinus } from '@tabler/icons-react';
 
 type Media = {
   id: string;
@@ -45,20 +45,21 @@ export function MediaPicker({ onSelect, currentMediaId }: MediaPickerProps) {
   }
 
   return (
-    <div className="grid grid-cols-4 gap-4 max-h-96 overflow-y-auto p-4 border border-gray-200 rounded-lg">
+    <div>
       <div
-        className="relative border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
+        className="relative border-2 border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-red-500 transition-colors h-10 w-10"
         onClick={() => {
           setSelectedId(null);
           onSelect(null);
         }}
       >
-        {selectedId === null && (
+        {/* {selectedId === null && (
           <div className="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1">
             <IconCheck size={16} />
           </div>
-        )}
-        <span className="text-sm text-gray-500">None</span>
+        )} */}
+        <IconFileMinus size={20} />
+        {/* <span className="text-sm text-gray-500">None</span> */}
       </div>
       {media.map((item) => (
         <div

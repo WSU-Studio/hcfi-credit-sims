@@ -75,13 +75,13 @@ export function LeadsTable() {
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Leads</h2>
         <div className="flex items-center gap-3">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           >
             <option value="">All Status</option>
             {STATUS_OPTIONS.map((opt) => (
@@ -96,25 +96,25 @@ export function LeadsTable() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nama
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Kontak
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Produk
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Simulasi
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tanggal
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -122,7 +122,7 @@ export function LeadsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-3 py-4 text-center text-gray-500">
                   Tidak ada data leads
                 </td>
               </tr>
@@ -132,17 +132,17 @@ export function LeadsTable() {
                 const StatusIcon = statusOpt.icon;
                 return (
                   <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{lead.name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{lead.phone}</div>
                       <div className="text-xs text-gray-500">{lead.email}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2">
                       <div className="text-sm text-gray-900">{lead.productName || '-'}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 py-2">
                       {lead.otrPrice || lead.dpPercent || lead.tenor ? (
                         <div className="text-xs text-gray-600 space-y-0.5">
                           {lead.otrPrice && <div>OTR: {formatCurrency(lead.otrPrice)}</div>}
@@ -153,7 +153,7 @@ export function LeadsTable() {
                         <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusOpt.color}`}
                       >
@@ -161,17 +161,17 @@ export function LeadsTable() {
                         {statusOpt.label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(lead.createdAt)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm">
                       <select
                         value={lead.status}
                         onChange={(e) => updateStatus(lead.id, e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       >
                         {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
+                          <option key={opt.value} value={opt.value} className="text-gray-700">
                             {opt.label}
                           </option>
                         ))}

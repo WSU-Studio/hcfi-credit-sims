@@ -2,7 +2,7 @@
 
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { TextSettingsFields } from '@/app/components/admin/pages/TextSettingsFields';
-import type { PageLayout, LayoutRow, LayoutCell } from '@/app/types';
+import type { PageLayout, LayoutCell } from '@/app/types';
 import { createEmptyCell, createEmptyRow } from '@/lib/layout-builder-utils';
 
 type LayoutBuilderFieldsProps = {

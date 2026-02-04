@@ -114,106 +114,112 @@ export function ProductForm({ productId }: ProductFormProps) {
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-            placeholder="e.g., Smart Installment Program"
-          />
-        </div>
 
-        {/* Subtitle */}
-        <div>
-          <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
-            Subtitle
-          </label>
-          <input
-            type="text"
-            id="subtitle"
-            value={formData.subtitle || ''}
-            onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-            placeholder="e.g., Stargazer & Creta"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Subtitle yang akan ditampilkan di bawah title pada product card
-          </p>
-        </div>
-
-        {/* Image URL */}
-        <div>
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-            Image URL <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              id="imageUrl"
+              id="title"
               required
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-              placeholder="/images/product.jpg or Cloudinary URL"
-            />
-            <MediaPicker
-              onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+              placeholder="e.g., Smart Installment Program"
             />
           </div>
-          {formData.imageUrl && (
-            <div className="mt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={formData.imageUrl}
-                alt="Preview"
-                className="h-32 w-auto rounded border border-gray-300 object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+
+          {/* Subtitle */}
+          <div>
+            <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
+              Subtitle
+            </label>
+            <input
+              type="text"
+              id="subtitle"
+              value={formData.subtitle || ''}
+              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+              placeholder="e.g., Stargazer & Creta"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Subtitle yang akan ditampilkan di bawah title pada product card
+            </p>
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                id="imageUrl"
+                required
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="flex-1 px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+                placeholder="/images/product.jpg or Cloudinary URL"
+              />
+              <MediaPicker
+                onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
               />
             </div>
-          )}
+          </div>
+
+          {/* Order */}
+          <div>
+            <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-1">
+              Order
+            </label>
+            <input
+              type="number"
+              id="order"
+              min="0"
+              value={formData.order}
+              onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) || 0 })}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Urutan tampil (angka lebih kecil = tampil lebih dulu)
+            </p>
+          </div>
         </div>
 
-        {/* Order */}
-        <div>
-          <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-1">
-            Order
-          </label>
-          <input
-            type="number"
-            id="order"
-            min="0"
-            value={formData.order}
-            onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Urutan tampil (angka lebih kecil = tampil lebih dulu)
-          </p>
-        </div>
+        {formData.imageUrl && (
+          <div className="mt-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={formData.imageUrl}
+              alt="Preview"
+              className="h-32 max-h-80 w-auto rounded border border-gray-300 object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
       </div>
+
+      <hr className="my-4 border-gray-200" />
 
       {/* Actions */}
       <div className="mt-6 flex items-center justify-end gap-3">
         <Link
           href="/admin/products"
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          className="px-4 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
         </Link>
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 h-10 flex items-center justify-center bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           {saving ? 'Saving...' : productId ? 'Update Product' : 'Create Product'}
         </button>

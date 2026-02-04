@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { IconEdit, IconPlus } from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
+import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
 
 type Role = {
   id: string;
@@ -20,6 +21,7 @@ type Role = {
 };
 
 export function RolesTable() {
+  const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,10 +32,20 @@ export function RolesTable() {
         setRoles(data.roles || []);
         setLoading(false);
       })
-      .catch(() => {
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
+
+  const handleDelete = (id: string, name: string) => {
+    if (!confirm(`Hapus role "${name}"? User yang memakai role ini akan kehilangan akses.`)) return;
+    fetch(`/api/admin/roles/${id}`, { method: 'DELETE' })
+      .then((res) => {
+        if (res.ok) {
+          setRoles((prev) => prev.filter((r) => r.id !== id));
+          router.refresh();
+        } else return res.json().then((d) => Promise.reject(new Error(d.error)));
+      })
+      .catch((err) => alert(err instanceof Error ? err.message : 'Gagal menghapus'));
+  };
 
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
@@ -82,12 +94,23 @@ export function RolesTable() {
                   {role.rolePermissions.length} permission(s)
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
-                  <Link
-                    href={`/admin/roles/${role.id}/edit`}
-                    className="h-5 w-5 flex items-center justify-center"
-                  >
-                    <IconEdit size={18} className="text-blue-500" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/roles/${role.id}/edit`}
+                      className="inline-flex items-center justify-center h-8 w-8 hover:bg-blue-100/80 rounded-lg border border-blue-200/80"
+                      aria-label="Edit"
+                    >
+                      <IconEdit size={18} className="text-blue-500" />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(role.id, role.name)}
+                      className="inline-flex items-center justify-center h-8 w-8 hover:bg-red-100/80 rounded-lg border border-red-200/80"
+                      aria-label="Delete"
+                    >
+                      <IconTrash size={18} className="text-red-500" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

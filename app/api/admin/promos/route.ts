@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('PROMOS', 'create');
 
     const body = await request.json();
-    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate } = body;
+    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -85,6 +85,9 @@ export async function POST(request: NextRequest) {
         order: order !== undefined ? Number(order) : 0,
         startDate: startDate === null || startDate === '' ? null : (startDate ? new Date(startDate) : undefined),
         endDate: endDate === null || endDate === '' ? null : (endDate ? new Date(endDate) : undefined),
+        bannerImageRatio: bannerImageRatio ?? undefined,
+        bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : undefined,
+        showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : undefined,
       },
     });
 

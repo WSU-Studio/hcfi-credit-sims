@@ -2,6 +2,7 @@ import type { Article } from "@/app/types";
 import { Container } from "../ui/Container";
 import { ArticleCard } from "../ui/ArticleCard";
 import Link from "next/link";
+import { IconStack2Filled } from "@tabler/icons-react";
 
 type ArticleSectionProps = {
   articles: Article[];
@@ -19,9 +20,10 @@ export function ArticleSection({ articles }: ArticleSectionProps) {
             Artikel
           </h2>
 
-          <Link href="/articles" className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 text-slate-700">
-            <span className="text-sm font-semibold text-slate-700">
-              Lihat Semua Artikel
+          <Link href="/articles" className="inline-flex items-center justify-center py-2.5 transition-colors duration-300 text-slate-700">
+            <span className="text-sm text-slate-700 hover:text-slate-900 font-semibold flex items-center gap-2">
+              <IconStack2Filled size={16} />
+              <span>Lihat Semua Artikel</span>
             </span>
           </Link>
         </div>

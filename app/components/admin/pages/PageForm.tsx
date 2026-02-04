@@ -136,36 +136,40 @@ export function PageForm({ pageId }: PageFormProps) {
         </div>
       )}
 
-      <div className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Page title"
-          />
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              required
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
+              placeholder="Page title"
+            />
+          </div>
+          <div>
+            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+              Slug (URL)
+            </label>
+            <input
+              type="text"
+              id="slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-slate-100/80"
+              placeholder="url-friendly-slug"
+              readOnly
+            />
+            <p className="mt-1 text-xs text-gray-500">URL: /[slug] (e.g. /informasi, /privacy-policy)</p>
+          </div>
         </div>
-        <div>
-          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
-            Slug (URL)
-          </label>
-          <input
-            type="text"
-            id="slug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="url-friendly-slug"
-          />
-          <p className="mt-1 text-xs text-gray-500">URL: /[slug] (e.g. /informasi, /privacy-policy)</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-6">
+
+        {/* <div className="flex flex-wrap items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -185,13 +189,14 @@ export function PageForm({ pageId }: PageFormProps) {
               min={0}
               value={menuOrder}
               onChange={(e) => setMenuOrder(Number(e.target.value) || 0)}
-              className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+              className="w-20 px-3 h-10 border border-gray-300 rounded-lg text-sm"
             />
           </div>
-        </div>
+        </div> */}
+
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            Fallback content (optional)
+            Content (optional)
           </label>
           <textarea
             id="content"

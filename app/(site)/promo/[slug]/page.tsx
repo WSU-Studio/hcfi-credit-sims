@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
@@ -51,6 +52,29 @@ export default async function PromoDetailPage({
     typeof layout === 'object' &&
     Array.isArray(layout?.rows) &&
     layout.rows.length > 0;
+
+  const imageUrl = promo.imageUrl?.trim() || null;
+  const promoBanner = promo as { bannerImageRatio?: string; bannerUseContainer?: boolean; showBannerImage?: boolean };
+  const bannerImageRatio = promoBanner.bannerImageRatio ?? 'default';
+  const bannerUseContainer = promoBanner.bannerUseContainer ?? true;
+  const showBannerImage = promoBanner.showBannerImage !== false;
+
+  const BANNER_RATIO_CLASSES: Record<string, string> = {
+    default: '',
+    '1:1': 'aspect-square',
+    '4:3': 'aspect-[4/3]',
+    '16:9': 'aspect-video',
+    '3:1': 'aspect-[3/1]',
+    '4:1': 'aspect-[4/1]',
+    '5:1': 'aspect-[5/1]',
+  };
+  const bannerRatioClass = BANNER_RATIO_CLASSES[bannerImageRatio] ?? '';
+  const bannerWrapperClass = [
+    'relative w-full overflow-hidden bg-[var(--card)]',
+    bannerUseContainer ? 'rounded-xl border border-[var(--border)]' : '',
+    bannerRatioClass || 'aspect-video',
+  ].filter(Boolean).join(' ');
+  const bannerImageClass = 'object-cover';
 
   const promos = await getActivePromos();
 
@@ -133,8 +157,38 @@ export default async function PromoDetailPage({
 
   return (
     <section className="min-h-[40vh]">
+      {imageUrl && showBannerImage && !bannerUseContainer && (
+        <div className="w-full">
+          <div className={bannerWrapperClass}>
+            <Image
+              src={imageUrl}
+              alt={promo.title}
+              fill
+              className={bannerImageClass}
+              unoptimized
+              priority
+              sizes="100vw"
+            />
+          </div>
+        </div>
+      )}
       {hasLayout ? (
         <div className="space-y-8">
+          {imageUrl && showBannerImage && bannerUseContainer && (
+            <Container className="py-0">
+              <div className={bannerWrapperClass}>
+                <Image
+                  src={imageUrl}
+                  alt={promo.title}
+                  fill
+                  className={bannerImageClass}
+                  unoptimized
+                  priority
+                  sizes="(max-width: 768px) 100vw, 800px"
+                />
+              </div>
+            </Container>
+          )}
           {layout.rows.map((row) => {
             const marginClass = [
               row.marginTop === true ? 'mt-4' : '',
@@ -156,9 +210,22 @@ export default async function PromoDetailPage({
         </div>
       ) : (
         <Container>
+          {imageUrl && showBannerImage && bannerUseContainer && (
+            <div className={`mb-6 ${bannerWrapperClass}`}>
+              <Image
+                src={imageUrl}
+                alt={promo.title}
+                fill
+                className={bannerImageClass}
+                unoptimized
+                priority
+                sizes="(max-width: 768px) 100vw, 800px"
+              />
+            </div>
+          )}
           {promo.content ? (
             <SanitizedHtml
-              html={promo.content}
+              html={promo.content.replace(/\n/g, '<br>')}
               className="prose prose-sm max-w-none"
             />
           ) : (

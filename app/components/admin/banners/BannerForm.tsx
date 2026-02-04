@@ -189,39 +189,42 @@ export function BannerForm({ bannerId }: BannerFormProps) {
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="title"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., Dapatkan Benefit Kredit Mobil Baru Anda di"
-          />
-        </div>
+      <div className="space-y-4">
 
-        {/* Highlight */}
-        <div>
-          <label htmlFor="highlight" className="block text-sm font-medium text-gray-700 mb-1">
-            Highlight (Accent Text)
-          </label>
-          <input
-            type="text"
-            id="highlight"
-            value={formData.highlight || ''}
-            onChange={(e) => setFormData({ ...formData, highlight: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., Hyundai Finance"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Text yang akan ditampilkan dengan warna accent
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Dapatkan Benefit Kredit Mobil Baru Anda di"
+            />
+          </div>
+
+          {/* Highlight */}
+          <div>
+            <label htmlFor="highlight" className="block text-sm font-medium text-gray-700 mb-1">
+              Highlight (Accent Text)
+            </label>
+            <input
+              type="text"
+              id="highlight"
+              value={formData.highlight || ''}
+              onChange={(e) => setFormData({ ...formData, highlight: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Hyundai Finance"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Text yang akan ditampilkan dengan warna accent
+            </p>
+          </div>
         </div>
 
         {/* Description */}
@@ -239,25 +242,131 @@ export function BannerForm({ bannerId }: BannerFormProps) {
           />
         </div>
 
-        {/* Image URL */}
-        <div>
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-            Image URL <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              id="imageUrl"
-              required
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="/images/banner.jpg or Cloudinary URL"
-            />
-            <MediaPicker
-              onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            {/* Image URL */}
+            <div>
+              <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                Image URL <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  id="imageUrl"
+                  required
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="/images/banner.jpg or Cloudinary URL"
+                />
+                <MediaPicker
+                  onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
+                />
+              </div>
+            </div>
+
+            {/* CTA Label & URL */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="ctaLabel" className="block text-sm font-medium text-gray-700 mb-1">
+                  CTA Label
+                </label>
+                <input
+                  type="text"
+                  id="ctaLabel"
+                  value={formData.ctaLabel || ''}
+                  onChange={(e) => setFormData({ ...formData, ctaLabel: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Mulai Simulasi"
+                />
+              </div>
+              <div>
+                <label htmlFor="ctaUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                  CTA URL
+                </label>
+                <input
+                  type="text"
+                  id="ctaUrl"
+                  value={formData.ctaUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, ctaUrl: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://... (kosongkan jika tidak ada)"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Kosongkan atau isi dengan URL lengkap. Jika tidak ada, biarkan kosong.
+                </p>
+              </div>
+            </div>
+
+            {/* Order & Status */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-1">
+                  Order
+                </label>
+                <input
+                  type="number"
+                  id="order"
+                  min="0"
+                  value={formData.order}
+                  onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Urutan tampil (angka lebih kecil = tampil lebih dulu)
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isActive}
+                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Active</span>
+                </label>
+                <p className="mt-1 text-xs text-gray-500">
+                  Hanya banner aktif yang ditampilkan
+                </p>
+              </div>
+            </div>
+
+            {/* Schedule */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Date (Optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  id="startDate"
+                  value={formData.startDate || ''}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  End Date (Optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  id="endDate"
+                  value={formData.endDate || ''}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              Jika diisi, banner hanya akan ditampilkan dalam rentang waktu tersebut
+            </p>
           </div>
+
           {formData.imageUrl && (
             <div className="mt-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -272,108 +381,9 @@ export function BannerForm({ bannerId }: BannerFormProps) {
             </div>
           )}
         </div>
-
-        {/* CTA Label & URL */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="ctaLabel" className="block text-sm font-medium text-gray-700 mb-1">
-              CTA Label
-            </label>
-            <input
-              type="text"
-              id="ctaLabel"
-              value={formData.ctaLabel || ''}
-              onChange={(e) => setFormData({ ...formData, ctaLabel: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., Mulai Simulasi"
-            />
-          </div>
-          <div>
-            <label htmlFor="ctaUrl" className="block text-sm font-medium text-gray-700 mb-1">
-              CTA URL
-            </label>
-            <input
-              type="text"
-              id="ctaUrl"
-              value={formData.ctaUrl || ''}
-              onChange={(e) => setFormData({ ...formData, ctaUrl: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="https://... (kosongkan jika tidak ada)"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Kosongkan atau isi dengan URL lengkap. Jika tidak ada, biarkan kosong.
-            </p>
-          </div>
-        </div>
-
-        {/* Order & Status */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-1">
-              Order
-            </label>
-            <input
-              type="number"
-              id="order"
-              min="0"
-              value={formData.order}
-              onChange={(e) => setFormData({ ...formData, order: Number(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Urutan tampil (angka lebih kecil = tampil lebih dulu)
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Active</span>
-            </label>
-            <p className="mt-1 text-xs text-gray-500">
-              Hanya banner aktif yang ditampilkan
-            </p>
-          </div>
-        </div>
-
-        {/* Schedule */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date (Optional)
-            </label>
-            <input
-              type="datetime-local"
-              id="startDate"
-              value={formData.startDate || ''}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-              End Date (Optional)
-            </label>
-            <input
-              type="datetime-local"
-              id="endDate"
-              value={formData.endDate || ''}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-        <p className="text-xs text-gray-500">
-          Jika diisi, banner hanya akan ditampilkan dalam rentang waktu tersebut
-        </p>
       </div>
+
+      <hr className="my-4 border-gray-200" />
 
       {/* Actions */}
       <div className="mt-6 flex items-center justify-end gap-3">

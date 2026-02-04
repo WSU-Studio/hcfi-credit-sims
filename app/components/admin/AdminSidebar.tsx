@@ -36,41 +36,43 @@ export function AdminSidebar() {
 
   return (
     <aside className="w-64 bg-gray-900 text-white min-h-screen">
-      <div className="p-6 border-b border-gray-800">
-        <h1 className="text-xl font-bold">HCFI CMS</h1>
-        <p className="text-sm text-gray-400 mt-1">Content Management</p>
-      </div>
-      
-      <nav className="p-4 space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
-          
-          return (
-            <Link
-              key={item.code}
-              href={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-              }`}
-            >
-              <Icon size={20} />
-              <span className="text-sm font-medium">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="fixed flex flex-col h-full">
+        <div className="p-6 border-b border-gray-800">
+          <h1 className="text-xl font-bold">HCFI CMS</h1>
+          <p className="text-sm text-gray-400 mt-1">Content Management</p>
+        </div>
+        
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-176px)]">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
+            
+            return (
+              <Link
+                key={item.code}
+                href={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="text-sm font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-      <div className="absolute bottom-0 w-64 p-4 border-t border-gray-800">
-        <Link
-          href="/auth/logout"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
-        >
-          <IconLogout size={20} />
-          <span className="text-sm font-medium">Logout</span>
-        </Link>
+        <div className="absolute bottom-0 w-64 p-4 border-t border-gray-800 bg-gray-900">
+          <Link
+            href="/auth/logout"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            <IconLogout size={20} />
+            <span className="text-sm font-medium">Logout</span>
+          </Link>
+        </div>
       </div>
     </aside>
   );

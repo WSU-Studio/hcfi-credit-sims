@@ -84,7 +84,7 @@ export function BannersTable() {
             ) : (
               banners.map((banner) => (
                 <tr key={banner.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100 flex items-center justify-center">
                     {imageErrors.has(banner.id) ? (
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
@@ -127,13 +127,13 @@ export function BannersTable() {
                     )}
                   </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-2">
                     <div className="text-sm font-medium text-gray-900">{banner.title}</div>
                     {banner.highlight && (
                       <div className="text-sm text-gray-500">{banner.highlight}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         banner.isActive
@@ -144,19 +144,21 @@ export function BannersTable() {
                       {banner.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     {banner.order}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/admin/banners/${banner.id}/edit`}
-                        className="h-5 w-5 flex items-center justify-center"
+                        className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                        title="Edit Banner"
                       >
                         <IconEdit size={18} className="text-blue-500" />
                       </Link>
                       <button
-                        className="h-5 w-5 flex items-center justify-center cursor-pointer"
+                        className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
+                        title="Delete Banner"
                         onClick={() => {
                           if (confirm('Are you sure you want to delete this banner?')) {
                             fetch(`/api/admin/banners/${banner.id}`, {
@@ -167,7 +169,7 @@ export function BannersTable() {
                           }
                         }}
                       >
-                        <IconTrash size={18} className="text-red-500" />
+                        <IconTrash size={18} className="text-red-500" title="Delete Banner" />
                       </button>
                     </div>
                   </td>

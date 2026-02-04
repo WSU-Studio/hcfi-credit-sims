@@ -102,12 +102,14 @@ export function PromosTable() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/admin/promos/${promo.id}/edit`}
-                      className="h-5 w-5 flex items-center justify-center"
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Edit Promo"
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </Link>
                     <button
-                      className="h-5 w-5 flex items-center justify-center cursor-pointer"
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
+                      title="Delete Promo"
                       onClick={() => {
                         if (confirm('Are you sure you want to delete this promo?')) {
                           fetch(`/api/admin/promos/${promo.id}`, {
