@@ -17,17 +17,18 @@ export async function getActivePromos() {
       },
     ],
   } as Prisma.PromoWhereInput;
+  const select = {
+    id: true,
+    title: true,
+    slug: true,
+    description: true,
+    imageUrl: true,
+    isHighlight: true,
+  } as Prisma.PromoSelect;
   const promos = await prisma.promo.findMany({
     where,
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      description: true,
-      imageUrl: true,
-      isHighlight: true,
-    },
+    select,
   });
   return promos.filter((p): p is typeof p & { slug: string } => p.slug != null);
 }
