@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
@@ -498,12 +498,12 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <Link
+        <AdminLink
           href="/admin/articles"
           className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
-        </Link>
+        </AdminLink>
         {articleId ? (
           <>
             <button

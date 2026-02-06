@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 
 type Permission = {
   id: string;
@@ -175,12 +175,12 @@ export function RoleForm({ roleId }: RoleFormProps) {
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
-        <Link
+        <AdminLink
           href="/admin/roles"
           className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
-        </Link>
+        </AdminLink>
         <button
           type="submit"
           disabled={saving}

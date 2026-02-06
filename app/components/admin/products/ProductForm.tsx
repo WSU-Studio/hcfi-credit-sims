@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 
 type Product = {
@@ -210,12 +210,12 @@ export function ProductForm({ productId }: ProductFormProps) {
 
       {/* Actions */}
       <div className="mt-6 flex items-center justify-end gap-3">
-        <Link
+        <AdminLink
           href="/admin/products"
           className="px-4 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
-        </Link>
+        </AdminLink>
         <button
           type="submit"
           disabled={saving}

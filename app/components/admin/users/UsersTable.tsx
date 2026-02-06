@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 
 type User = {
@@ -56,13 +56,13 @@ export function UsersTable() {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Users</h2>
-        <Link
+        <AdminLink
           href="/admin/users/new"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <IconPlus size={20} />
           Add User
-        </Link>
+        </AdminLink>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -110,13 +110,13 @@ export function UsersTable() {
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                   <div className="flex items-center gap-2">
-                    <Link
+                    <AdminLink
                       href={`/admin/users/${user.id}/edit`}
                       className="h-8 w-8 flex items-center justify-center hover:bg-blue-100/80 rounded-lg border border-blue-200/80"
                       title="Edit User"
                     >
                       <IconEdit size={18} className="text-blue-500" />
-                    </Link>
+                    </AdminLink>
                     <button
                       type="button"
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-red-100/80 rounded-lg border border-red-200/80 disabled:opacity-50 disabled:cursor-not-allowed"
