@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   IconLayoutDashboard,
@@ -16,6 +16,8 @@ import {
   IconLogout,
   IconPhone,
 } from '@tabler/icons-react';
+import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 
 const menuItems = [
   { code: 'DASHBOARD', name: 'Dashboard', path: '/admin/dashboard', icon: IconLayoutDashboard },
@@ -33,6 +35,11 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { setNavigating } = useAdminNavigation();
+
+  useEffect(() => {
+    setNavigating(false);
+  }, [pathname, setNavigating]);
 
   return (
     <aside className="w-64 bg-gray-900 text-white min-h-screen">
@@ -48,7 +55,7 @@ export function AdminSidebar() {
             const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
             
             return (
-              <Link
+              <AdminLink
                 key={item.code}
                 href={item.path}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -59,19 +66,19 @@ export function AdminSidebar() {
               >
                 <Icon size={20} />
                 <span className="text-sm font-medium">{item.name}</span>
-              </Link>
+              </AdminLink>
             );
           })}
         </nav>
 
         <div className="absolute bottom-0 w-64 p-4 border-t border-gray-800 bg-gray-900">
-          <Link
+          <AdminLink
             href="/auth/logout"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
           >
             <IconLogout size={20} />
             <span className="text-sm font-medium">Logout</span>
-          </Link>
+          </AdminLink>
         </div>
       </div>
     </aside>
