@@ -62,6 +62,7 @@ export default async function StaticPageBySlug({
     typeof layout === 'object' &&
     Array.isArray(layout?.rows) &&
     layout.rows.length > 0;
+  const showBasicContent = (page as { showBasicContent?: boolean }).showBasicContent ?? true;
   // const slugs = await getAllSlugs();
   // const currentIndex = slugs.indexOf(pageSlug);
   // const nextSlug =
@@ -125,18 +126,25 @@ export default async function StaticPageBySlug({
     </div>
   );
 
+  const basicContentBlock = showBasicContent && (
+    <div className="py-8">
+      <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl text-gray-700 mb-4">
+        {page.title}
+      </h1>
+      {page.content && (
+        <SanitizedHtml
+          html={page.content.replace(/\n/g, '<br>')}
+          className="prose prose-sm max-w-none text-gray-700"
+        />
+      )}
+    </div>
+  );
+
   return (
     <section className="min-h-[40vh]">
-      {/* <Container>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
-            {page.title}
-          </h1>
-        </div>
-      </Container> */}
-
       {hasLayout ? (
         <div className="space-y-8">
+          {basicContentBlock}
           {layout.rows.map((row) => {
             const marginClass = [
               row.marginTop === true ? 'mt-4' : '',
@@ -156,12 +164,8 @@ export default async function StaticPageBySlug({
         </div>
       ) : (
         <Container>
-          {page.content ? (
-            <SanitizedHtml
-              html={page.content}
-              className="prose prose-sm max-w-none"
-            />
-          ) : (
+          {basicContentBlock}
+          {showBasicContent && !page.content && (
             <p className="text-white/70">Belum ada konten.</p>
           )}
           {bottomNav}
