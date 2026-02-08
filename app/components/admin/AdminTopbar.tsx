@@ -4,10 +4,12 @@ import { useRef, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { IconLock, IconLogout } from '@tabler/icons-react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
+import { ChangePasswordModal } from '@/app/components/admin/ChangePasswordModal';
 
 export function AdminTopbar() {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,14 +44,17 @@ export function AdminTopbar() {
           </button>
           {open && (
             <div className="absolute right-0 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg z-50">
-              <AdminLink
-                href="/admin/change-password"
-                className="flex items-center gap-2 px-4 h-10 text-sm text-gray-700 hover:bg-gray-50"
-                onClick={() => setOpen(false)}
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  setPasswordModalOpen(true);
+                }}
+                className="flex w-full items-center gap-2 px-4 h-10 text-sm text-gray-700 hover:bg-gray-50"
               >
                 <IconLock size={16} className="text-gray-700" />
                 <span className="text-sm font-medium text-gray-700">Change Password</span>
-              </AdminLink>
+              </button>
               <AdminLink
                 href="/auth/logout"
                 className="flex items-center gap-2 px-4 h-10 text-sm text-gray-700 hover:bg-gray-50"
@@ -62,6 +67,10 @@ export function AdminTopbar() {
           )}
         </div>
       </div>
+      <ChangePasswordModal
+        open={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
     </header>
   );
 }
