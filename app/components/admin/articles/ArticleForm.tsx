@@ -391,7 +391,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
         <div>
           <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">
-            Meta Description (SEO)
+            Meta Description
           </label>
           <textarea
             id="metaDescription"
