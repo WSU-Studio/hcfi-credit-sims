@@ -63,7 +63,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Users & Access */}
-      <section>
+      {/* <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
           Pengguna & Akses
         </h2>
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
             accent="default"
           />
         </div>
-      </section>
+      </section> */}
 
       {/* Content */}
       <section>

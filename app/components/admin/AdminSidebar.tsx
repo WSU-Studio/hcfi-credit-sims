@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   IconLayoutDashboard,
@@ -18,6 +18,7 @@ import {
 } from '@tabler/icons-react';
 import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
 import { AdminLink } from '@/app/components/admin/AdminLink';
+import { useUserPermissions } from '@/app/hooks/usePermission';
 
 const menuItems = [
   { code: 'DASHBOARD', name: 'Dashboard', path: '/admin/dashboard', icon: IconLayoutDashboard },
@@ -36,6 +37,12 @@ const menuItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const { setNavigating } = useAdminNavigation();
+  const { permissions, loading } = useUserPermissions();
+
+  const visibleItems = useMemo(() => {
+    if (loading || !permissions) return [];
+    return menuItems.filter((item) => permissions[item.code]?.canView === true);
+  }, [permissions, loading]);
 
   useEffect(() => {
     setNavigating(false);
@@ -50,7 +57,7 @@ export function AdminSidebar() {
         </div>
         
         <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-176px)]">
-          {menuItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
             
