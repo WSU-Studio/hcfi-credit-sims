@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import {
-  IconUsers,
-  IconShield,
+  // IconUsers,
+  // IconShield,
   IconPhoto,
   IconArticle,
   IconLayout,
@@ -23,8 +23,8 @@ export default async function DashboardPage() {
   }
 
   const [
-    totalUsers,
-    totalRoles,
+    // totalUsers,
+    // totalRoles,
     activeBanners,
     totalBanners,
     totalProducts,
@@ -36,8 +36,8 @@ export default async function DashboardPage() {
     totalLeads,
     recentLeads,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.role.count(),
+    // prisma.user.count(),
+    // prisma.role.count(),
     prisma.banner.count({ where: { isActive: true } }),
     prisma.banner.count(),
     prisma.product.count(),
