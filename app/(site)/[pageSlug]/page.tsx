@@ -127,14 +127,14 @@ export default async function StaticPageBySlug({
   );
 
   const basicContentBlock = showBasicContent && (
-    <div className="py-8">
-      <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl text-gray-700 mb-4">
+    <div className="pt-12">
+      <h1 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl text-gray-700 mb-6">
         {page.title}
       </h1>
       {page.content && (
         <SanitizedHtml
           html={page.content.replace(/\n/g, '<br>')}
-          className="prose prose-sm max-w-none text-gray-700"
+          className="prose prose-sm max-w-none text-gray-700 text-justify"
         />
       )}
     </div>
