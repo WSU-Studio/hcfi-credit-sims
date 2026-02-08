@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { validateLayout } from '@/lib/validate-layout';
 
 export async function GET() {
   try {
@@ -42,9 +44,25 @@ export async function POST(request: NextRequest) {
     await requirePermission('PRODUCTS', 'create');
 
     const body = await request.json();
-    const product = await prisma.product.create({
-      data: body,
-    });
+    const { title, subtitle, imageUrl, order, content, layout } = body;
+
+    if (!title || typeof title !== 'string') {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
+    }
+
+    const createData = {
+      title: String(title).trim(),
+      subtitle: subtitle === null || subtitle === '' ? null : String(subtitle).trim(),
+      imageUrl: imageUrl == null || imageUrl === '' ? '' : String(imageUrl),
+      order: Number(order) ?? 0,
+      content: content === null || content === '' ? null : String(content),
+      layout: layout ?? undefined,
+    } as unknown as Prisma.ProductCreateInput;
+    const product = await prisma.product.create({ data: createData });
 
     return NextResponse.json({ product });
   } catch (error: unknown) {
