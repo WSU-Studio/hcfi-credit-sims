@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 
 type Role = {
   id: string;
@@ -252,12 +252,12 @@ export function UserForm({ userId }: UserFormProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
+          <AdminLink
             href="/admin/users"
             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </Link>
+          </AdminLink>
           <button
             type="submit"
             disabled={saving}

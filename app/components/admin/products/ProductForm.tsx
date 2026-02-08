@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
+import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
+import type { PageLayout } from '@/app/types';
 
 type Product = {
   id: string;
   title: string;
   subtitle: string | null;
   imageUrl: string;
+  content: string | null;
+  layout: PageLayout | null;
   order: number;
 };
 
@@ -26,6 +30,8 @@ export function ProductForm({ productId }: ProductFormProps) {
     title: '',
     subtitle: '',
     imageUrl: '',
+    content: '',
+    layout: { rows: [] },
     order: 0,
   });
 
@@ -41,10 +47,17 @@ export function ProductForm({ productId }: ProductFormProps) {
         .then((data) => {
           if (data.product) {
             const product = data.product;
+            const layout = product.layout;
+            const parsedLayout: PageLayout =
+              layout && typeof layout === 'object' && 'rows' in layout && Array.isArray((layout as PageLayout).rows)
+                ? (layout as PageLayout)
+                : { rows: [] };
             setFormData({
               title: product.title || '',
               subtitle: product.subtitle || '',
               imageUrl: product.imageUrl || '',
+              content: (product as Product).content ?? '',
+              layout: parsedLayout,
               order: product.order ?? 0,
             });
           } else {
@@ -71,6 +84,8 @@ export function ProductForm({ productId }: ProductFormProps) {
         ...formData,
         order: Number(formData.order) || 0,
         subtitle: formData.subtitle || null,
+        content: formData.content || null,
+        layout: formData.layout ?? null,
       };
 
       const url = productId
@@ -206,16 +221,41 @@ export function ProductForm({ productId }: ProductFormProps) {
         )}
       </div>
 
+        <div className="mt-6">
+          <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+            Content (opsional)
+          </label>
+          <textarea
+            id="content"
+            rows={3}
+            value={formData.content ?? ''}
+            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+            placeholder="Plain HTML digunakan jika layout kosong"
+          />
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Layout (widget)</h3>
+          <LayoutBuilderSection
+            layout={formData.layout ?? { rows: [] }}
+            setLayout={(l) => {
+              const next = typeof l === 'function' ? l(formData.layout ?? { rows: [] }) : l;
+              setFormData((prev) => ({ ...prev, layout: next }));
+            }}
+          />
+        </div>
+
       <hr className="my-4 border-gray-200" />
 
       {/* Actions */}
       <div className="mt-6 flex items-center justify-end gap-3">
-        <Link
+        <AdminLink
           href="/admin/products"
           className="px-4 h-10 flex items-center justify-center border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Cancel
-        </Link>
+        </AdminLink>
         <button
           type="submit"
           disabled={saving}

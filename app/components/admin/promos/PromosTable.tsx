@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 
 type Promo = {
@@ -37,13 +37,13 @@ export function PromosTable() {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Promos</h2>
-        <Link
+        <AdminLink
           href="/admin/promos/new"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <IconPlus size={20} />
           Add Promo
-        </Link>
+        </AdminLink>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -100,13 +100,13 @@ export function PromosTable() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
-                    <Link
+                    <AdminLink
                       href={`/admin/promos/${promo.id}/edit`}
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
                       title="Edit Promo"
                     >
                       <IconEdit size={18} className="text-blue-500" />
-                    </Link>
+                    </AdminLink>
                     <button
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
                       title="Delete Promo"

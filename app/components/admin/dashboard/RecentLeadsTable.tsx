@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconCheck, IconX, IconClock, IconUserCheck } from '@tabler/icons-react';
 
 export type RecentLead = {
@@ -39,12 +39,12 @@ export function RecentLeadsTable({ leads }: RecentLeadsTableProps) {
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Leads Terbaru</h2>
-        <Link
+        <AdminLink
           href="/admin/leads"
           className="text-sm font-medium text-blue-600 hover:text-blue-800"
         >
           Lihat semua →
-        </Link>
+        </AdminLink>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">

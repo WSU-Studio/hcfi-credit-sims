@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 
 export type StatCardProps = {
   label: string;
@@ -44,9 +44,9 @@ export function StatCard({ label, value, href, sublabel, icon: Icon, accent = 'd
 
   if (href != null) {
     return (
-      <Link href={href} className={className}>
+      <AdminLink href={href} className={className}>
         {content}
-      </Link>
+      </AdminLink>
     );
   }
 

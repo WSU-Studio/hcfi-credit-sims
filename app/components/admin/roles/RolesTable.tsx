@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { AdminLink } from '@/app/components/admin/AdminLink';
 import { useRouter } from 'next/navigation';
 import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
 
@@ -55,13 +55,13 @@ export function RolesTable() {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Roles</h2>
-        <Link
+        <AdminLink
           href="/admin/roles/new"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <IconPlus size={20} />
           Add Role
-        </Link>
+        </AdminLink>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -95,13 +95,13 @@ export function RolesTable() {
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                   <div className="flex items-center gap-2">
-                    <Link
+                    <AdminLink
                       href={`/admin/roles/${role.id}/edit`}
                       className="inline-flex items-center justify-center h-8 w-8 hover:bg-blue-100/80 rounded-lg border border-blue-200/80"
                       aria-label="Edit"
                     >
                       <IconEdit size={18} className="text-blue-500" />
-                    </Link>
+                    </AdminLink>
                     <button
                       type="button"
                       onClick={() => handleDelete(role.id, role.name)}

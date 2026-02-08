@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import {
-  IconUsers,
-  IconShield,
+  // IconUsers,
+  // IconShield,
   IconPhoto,
   IconArticle,
   IconLayout,
@@ -23,8 +23,8 @@ export default async function DashboardPage() {
   }
 
   const [
-    totalUsers,
-    totalRoles,
+    // totalUsers,
+    // totalRoles,
     activeBanners,
     totalBanners,
     totalProducts,
@@ -36,8 +36,8 @@ export default async function DashboardPage() {
     totalLeads,
     recentLeads,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.role.count(),
+    // prisma.user.count(),
+    // prisma.role.count(),
     prisma.banner.count({ where: { isActive: true } }),
     prisma.banner.count(),
     prisma.product.count(),
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Users & Access */}
-      <section>
+      {/* <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
           Pengguna & Akses
         </h2>
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
             accent="default"
           />
         </div>
-      </section>
+      </section> */}
 
       {/* Content */}
       <section>
