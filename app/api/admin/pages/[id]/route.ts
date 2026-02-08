@@ -53,7 +53,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, slug, content, layout, showInMenu, menuOrder } = body;
+    const { title, slug, content, layout, showInMenu, menuOrder, showBasicContent } = body;
 
     if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
       return NextResponse.json(
@@ -82,6 +82,7 @@ export async function PUT(
       layout?: unknown;
       showInMenu?: boolean;
       menuOrder?: number;
+      showBasicContent?: boolean;
     };
     if (slug !== existingFields.slug) {
       const slugTaken = await prisma.staticPage.findUnique({
@@ -102,6 +103,7 @@ export async function PUT(
       layout: layout ?? existingFields.layout,
       showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
       menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,
+      showBasicContent: showBasicContent !== undefined ? Boolean(showBasicContent) : existingFields.showBasicContent ?? true,
     } as unknown as Prisma.StaticPageUpdateInput;
     const page = await prisma.staticPage.update({ where: { id }, data: updateData });
 
