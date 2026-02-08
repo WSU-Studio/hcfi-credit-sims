@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('PAGES', 'create');
 
     const body = await request.json();
-    const { title, slug, content, layout, showInMenu, menuOrder } = body;
+    const { title, slug, content, layout, showInMenu, menuOrder, showBasicContent } = body;
     if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
       return NextResponse.json(
         { error: 'Title and slug are required' },
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       layout: layout ?? undefined,
       showInMenu: Boolean(showInMenu ?? false),
       menuOrder: Number(menuOrder ?? 0),
+      showBasicContent: showBasicContent !== undefined ? Boolean(showBasicContent) : true,
     } as unknown as Prisma.StaticPageCreateInput;
     const page = await prisma.staticPage.create({ data: createData });
 

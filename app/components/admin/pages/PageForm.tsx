@@ -14,6 +14,7 @@ type StaticPage = {
   layout: PageLayout | null;
   showInMenu: boolean;
   menuOrder: number;
+  showBasicContent: boolean;
 };
 
 type PageFormProps = {
@@ -30,6 +31,7 @@ export function PageForm({ pageId }: PageFormProps) {
   const [content, setContent] = useState('');
   const [showInMenu, setShowInMenu] = useState(false);
   const [menuOrder, setMenuOrder] = useState(0);
+  const [showBasicContent, setShowBasicContent] = useState(true);
   const [layout, setLayout] = useState<PageLayout>({ rows: [] });
   const returnAfterSaveRef = useRef(false);
 
@@ -48,6 +50,7 @@ export function PageForm({ pageId }: PageFormProps) {
             setContent(p.content ?? '');
             setShowInMenu(p.showInMenu ?? false);
             setMenuOrder(p.menuOrder ?? 0);
+            setShowBasicContent(p.showBasicContent ?? true);
             const l = p.layout;
             if (l && typeof l === 'object' && 'rows' in l && Array.isArray((l as PageLayout).rows)) {
               setLayout(l as PageLayout);
@@ -89,6 +92,7 @@ export function PageForm({ pageId }: PageFormProps) {
         content: content.trim() || null,
         showInMenu,
         menuOrder: Number(menuOrder) || 0,
+        showBasicContent,
         layout,
       };
       const url = pageId ? `/api/admin/pages/${pageId}` : '/api/admin/pages';
@@ -193,6 +197,16 @@ export function PageForm({ pageId }: PageFormProps) {
             />
           </div>
         </div> */}
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showBasicContent}
+            onChange={(e) => setShowBasicContent(e.target.checked)}
+            className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+          />
+          <span className="text-sm font-medium text-gray-700">Show Basic Content (title dan content optional)</span>
+        </label>
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
