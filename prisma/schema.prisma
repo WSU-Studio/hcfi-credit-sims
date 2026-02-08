@@ -195,15 +195,16 @@ model Article {
 }
 
 model StaticPage {
-  id         String   @id @default(uuid())
-  title      String
-  slug       String   @unique
-  content    String?  @db.Text
-  layout     Json?
-  showInMenu Boolean  @default(false)
-  menuOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String   @id @default(uuid())
+  title            String
+  slug             String   @unique
+  content          String?  @db.Text
+  layout           Json?
+  showInMenu       Boolean  @default(false)
+  menuOrder        Int      @default(0)
+  showBasicContent Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("static_pages")
 }
