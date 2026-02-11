@@ -12,6 +12,7 @@ type Product = {
   subtitle: string | null;
   imageUrl: string;
   order: number;
+  isFeatured: boolean;
 };
 
 export function ProductsTable() {
@@ -60,6 +61,9 @@ export function ProductsTable() {
                 Subtitle
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Featured
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Order
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -96,6 +100,9 @@ export function ProductsTable() {
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-500">
                   {product.subtitle || '-'}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                  {product.isFeatured ? 'Yes' : 'No'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                   {product.order}
