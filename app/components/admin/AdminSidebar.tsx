@@ -32,6 +32,7 @@ const menuItems = [
   { code: 'LEADS', name: 'Leads', path: '/admin/leads', icon: IconPhone },
   { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', icon: IconSettings },
   { code: 'MEDIA', name: 'Media Library', path: '/admin/media', icon: IconFolder },
+  { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', icon: IconSettings },
 ];
 
 export function AdminSidebar() {
