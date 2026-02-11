@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
-
-const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
+import {
+  mockApi,
+  isMockModeEnabled,
+  simulateDelay,
+  shouldNotUseMockFallback,
+  PRODUCTION_DATA_ERROR_MESSAGE,
+} from '@/lib/mock-api';
+import {
+  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
+  getHyundaiRequestHeaders,
+  clearHyundaiTokenCache,
+} from '@/lib/hyundai-api-client';
 
 /**
  * SimulateFinancialCalculate / CalculateProductFromRule
@@ -42,9 +51,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      const headers = await getHyundaiRequestHeaders();
+      if (!headers['AdInsKey']) {
+        return NextResponse.json(
+          { error: PRODUCTION_DATA_ERROR_MESSAGE },
+          { status: 503 }
+        );
+      }
       const res = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/SimulateFinancialCalculate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           LeadNo: body.LeadNo || 'MOCK-LEAD-001',
           DpPrcnt: Number(dpPrcnt),
@@ -56,11 +72,39 @@ export async function POST(request: NextRequest) {
           Tenor: body.Tenor || 36,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.Message || 'Simulate failed');
+      const resText = await res.text();
+      let data: { Message?: string } = {};
+      try {
+        data = resText ? JSON.parse(resText) : {};
+      } catch {
+        if (!res.ok || shouldNotUseMockFallback()) {
+          if (res.status === 401) clearHyundaiTokenCache();
+          return NextResponse.json(
+            { error: PRODUCTION_DATA_ERROR_MESSAGE },
+            { status: 503 }
+          );
+        }
+        throw new Error('Response bukan JSON');
+      }
+      if (!res.ok) {
+        if (res.status === 401) clearHyundaiTokenCache();
+        if (shouldNotUseMockFallback()) {
+          return NextResponse.json(
+            { error: PRODUCTION_DATA_ERROR_MESSAGE },
+            { status: 503 }
+          );
+        }
+        throw new Error(data.Message || 'Simulate failed');
+      }
       return NextResponse.json({ ...data, dataSource: 'hyundai' });
     } catch (e) {
       console.warn('SimulateFinancialCalculate failed, using mock:', e);
+      if (shouldNotUseMockFallback()) {
+        return NextResponse.json(
+          { error: PRODUCTION_DATA_ERROR_MESSAGE },
+          { status: 503 }
+        );
+      }
       await simulateDelay(400);
       const res = mockApi.calculateProductFromRule({
         otrPrice: Number(otrPrice),
@@ -73,6 +117,12 @@ export async function POST(request: NextRequest) {
     }
   } catch (err: unknown) {
     console.error('Simulate error:', err);
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       {
         error: 'Internal server error',

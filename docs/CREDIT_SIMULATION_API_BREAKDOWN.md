@@ -9,6 +9,40 @@ Dokumentasi breakdown API untuk Credit Simulation berdasarkan Postman Collection
 
 ---
 
+## Authentication (Login)
+
+Sebelum memanggil API Lead Asset / Simulasi, gateway Hyundai memerlukan **token** dari Login.
+
+**Endpoint:** `POST {{base_url}}/v3/Auth/Login`
+
+**Request body:**
+```json
+{
+  "username": "VENDORLOSMOBILE",
+  "password": "<password dari tim Hyundai>",
+  "IsRememberMe": true
+}
+```
+
+**Response:** Berisi field **`Token`** (string). Bisa juga berisi **masa berlaku** token (mis. `ExpiresIn` dalam detik). Aplikasi memakai token di header **`AdInsKey`** dan akan **Login ulang otomatis** sebelum token kadaluarsa jika masa berlaku ada di response; jika tidak, default ~55 menit.
+
+**Environment variables (di `.env`):**
+
+| Variable | Wajib untuk API real | Keterangan |
+|----------|------------------------|------------|
+| `CREDIT_SIMULATION_API_URL` | Ya | Base URL (default: qaapigwconfins.hyundaicapital.co.id/api/mobileloan) |
+| `CREDIT_SIMULATION_USERNAME` | **Disarankan** | Username untuk Login (contoh: VENDORLOSMOBILE). Jika di-set bersama PASSWORD, token **selalu di-update via API** (tidak pakai token statis yang bisa expired). |
+| `CREDIT_SIMULATION_PASSWORD` | **Disarankan** | Password untuk Login. |
+| `CREDIT_SIMULATION_TOKEN` | Opsional | Token statis (bisa kadaluarsa). Hanya dipakai jika USERNAME/PASSWORD tidak di-set. |
+| `USE_MOCK_API` | - | `false` = pakai API Hyundai; `true` = pakai mock |
+| `CREDIT_SIMULATION_USER_AGENT` | Opsional | Override User-Agent ke gateway |
+
+**Token di-update terus dari API:** Jika `CREDIT_SIMULATION_USERNAME` dan `CREDIT_SIMULATION_PASSWORD` di-set, aplikasi akan memanggil Login dan meng-cache token. Sebelum cache kadaluarsa, Login dipanggil lagi sehingga token selalu valid. Jika response Login berisi field masa berlaku (mis. `ExpiresIn` dalam detik), aplikasi memakainya; jika tidak, default ~55 menit. Saat dapat **401** dari API, cache token dibersihkan sehingga request berikutnya akan Login ulang.
+
+**Cara tahu masa berlaku token:** (1) Cek response body Login di Postman—cari field seperti `ExpiresIn`, `TokenExpiresIn`, `expires_in` (nilai dalam detik). (2) Tanyakan ke tim Hyundai nama field dan satuan (detik/menit). Aplikasi sudah mendukung parsing `ExpiresIn`, `TokenExpiresIn`, `expires_in`, `ExpirySeconds` di root atau di `ReturnObject`. Di development, log di console akan menampilkan apakah masa berlaku terbaca dari API atau memakai default.
+
+---
+
 ## FASE 1: LEAD ASSET (Pemilihan Kendaraan)
 
 ### 1. Get List Vendor by Asset Code

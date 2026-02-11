@@ -521,11 +521,30 @@ export const mockApi = {
 };
 
 /**
+ * Production: never use mock; always use Hyundai API.
+ */
+export function isProduction(): boolean {
+  return process.env.NODE_ENV === 'production';
+}
+
+/**
+ * Jangan fallback ke mock: production ATAU USE_MOCK_API=false.
+ * Dipakai agar saat USE_MOCK_API=false (termasuk npm run dev) tetap tampil error, bukan mock.
+ */
+export function shouldNotUseMockFallback(): boolean {
+  return process.env.NODE_ENV === 'production' || process.env.USE_MOCK_API === 'false';
+}
+
+/** Pesan error untuk user ketika akses data gagal dan tidak fallback mock. */
+export const PRODUCTION_DATA_ERROR_MESSAGE =
+  'Saat ini terjadi kendala dalam akses data.';
+
+/**
  * Check if mock mode is enabled.
- * USE_MOCK_API explicitly 'true' → mock; 'false' → real API.
- * When not set, default to mock in development only.
+ * Production: never mock. Otherwise USE_MOCK_API 'true' → mock, 'false' → real, unset → mock in dev only.
  */
 export function isMockModeEnabled(): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
   if (process.env.USE_MOCK_API === 'true') return true;
   if (process.env.USE_MOCK_API === 'false') return false;
   return process.env.NODE_ENV === 'development';

@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
-
-const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
+import {
+  mockApi,
+  isMockModeEnabled,
+  simulateDelay,
+  shouldNotUseMockFallback,
+  PRODUCTION_DATA_ERROR_MESSAGE,
+} from '@/lib/mock-api';
+import {
+  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
+  getHyundaiRequestHeaders,
+  clearHyundaiTokenCache,
+} from '@/lib/hyundai-api-client';
 
 // Get List Asset Variant (Trim) By Model and Manufacturing Year
 export async function POST(request: NextRequest) {
@@ -20,11 +29,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    const headers = await getHyundaiRequestHeaders();
+    if (!headers['AdInsKey']) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
+
     const response = await fetch(`${API_BASE_URL}/Foundation/v2/AssetMasterForMobileX/GetListAssetVariantByModelManufYear`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         ModelCode: body.ModelCode,
         DealerCode: body.DealerCode,
@@ -32,27 +47,53 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    let data: { Message?: string } = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      if (!response.ok || shouldNotUseMockFallback()) {
+        if (response.status === 401) clearHyundaiTokenCache();
+        return NextResponse.json(
+          { error: PRODUCTION_DATA_ERROR_MESSAGE },
+          { status: 503 }
+        );
+      }
+      throw new Error('Response bukan JSON');
+    }
 
     if (!response.ok) {
+      if (response.status === 401) clearHyundaiTokenCache();
+      if (shouldNotUseMockFallback()) {
+        return NextResponse.json(
+          { error: PRODUCTION_DATA_ERROR_MESSAGE },
+          { status: 503 }
+        );
+      }
+      const message =
+        response.status === 401
+          ? '401: Unauthorized API Call.'
+          : data.Message || 'Failed to fetch variants';
       return NextResponse.json(
-        { error: data.Message || 'Failed to fetch variants' },
+        { error: message },
         { status: response.status }
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data as Record<string, unknown>);
   } catch (error: unknown) {
     console.error('Error fetching variants:', error);
-    console.log('Falling back to mock API...');
-    
-    // Fallback to mock API on error
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     try {
-      const body = await request.json();
       const mockResponse = mockApi.getAssetVariants({
-        ModelCode: body.ModelCode,
-        DealerCode: body.DealerCode,
-        ManufYear: body.ManufYear,
+        ModelCode: '',
+        DealerCode: '',
+        ManufYear: new Date().getFullYear(),
       });
       return NextResponse.json(mockResponse);
     } catch (mockError) {

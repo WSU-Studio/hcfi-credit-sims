@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
-
-const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
+import {
+  mockApi,
+  isMockModeEnabled,
+  simulateDelay,
+  shouldNotUseMockFallback,
+  PRODUCTION_DATA_ERROR_MESSAGE,
+} from '@/lib/mock-api';
+import {
+  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
+  getHyundaiRequestHeaders,
+  clearHyundaiTokenCache,
+} from '@/lib/hyundai-api-client';
 
 // Get List Product From Rule By LeadNo (With Calculation)
 // Note: This requires a LeadNo which should be created first
@@ -26,33 +35,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
     }
 
-    // Try real API first
+    // Try real API first (perlu token dari Auth dulu)
     if (body.LeadNo) {
       try {
+        const headers = await getHyundaiRequestHeaders();
+        if (!headers['AdInsKey']) {
+          return NextResponse.json(
+            { error: PRODUCTION_DATA_ERROR_MESSAGE },
+            { status: 503 }
+          );
+        }
         const response = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/GetListProductFromRuleByLeadNo`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({
             LeadNo: body.LeadNo,
           }),
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        let data: { Message?: string } = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          if (!response.ok || shouldNotUseMockFallback()) {
+            if (response.status === 401) clearHyundaiTokenCache();
+            return NextResponse.json(
+              { error: PRODUCTION_DATA_ERROR_MESSAGE },
+              { status: 503 }
+            );
+          }
+          throw new Error('Response bukan JSON');
+        }
 
         if (!response.ok) {
+          if (response.status === 401) clearHyundaiTokenCache();
+          if (shouldNotUseMockFallback()) {
+            return NextResponse.json(
+              { error: PRODUCTION_DATA_ERROR_MESSAGE },
+              { status: 503 }
+            );
+          }
           throw new Error(data.Message || 'Failed to calculate products');
         }
 
         return NextResponse.json({ ...data, dataSource: 'hyundai' });
       } catch (apiError: unknown) {
         console.error('Real API error, falling back to mock:', apiError);
+        if (shouldNotUseMockFallback()) {
+          return NextResponse.json(
+            { error: PRODUCTION_DATA_ERROR_MESSAGE },
+            { status: 503 }
+          );
+        }
         // Fall through to mock API
       }
     }
 
-    // Fallback to mock API
+    // Fallback to mock API (dev only)
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     await simulateDelay(400);
     const mockResponse = mockApi.getListDefaultProducts({
       LeadNo: body.LeadNo || 'MOCK-LEAD-001',
@@ -61,7 +107,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
   } catch (error: unknown) {
     console.error('Error calculating products:', error);
-    // Last resort: try mock API (body already consumed; use empty)
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     try {
       const mockResponse = mockApi.getListDefaultProducts({
         LeadNo: 'MOCK-LEAD-001',
