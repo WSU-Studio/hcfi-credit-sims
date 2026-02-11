@@ -94,6 +94,7 @@ async function getBenefits() {
 async function getProducts() {
   try {
     const products = await prisma.product.findMany({
+      where: { isFeatured: true },
       orderBy: {
         order: 'asc',
       },

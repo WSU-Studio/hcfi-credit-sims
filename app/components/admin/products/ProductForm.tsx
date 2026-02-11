@@ -15,6 +15,7 @@ type Product = {
   content: string | null;
   layout: PageLayout | null;
   order: number;
+  isFeatured: boolean;
 };
 
 type ProductFormProps = {
@@ -33,6 +34,7 @@ export function ProductForm({ productId }: ProductFormProps) {
     content: '',
     layout: { rows: [] },
     order: 0,
+    isFeatured: false,
   });
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export function ProductForm({ productId }: ProductFormProps) {
               content: (product as Product).content ?? '',
               layout: parsedLayout,
               order: product.order ?? 0,
+              isFeatured: (product as Product).isFeatured ?? false,
             });
           } else {
             setError('Product not found');
@@ -86,6 +89,7 @@ export function ProductForm({ productId }: ProductFormProps) {
         subtitle: formData.subtitle || null,
         content: formData.content || null,
         layout: formData.layout ?? null,
+        isFeatured: formData.isFeatured ?? false,
       };
 
       const url = productId
@@ -204,6 +208,23 @@ export function ProductForm({ productId }: ProductFormProps) {
               Urutan tampil (angka lebih kecil = tampil lebih dulu)
             </p>
           </div>
+
+          {/* Featured on home */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              checked={formData.isFeatured ?? false}
+              onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+              className="w-4 h-4 text-[#002c5f] border-gray-300 rounded focus:ring-[#002c5f]"
+            />
+            <label htmlFor="isFeatured" className="text-sm font-medium text-gray-700 cursor-pointer">
+              Tampilkan di halaman beranda (home)
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 -mt-2">
+            Jika dicentang, produk ini akan muncul di section produk pada halaman beranda. Semua produk tetap tampil di halaman &quot;Semua Produk&quot;.
+          </p>
         </div>
 
         {formData.imageUrl && (
