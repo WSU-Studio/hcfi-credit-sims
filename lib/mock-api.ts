@@ -521,10 +521,14 @@ export const mockApi = {
 };
 
 /**
- * Check if mock mode is enabled
+ * Check if mock mode is enabled.
+ * USE_MOCK_API explicitly 'true' → mock; 'false' → real API.
+ * When not set, default to mock in development only.
  */
 export function isMockModeEnabled(): boolean {
-  return process.env.USE_MOCK_API === 'true' || process.env.NODE_ENV === 'development';
+  if (process.env.USE_MOCK_API === 'true') return true;
+  if (process.env.USE_MOCK_API === 'false') return false;
+  return process.env.NODE_ENV === 'development';
 }
 
 /**
