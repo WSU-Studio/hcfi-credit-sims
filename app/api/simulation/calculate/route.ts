@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         LeadNo: body.LeadNo || 'MOCK-LEAD-001',
         otrPrice: body.otrPrice,
       });
-      return NextResponse.json(mockResponse);
+      return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
     }
 
     // Try real API first
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
           throw new Error(data.Message || 'Failed to calculate products');
         }
 
-        return NextResponse.json(data);
+        return NextResponse.json({ ...data, dataSource: 'hyundai' });
       } catch (apiError: unknown) {
         console.error('Real API error, falling back to mock:', apiError);
         // Fall through to mock API
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       LeadNo: body.LeadNo || 'MOCK-LEAD-001',
       otrPrice: body.otrPrice,
     });
-    return NextResponse.json(mockResponse);
+    return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
   } catch (error: unknown) {
     console.error('Error calculating products:', error);
     // Last resort: try mock API (body already consumed; use empty)
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         LeadNo: 'MOCK-LEAD-001',
         otrPrice: 500000000,
       });
-      return NextResponse.json(mockResponse);
+      return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
     } catch {
       return NextResponse.json(
         { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },

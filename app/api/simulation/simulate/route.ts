@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         productName: String(productName),
         firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
       });
-      return NextResponse.json(res);
+      return NextResponse.json({ ...res, dataSource: 'mock' });
     }
 
     try {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.Message || 'Simulate failed');
-      return NextResponse.json(data);
+      return NextResponse.json({ ...data, dataSource: 'hyundai' });
     } catch (e) {
       console.warn('SimulateFinancialCalculate failed, using mock:', e);
       await simulateDelay(400);
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         productName: String(productName),
         firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
       });
-      return NextResponse.json(res);
+      return NextResponse.json({ ...res, dataSource: 'mock' });
     }
   } catch (err: unknown) {
     console.error('Simulate error:', err);
