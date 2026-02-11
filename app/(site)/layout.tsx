@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
 import { WhatsappFAB } from "../components/layout/WhatsappFAB";
+import { AnalyticsScripts } from "../components/layout/AnalyticsScripts";
 import { CompanyInfo, NavItem } from "../types";
 import { IconBrandWhatsapp, IconBrandInstagram, IconPhone, IconMail } from "@tabler/icons-react";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/site-settings";
 
 async function getStaticPages() {
   try {
@@ -199,17 +201,26 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }>) {
   const pages = await getStaticPages();
+  const [companyInfo, siteSettings] = await Promise.all([
+    getFooterData(pages),
+    getSiteSettings(),
+  ]);
   const navItems = buildNavItems(pages);
-  const companyInfo = await getFooterData(pages);
+  const fabPhone = siteSettings.whatsappFabPhone.trim() || undefined;
+  const fabMessage = siteSettings.whatsappFabMessage.trim() || undefined;
 
   return (
     <>
+      <AnalyticsScripts
+        gtmId={siteSettings.gtmId}
+        gaMeasurementId={siteSettings.gaMeasurementId}
+      />
       <Header items={navItems} />
       <main className="pt-14 pb-16">
         {children}
       </main>
 
-      <WhatsappFAB />
+      <WhatsappFAB phone={fabPhone} message={fabMessage} />
 
       <div id="footer">
         <Footer company={companyInfo} />

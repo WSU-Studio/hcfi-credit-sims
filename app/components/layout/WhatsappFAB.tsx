@@ -2,12 +2,13 @@ import { IconBrandWhatsapp } from "@tabler/icons-react";
 import Link from "next/link";
 
 type WhatsappFABProps = {
-  /** Nomor WhatsApp (format internasional tanpa +, contoh: 628111500708) */
+  /** Nomor WhatsApp dari Site Settings (format 62xxx atau 08xxx). Kosong = pakai fallback. */
   phone?: string;
-  /** Teks prefill opsional untuk chat */
+  /** Pesan awal dari Site Settings (prefill chat). */
   message?: string;
 };
 
+/** Fallback bila nomor tidak diatur di Admin → Site Settings. */
 const DEFAULT_PHONE = "628111500708";
 
 export function WhatsappFAB({ phone = DEFAULT_PHONE, message }: WhatsappFABProps) {
