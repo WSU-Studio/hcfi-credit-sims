@@ -20,7 +20,7 @@ export function ProductSection({ title, products }: ProductSectionProps) {
 
         <div className="grid gap-4 md:grid-cols-3">
           {products.map((product) => (
-            <ProductCard key={product.title} {...product} />
+            <ProductCard key={product.id ?? product.title} {...product} />
           ))}
         </div>
       </Container>

@@ -100,6 +100,7 @@ async function getProducts() {
     });
 
     return products.map((product) => ({
+      id: product.id,
       title: product.title,
       subtitle: product.subtitle || undefined,
       image: product.imageUrl,
@@ -108,16 +109,19 @@ async function getProducts() {
     console.error('Error fetching products:', error);
     return [
       {
+        id: undefined,
         title: "Smart Installment Program",
         subtitle: "Stargazer & Creta",
         image: "/images/product-01.jpg",
       },
       {
+        id: undefined,
         title: "Kredit 50:50",
         subtitle: "Bebas Angsuran 1 Tahun",
         image: "/images/product-02.jpg",
       },
       {
+        id: undefined,
         title: "Balloon Payment",
         subtitle: "Lebih Leluasa & Ringan",
         image: "/images/product-03.jpg",
