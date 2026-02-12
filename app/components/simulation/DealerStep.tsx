@@ -66,28 +66,40 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
       )}
 
       <div className="space-y-4">
-        {/* City Filter */}
-        {cities.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Filter by Kota
-            </label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent"
-            >
-              <option value="">Semua Kota</option>
-              {cities.map(city => (
+        {/* City Filter - always show select; disabled with loading message while fetching */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            Pilih Kota <span className="text-gray-400 font-normal">(opsional)</span>
+          </label>
+          <select
+            value={selectedCity}
+            onChange={(e) => setSelectedCity(e.target.value)}
+            disabled={loading}
+            aria-busy={loading}
+            aria-describedby={loading ? 'loading-dealer-desc' : undefined}
+            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+          >
+            <option value="">
+              {loading ? 'Memuat data dealer...' : 'Semua Kota'}
+            </option>
+            {!loading &&
+              cities.map(city => (
                 <option key={city} value={city}>{city}</option>
               ))}
-            </select>
-          </div>
-        )}
+          </select>
+          {loading && (
+            <p id="loading-dealer-desc" className="mt-1.5 text-sm text-[var(--muted)]">
+              Mengambil daftar dealer...
+            </p>
+          )}
+        </div>
 
         {/* Vendor List */}
         {loading ? (
-          <div className="text-center py-8 text-[var(--muted)]">Memuat dealer...</div>
+          <div className="text-center py-8 text-[var(--muted)] flex flex-col items-center gap-2">
+            <span className="inline-block w-6 h-6 border-2 border-[#002c5f] border-t-transparent rounded-full animate-spin" aria-hidden />
+            Memuat dealer...
+          </div>
         ) : filteredVendors.length === 0 ? (
           <div className="text-center py-8 text-[var(--muted)]">Tidak ada dealer tersedia</div>
         ) : (
