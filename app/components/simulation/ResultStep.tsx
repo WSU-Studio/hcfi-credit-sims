@@ -11,7 +11,6 @@ import { ContactModal } from '@/app/components/simulation/ContactModal';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
-type DataSource = 'mock' | 'hyundai';
 
 interface ResultStepProps {
   leadNo?: string;
@@ -37,11 +36,8 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [dataSourceList, setDataSourceList] = useState<DataSource | null>(null);
-  const [dataSourceSimulate, setDataSourceSimulate] = useState<DataSource | null>(null);
 
   const products = tab === 'Standard' ? listStandard : listPromo;
-  const displayDataSource = dataSourceSimulate ?? dataSourceList;
 
   useEffect(() => {
     if (!otrPrice && !leadNo) return;
@@ -77,7 +73,6 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal memuat produk');
-      setDataSourceList(data.dataSource ?? null);
       setListStandard(data.ListDefaultStandardProductObj ?? []);
       setListPromo(data.ListDefaultPromotionProductObj ?? []);
       const first = data.ListDefaultStandardProductObj?.[0];
@@ -110,7 +105,6 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menghitung');
-      setDataSourceSimulate(data.dataSource ?? null);
       setTableRows(data.ListProductObj ?? []);
       const row36 = (data.ListProductObj ?? []).find((r: ProductCalculation) => r.Tenor === 36);
       const first = (data.ListProductObj ?? [])[0];
@@ -154,19 +148,6 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
       <div>
         <h2 className="text-2xl font-semibold mb-2">Pilih Produk Kredit</h2>
         <p className="text-gray-500">Pilih tipe produk, DP %, ADDM/ADDB, lalu hitung simulasi</p>
-        {displayDataSource && (
-          <span
-            className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-medium ${
-              displayDataSource === 'mock'
-                ? 'bg-gray-100 text-gray-700'
-                : 'bg-[#002c5f]/10 text-[#002c5f]'
-            }`}
-          >
-            {displayDataSource === 'mock'
-              ? 'Data simulasi dari Mock API'
-              : 'Data simulasi dari API Hyundai'}
-          </span>
-        )}
       </div>
 
       {/* Tabs */}

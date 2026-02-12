@@ -1,3 +1,4 @@
+import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   mockApi,
@@ -6,11 +7,14 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
-import {
-  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
-  getHyundaiRequestHeaders,
-  clearHyundaiTokenCache,
-} from '@/lib/hyundai-api-client';
+import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+
+const CONNECT_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+
+const hyundaiAgent = new Agent({
+  connectTimeout: CONNECT_TIMEOUT_MS,
+});
 
 // Get List Vendor And Vendor City
 export async function POST(request: NextRequest) {
@@ -28,68 +32,58 @@ export async function POST(request: NextRequest) {
   let timeoutId: NodeJS.Timeout | null = null;
 
   try {
-    const body = await request.json();
-
-    // 1. Dapatkan token dulu via Auth (Login); 2. Baru panggil API data dengan token
     const headers = await getHyundaiRequestHeaders();
-    if (!headers['AdInsKey']) {
-      console.error('Vendors: tidak ada token (Login gagal atau belum). Pastikan Auth API sukses.');
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
       return NextResponse.json(
         { error: PRODUCTION_DATA_ERROR_MESSAGE },
         { status: 503 }
       );
     }
 
-    // Increase timeout for API calls (30 seconds)
-    const controller = new AbortController();
-    timeoutId = setTimeout(() => controller.abort(), 30000);
+    const body = await request.json();
 
-    const response = await fetch(`${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
-        hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
-      }),
-      signal: controller.signal,
-    });
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    const response = await undiciFetch(
+      `${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
+          hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
+        }),
+        signal: controller.signal,
+        dispatcher: hyundaiAgent,
+      }
+    );
 
     if (timeoutId) clearTimeout(timeoutId);
 
     const text = await response.text();
-    let data: { Message?: string } = {};
+    let data: unknown;
     try {
       data = text ? JSON.parse(text) : {};
     } catch {
-      if (!response.ok || shouldNotUseMockFallback()) {
-        if (response.status === 401) clearHyundaiTokenCache();
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
-      throw new Error('Response bukan JSON');
+      return NextResponse.json(
+        { error: 'Invalid response from vendor API' },
+        { status: 502 }
+      );
     }
 
     if (!response.ok) {
-      if (response.status === 401) clearHyundaiTokenCache();
-      if (shouldNotUseMockFallback()) {
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
-      const message =
-        response.status === 401
-          ? '401: Unauthorized API Call.'
-          : data.Message || 'Failed to fetch vendors';
+      const errMsg =
+        data && typeof data === 'object' && 'Message' in data
+          ? String((data as { Message?: string }).Message)
+          : 'Failed to fetch vendors';
       return NextResponse.json(
-        { error: message },
+        { error: errMsg },
         { status: response.status }
       );
     }
 
-    return NextResponse.json(data as Record<string, unknown>);
+    return NextResponse.json(data);
   } catch (error: unknown) {
     if (timeoutId) clearTimeout(timeoutId);
     console.error('Error fetching vendors:', error);

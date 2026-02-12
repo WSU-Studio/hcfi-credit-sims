@@ -1,3 +1,4 @@
+import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   mockApi,
@@ -6,80 +7,81 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
-import {
-  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
-  getHyundaiRequestHeaders,
-  clearHyundaiTokenCache,
-} from '@/lib/hyundai-api-client';
+import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+
+const CONNECT_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+
+const hyundaiAgent = new Agent({
+  connectTimeout: CONNECT_TIMEOUT_MS,
+});
 
 // Get List Manufacturing Year By Model
 export async function POST(request: NextRequest) {
-  // Check if mock mode is enabled
+  const body = await request.json().catch(() => ({}));
+  const payload = {
+    ModelCode: body.ModelCode as string,
+    DealerCode: body.DealerCode as string,
+  };
+
   if (isMockModeEnabled()) {
     await simulateDelay(200);
-    const body = await request.json();
-    const mockResponse = mockApi.getManufacturingYears({
-      ModelCode: body.ModelCode,
-      DealerCode: body.DealerCode,
-    });
+    const mockResponse = mockApi.getManufacturingYears(payload);
     return NextResponse.json(mockResponse);
   }
 
-  try {
-    const body = await request.json();
+  let timeoutId: NodeJS.Timeout | null = null;
 
+  try {
     const headers = await getHyundaiRequestHeaders();
-    if (!headers['AdInsKey']) {
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
       return NextResponse.json(
         { error: PRODUCTION_DATA_ERROR_MESSAGE },
         { status: 503 }
       );
     }
 
-    const response = await fetch(`${API_BASE_URL}/Foundation/v2/AssetMasterForMobileX/GetListManufYearByModel`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        ModelCode: body.ModelCode,
-        DealerCode: body.DealerCode,
-      }),
-    });
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    const response = await undiciFetch(
+      `${API_BASE_URL}/Foundation/v2/AssetMasterForMobileX/GetListManufYearByModel`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+        dispatcher: hyundaiAgent,
+      }
+    );
+
+    if (timeoutId) clearTimeout(timeoutId);
 
     const text = await response.text();
-    let data: { Message?: string } = {};
+    let data: unknown;
     try {
       data = text ? JSON.parse(text) : {};
     } catch {
-      if (!response.ok || shouldNotUseMockFallback()) {
-        if (response.status === 401) clearHyundaiTokenCache();
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
-      throw new Error('Response bukan JSON');
+      return NextResponse.json(
+        { error: 'Invalid response from manufacturing-years API' },
+        { status: 502 }
+      );
     }
 
     if (!response.ok) {
-      if (response.status === 401) clearHyundaiTokenCache();
-      if (shouldNotUseMockFallback()) {
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
-      const message =
-        response.status === 401
-          ? '401: Unauthorized API Call.'
-          : data.Message || 'Failed to fetch manufacturing years';
+      const errMsg =
+        data && typeof data === 'object' && 'Message' in data
+          ? String((data as { Message?: string }).Message)
+          : 'Failed to fetch manufacturing years';
       return NextResponse.json(
-        { error: message },
+        { error: errMsg },
         { status: response.status }
       );
     }
 
-    return NextResponse.json(data as Record<string, unknown>);
+    return NextResponse.json(data);
   } catch (error: unknown) {
+    if (timeoutId) clearTimeout(timeoutId);
     console.error('Error fetching manufacturing years:', error);
     if (shouldNotUseMockFallback()) {
       return NextResponse.json(
@@ -88,15 +90,15 @@ export async function POST(request: NextRequest) {
       );
     }
     try {
-      const mockResponse = mockApi.getManufacturingYears({
-        ModelCode: '',
-        DealerCode: '',
-      });
+      const mockResponse = mockApi.getManufacturingYears(payload);
       return NextResponse.json(mockResponse);
     } catch (mockError) {
       console.error('Error fetching manufacturing years:', mockError);
       return NextResponse.json(
-        { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+        {
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }

@@ -6,11 +6,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
-import {
-  CREDIT_SIMULATION_API_BASE_URL as API_BASE_URL,
-  getHyundaiRequestHeaders,
-  clearHyundaiTokenCache,
-} from '@/lib/hyundai-api-client';
+import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 /**
  * SimulateFinancialCalculate / CalculateProductFromRule
@@ -47,17 +43,18 @@ export async function POST(request: NextRequest) {
         productName: String(productName),
         firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
       });
-      return NextResponse.json({ ...res, dataSource: 'mock' });
+      return NextResponse.json(res);
+    }
+
+    const headers = await getHyundaiRequestHeaders();
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
     }
 
     try {
-      const headers = await getHyundaiRequestHeaders();
-      if (!headers['AdInsKey']) {
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
       const res = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/SimulateFinancialCalculate`, {
         method: 'POST',
         headers,
@@ -72,33 +69,11 @@ export async function POST(request: NextRequest) {
           Tenor: body.Tenor || 36,
         }),
       });
-      const resText = await res.text();
-      let data: { Message?: string } = {};
-      try {
-        data = resText ? JSON.parse(resText) : {};
-      } catch {
-        if (!res.ok || shouldNotUseMockFallback()) {
-          if (res.status === 401) clearHyundaiTokenCache();
-          return NextResponse.json(
-            { error: PRODUCTION_DATA_ERROR_MESSAGE },
-            { status: 503 }
-          );
-        }
-        throw new Error('Response bukan JSON');
-      }
-      if (!res.ok) {
-        if (res.status === 401) clearHyundaiTokenCache();
-        if (shouldNotUseMockFallback()) {
-          return NextResponse.json(
-            { error: PRODUCTION_DATA_ERROR_MESSAGE },
-            { status: 503 }
-          );
-        }
-        throw new Error(data.Message || 'Simulate failed');
-      }
-      return NextResponse.json({ ...data, dataSource: 'hyundai' });
+      const data = await res.json();
+      if (!res.ok) throw new Error((data && (data as { Message?: string }).Message) || 'Simulate failed');
+      return NextResponse.json(data);
     } catch (e) {
-      console.warn('SimulateFinancialCalculate failed, using mock:', e);
+      console.warn('SimulateFinancialCalculate failed:', e);
       if (shouldNotUseMockFallback()) {
         return NextResponse.json(
           { error: PRODUCTION_DATA_ERROR_MESSAGE },
@@ -113,16 +88,10 @@ export async function POST(request: NextRequest) {
         productName: String(productName),
         firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
       });
-      return NextResponse.json({ ...res, dataSource: 'mock' });
+      return NextResponse.json(res);
     }
   } catch (err: unknown) {
     console.error('Simulate error:', err);
-    if (shouldNotUseMockFallback()) {
-      return NextResponse.json(
-        { error: PRODUCTION_DATA_ERROR_MESSAGE },
-        { status: 503 }
-      );
-    }
     return NextResponse.json(
       {
         error: 'Internal server error',
