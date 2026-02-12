@@ -16,7 +16,7 @@ export default async function NewProductPage() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          You don't have permission to create products.
+          You don&apos;t have permission to create products.
         </div>
       </div>
     );

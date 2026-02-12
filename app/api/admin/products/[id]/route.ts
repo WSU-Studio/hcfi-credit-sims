@@ -54,7 +54,7 @@ export async function PUT(
 
     const { id } = await Promise.resolve(params);
     const body = await request.json();
-    const { title, subtitle, imageUrl, order, content, layout } = body;
+    const { title, subtitle, imageUrl, order, content, layout, isFeatured } = body;
 
     if (title !== undefined && (!title || typeof title !== 'string')) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -71,6 +71,7 @@ export async function PUT(
       ...(order !== undefined && { order: Number(order) ?? 0 }),
       ...(content !== undefined && { content: content === null || content === '' ? null : String(content) }),
       ...(layout !== undefined && { layout: layout ?? null }),
+      ...(isFeatured !== undefined && { isFeatured: Boolean(isFeatured) }),
     } as unknown as Prisma.ProductUpdateInput;
     const product = await prisma.product.update({
       where: { id },
