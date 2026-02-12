@@ -8,10 +8,14 @@ import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 type Banner = {
   id: string;
   title: string;
+  titleEn?: string | null;
   highlight: string | null;
+  highlightEn?: string | null;
   description: string | null;
+  descriptionEn?: string | null;
   imageUrl: string;
   ctaLabel: string | null;
+  ctaLabelEn?: string | null;
   ctaUrl: string | null;
   isActive: boolean;
   order: number;
@@ -30,10 +34,14 @@ export function BannerForm({ bannerId }: BannerFormProps) {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<Partial<Banner>>({
     title: '',
+    titleEn: '',
     highlight: '',
+    highlightEn: '',
     description: '',
+    descriptionEn: '',
     imageUrl: '',
     ctaLabel: '',
+    ctaLabelEn: '',
     ctaUrl: '',
     isActive: true,
     order: 0,
@@ -85,10 +93,14 @@ export function BannerForm({ bannerId }: BannerFormProps) {
             
             setFormData({
               title: banner.title || '',
+              titleEn: (banner as { titleEn?: string }).titleEn || '',
               highlight: banner.highlight || '',
+              highlightEn: (banner as { highlightEn?: string }).highlightEn || '',
               description: banner.description || '',
+              descriptionEn: (banner as { descriptionEn?: string }).descriptionEn || '',
               imageUrl: banner.imageUrl || '',
               ctaLabel: banner.ctaLabel || '',
+              ctaLabelEn: (banner as { ctaLabelEn?: string }).ctaLabelEn || '',
               ctaUrl: banner.ctaUrl || '',
               isActive: banner.isActive ?? true,
               order: banner.order ?? 0,
@@ -197,15 +209,29 @@ export function BannerForm({ bannerId }: BannerFormProps) {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., Dapatkan Benefit Kredit Mobil Baru Anda di"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="title"
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="e.g., Dapatkan Benefit Kredit Mobil Baru Anda di"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="titleEn"
+                value={(formData as { titleEn?: string }).titleEn || ''}
+                onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="e.g., Get Your New Car Credit Benefits at"
+              />
+            </div>
           </div>
 
           {/* Highlight */}
@@ -213,14 +239,28 @@ export function BannerForm({ bannerId }: BannerFormProps) {
             <label htmlFor="highlight" className="block text-sm font-medium text-gray-700 mb-1">
               Highlight (Accent Text)
             </label>
-            <input
-              type="text"
-              id="highlight"
-              value={formData.highlight || ''}
-              onChange={(e) => setFormData({ ...formData, highlight: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., Hyundai Finance"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="highlight"
+                value={formData.highlight || ''}
+                onChange={(e) => setFormData({ ...formData, highlight: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="e.g., Hyundai Finance"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="highlightEn"
+                value={(formData as { highlightEn?: string }).highlightEn || ''}
+                onChange={(e) => setFormData({ ...formData, highlightEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="e.g., Hyundai Finance"
+              />
+            </div>
             <p className="mt-1 text-xs text-gray-500">
               Text yang akan ditampilkan dengan warna accent
             </p>
@@ -232,14 +272,28 @@ export function BannerForm({ bannerId }: BannerFormProps) {
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
             Description
           </label>
-          <textarea
-            id="description"
-            rows={3}
-            value={formData.description || ''}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="e.g., Rasakan kemudahan proses kredit dengan layanan profesional..."
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="description"
+              rows={3}
+              value={formData.description || ''}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="e.g., Rasakan kemudahan proses kredit dengan layanan profesional..."
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="descriptionEn"
+              rows={3}
+              value={(formData as { descriptionEn?: string }).descriptionEn || ''}
+              onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="e.g., Experience easy credit process with professional service..."
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,14 +325,28 @@ export function BannerForm({ bannerId }: BannerFormProps) {
                 <label htmlFor="ctaLabel" className="block text-sm font-medium text-gray-700 mb-1">
                   CTA Label
                 </label>
-                <input
-                  type="text"
-                  id="ctaLabel"
-                  value={formData.ctaLabel || ''}
-                  onChange={(e) => setFormData({ ...formData, ctaLabel: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., Mulai Simulasi"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+                  <input
+                    type="text"
+                    id="ctaLabel"
+                    value={formData.ctaLabel || ''}
+                    onChange={(e) => setFormData({ ...formData, ctaLabel: e.target.value })}
+                    className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                    placeholder="e.g., Mulai Simulasi"
+                  />
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+                  <input
+                    type="text"
+                    id="ctaLabelEn"
+                    value={(formData as { ctaLabelEn?: string }).ctaLabelEn || ''}
+                    onChange={(e) => setFormData({ ...formData, ctaLabelEn: e.target.value })}
+                    className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                    placeholder="e.g., Start Simulation"
+                  />
+                </div>
               </div>
               <div>
                 <label htmlFor="ctaUrl" className="block text-sm font-medium text-gray-700 mb-1">

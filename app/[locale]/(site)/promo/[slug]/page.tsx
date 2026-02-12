@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -8,13 +9,22 @@ import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
 import { getActivePromos } from '../page';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 
 export const dynamic = 'force-dynamic';
 
-async function getPromoBySlug(slug: string) {
+async function getPromoBySlug(slug: string, locale: Locale) {
   try {
     const where = { slug, isActive: true } as unknown as Prisma.PromoWhereInput;
-    return await prisma.promo.findFirst({ where });
+    const row = await prisma.promo.findFirst({ where });
+    if (!row) return null;
+    return {
+      ...row,
+      title: pickLocaleString(row.title, row.titleEn ?? undefined, locale),
+      description: pickLocaleString(row.description ?? undefined, row.descriptionEn ?? undefined, locale),
+      content: pickLocaleString(row.content ?? undefined, row.contentEn ?? undefined, locale),
+    };
   } catch (error) {
     console.error('Error fetching promo:', error);
     return null;
@@ -24,10 +34,10 @@ async function getPromoBySlug(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
 }) {
-  const { slug } = await Promise.resolve(params);
-  const promo = await getPromoBySlug(slug);
+  const { slug, locale } = await Promise.resolve(params);
+  const promo = await getPromoBySlug(slug, locale as Locale);
   if (!promo) return { title: 'Hyundai Capital' };
   return {
     title: `Hyundai Capital - ${promo.title}`,
@@ -37,10 +47,11 @@ export async function generateMetadata({
 export default async function PromoDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
 }) {
-  const { slug } = await Promise.resolve(params);
-  const promo = await getPromoBySlug(slug);
+  const { slug, locale } = await Promise.resolve(params);
+  const localeTyped = locale as Locale;
+  const [promo, tCommon] = await Promise.all([getPromoBySlug(slug, localeTyped), getTranslations('common')]);
   if (!promo) notFound();
 
   const layout = (promo as { layout?: unknown }).layout as PageLayout | null;
@@ -73,7 +84,7 @@ export default async function PromoDetailPage({
   ].filter(Boolean).join(' ');
   const bannerImageClass = 'object-cover';
 
-  const promos = await getActivePromos();
+  const promos = await getActivePromos(localeTyped);
 
   const currentIndex = promos.findIndex((p) => p.slug === slug);
   const nextSlug =
@@ -114,7 +125,7 @@ export default async function PromoDetailPage({
           className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
         >
           <span className="text-sm font-semibold text-slate-700">
-            Kembali ke Beranda
+            {tCommon('backToHome')}
           </span>
         </Link>
         <Link
@@ -122,7 +133,7 @@ export default async function PromoDetailPage({
           className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
         >
           <span className="text-sm font-semibold text-slate-700">
-            Lihat Semua Promo
+            {tCommon('viewAllPromos')}
           </span>
         </Link>
       </div>
@@ -134,7 +145,7 @@ export default async function PromoDetailPage({
             className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
           >
             <span className="text-sm font-semibold text-slate-700">
-              Lihat Promo Berikutnya
+              {tCommon('nextPromo')}
             </span>
           </Link>
         )}
@@ -144,7 +155,7 @@ export default async function PromoDetailPage({
             className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
           >
             <span className="text-sm font-semibold text-slate-700">
-              Lihat Promo Sebelumnya
+              {tCommon('prevPromo')}
             </span>
           </Link>
         )}
@@ -226,7 +237,7 @@ export default async function PromoDetailPage({
               className="prose prose-sm max-w-none"
             />
           ) : (
-            <p className="text-white/70">Belum ada konten.</p>
+            <p className="text-white/70">{tCommon('noContent')}</p>
           )}
           {bottomNav}
         </Container>

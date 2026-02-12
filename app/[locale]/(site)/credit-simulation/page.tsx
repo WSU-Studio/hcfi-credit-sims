@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Container } from '@/app/components/ui/Container';
 import { DealerStep } from '@/app/components/simulation/DealerStep';
 import { ModelStep } from '@/app/components/simulation/ModelStep';
@@ -13,6 +14,7 @@ import type { Vendor, AssetMaster, ProductCalculation } from '@/app/types/credit
 type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function SimulasiKreditPage() {
+  const t = useTranslations('creditSimulation');
   const [currentStep, setCurrentStep] = useState<Step>(1);
   
   // Form data
@@ -108,19 +110,19 @@ export default function SimulasiKreditPage() {
     <div className="min-h-screen bg-white py-12">
       <Container>
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">Simulasi Kredit Mobil</h1>
-          <p className="text-gray-500">Dapatkan estimasi cicilan kredit kendaraan impian Anda</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-gray-900">{t('title')}</h1>
+          <p className="text-gray-500">{t('subtitle')}</p>
         </div>
 
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {[
-              { num: 1, label: 'Dealer' },
-              { num: 2, label: 'Model' },
-              { num: 3, label: 'Spesifikasi' },
-              { num: 4, label: 'Harga' },
-              { num: 5, label: 'Hasil' },
+              { num: 1, label: t('stepDealer') },
+              { num: 2, label: t('stepModel') },
+              { num: 3, label: t('stepSpec') },
+              { num: 4, label: t('stepPrice') },
+              { num: 5, label: t('stepResult') },
             ].map((step, index) => (
               <div key={step.num} className="flex items-center flex-1">
                 <button
@@ -186,7 +188,7 @@ export default function SimulasiKreditPage() {
                   onClick={() => goToStep(2)}
                   className="text-sm font-medium text-[#002c5f] hover:underline"
                 >
-                  Ganti Model
+                  {t('changeModel')}
                 </button>
               </div>
               <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 md:p-6 shadow-lg">
@@ -232,11 +234,11 @@ export default function SimulasiKreditPage() {
                     onClick={() => setCurrentStep((currentStep - 1) as Step)}
                     className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
                   >
-                    Kembali
+                    {t('back')}
                   </button>
                   {currentStep < 5 && (
                     <div className="text-sm text-[var(--muted)] flex items-center">
-                      Langkah {currentStep} dari 5
+                      {t('stepOf', { current: currentStep })}
                     </div>
                   )}
                 </div>
@@ -267,11 +269,11 @@ export default function SimulasiKreditPage() {
                   onClick={() => setCurrentStep((currentStep - 1) as Step)}
                   className="px-6 py-3 text-gray-500 border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-300 cursor-pointer"
                 >
-                  Kembali
+                  {t('back')}
                 </button>
                 {currentStep < 5 && (
                   <div className="text-sm text-[var(--muted)] flex items-center">
-                    Langkah {currentStep} dari 5
+                    {t('stepOf', { current: currentStep })}
                   </div>
                 )}
               </div>

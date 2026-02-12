@@ -1,22 +1,25 @@
+import { getTranslations, getLocale } from "next-intl/server";
 import { HeroSlider } from "@/app/components/home/HeroSlider";
 import { ProductSection } from "@/app/components/home/ProductSection";
 import { BenefitSection } from "@/app/components/home/BenefitSection";
 import { ArticleSection } from "@/app/components/home/ArticleSection";
 import type { Benefit, Product, Slide, Article } from "@/app/types";
 import { prisma } from "@/lib/prisma";
+import { pickLocaleString } from "@/lib/pick-locale";
+import type { Locale } from "@/lib/pick-locale";
 
 // Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
-// Tanpa ini, halaman di-static generate saat deploy dan update DB lewat admin tidak muncul di home.
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
+  const t = await getTranslations("home");
   return {
-    title: "Hyundai Capital",
-    description: "Hyundai Capital adalah perusahaan kredit yang menyediakan kredit untuk pembelian mobil Hyundai.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   };
 }
 
-async function getBanners() {
+async function getBanners(locale: Locale) {
   try {
     const now = new Date();
     const banners = await prisma.banner.findMany({
@@ -41,11 +44,11 @@ async function getBanners() {
     });
 
     return banners.map((banner) => ({
-      title: banner.title,
-      highlight: banner.highlight || '',
-      description: banner.description || '',
+      title: pickLocaleString(banner.title, banner.titleEn ?? undefined, locale),
+      highlight: pickLocaleString(banner.highlight ?? undefined, banner.highlightEn ?? undefined, locale) || '',
+      description: pickLocaleString(banner.description ?? undefined, banner.descriptionEn ?? undefined, locale) || '',
       image: banner.imageUrl,
-      ctaLabel: banner.ctaLabel ?? undefined,
+      ctaLabel: pickLocaleString(banner.ctaLabel ?? undefined, banner.ctaLabelEn ?? undefined, locale) || undefined,
       ctaUrl: banner.ctaUrl ?? undefined,
     })) as Slide[];
   } catch (error) {
@@ -64,7 +67,7 @@ async function getBanners() {
   }
 }
 
-async function getBenefits() {
+async function getBenefits(locale: Locale) {
   try {
     const benefits = await prisma.benefit.findMany({
       orderBy: {
@@ -73,8 +76,8 @@ async function getBenefits() {
     });
 
     return benefits.map((benefit) => ({
-      title: benefit.title,
-      description: benefit.description,
+      title: pickLocaleString(benefit.title, benefit.titleEn ?? undefined, locale),
+      description: pickLocaleString(benefit.description, benefit.descriptionEn ?? undefined, locale),
     })) as Benefit[];
   } catch (error) {
     console.error('Error fetching benefits:', error);
@@ -91,7 +94,7 @@ async function getBenefits() {
   }
 }
 
-async function getProducts() {
+async function getProducts(locale: Locale) {
   try {
     const products = await prisma.product.findMany({
       where: { isFeatured: true },
@@ -102,8 +105,8 @@ async function getProducts() {
 
     return products.map((product) => ({
       id: product.id,
-      title: product.title,
-      subtitle: product.subtitle || undefined,
+      title: pickLocaleString(product.title, product.titleEn ?? undefined, locale),
+      subtitle: pickLocaleString(product.subtitle ?? undefined, product.subtitleEn ?? undefined, locale) || undefined,
       image: product.imageUrl,
     })) as Product[];
   } catch (error) {
@@ -131,7 +134,7 @@ async function getProducts() {
   }
 }
 
-async function getArticles() {
+async function getArticles(locale: Locale) {
   try {
     const articles = await prisma.article.findMany({
       where: { isPublished: true },
@@ -141,7 +144,7 @@ async function getArticles() {
     });
 
     return articles.map((article) => ({
-      title: article.title,
+      title: pickLocaleString(article.title, article.titleEn ?? undefined, locale),
       image: article.imageUrl ?? "/images/main-banner.jpg",
       slug: article.slug ?? undefined,
     })) as Article[];
@@ -152,11 +155,12 @@ async function getArticles() {
 }
 
 export default async function Home() {
-  const [slides, benefits, products, articles ] = await Promise.all([
-    getBanners(),
-    getBenefits(),
-    getProducts(),
-    getArticles(),
+  const locale = (await getLocale()) as Locale;
+  const [slides, benefits, products, articles] = await Promise.all([
+    getBanners(locale),
+    getBenefits(locale),
+    getProducts(locale),
+    getArticles(locale),
   ]);
 
   return (
@@ -165,7 +169,7 @@ export default async function Home() {
       
       <BenefitSection benefits={benefits} />
 
-      <ProductSection title="Kredit Pintar, Untuk Kebutuhan Anda" products={products} />
+      <ProductSection products={products} />
 
       <ArticleSection articles={articles} />
     </>

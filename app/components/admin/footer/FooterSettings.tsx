@@ -14,7 +14,9 @@ type FooterData = {
   playStoreHref: string;
   appStoreHref: string;
   disclaimer: string;
+  disclaimerEn: string;
   copyright: string;
+  copyrightEn: string;
 };
 
 const defaultData: FooterData = {
@@ -28,12 +30,24 @@ const defaultData: FooterData = {
   playStoreHref: '',
   appStoreHref: '',
   disclaimer: '',
+  disclaimerEn: '',
   copyright: '',
+  copyrightEn: '',
 };
 
 function ensureString(v: unknown): string {
   if (v == null) return '';
   return typeof v === 'string' ? v : String(v);
+}
+
+function parseBilingual(val: unknown): { id: string; en: string } {
+  if (val == null) return { id: '', en: '' };
+  if (typeof val === 'string') return { id: val, en: '' };
+  if (typeof val === 'object' && val !== null && 'id' in val && 'en' in val) {
+    const o = val as { id?: unknown; en?: unknown };
+    return { id: ensureString(o.id), en: ensureString(o.en) };
+  }
+  return { id: ensureString(val), en: '' };
 }
 
 export function FooterSettings() {
@@ -63,8 +77,10 @@ export function FooterSettings() {
             emailHref: ensureString(d.emailHref || (contact[2] as { href?: string } | undefined)?.href) || defaultData.emailHref,
             playStoreHref: ensureString(d.playStoreHref || (apps[0] as { href?: string } | undefined)?.href) || defaultData.playStoreHref,
             appStoreHref: ensureString(d.appStoreHref || (apps[1] as { href?: string } | undefined)?.href) || defaultData.appStoreHref,
-            disclaimer: ensureString(d.disclaimer) || defaultData.disclaimer,
-            copyright: ensureString(d.copyright) || defaultData.copyright,
+            disclaimer: parseBilingual(d.disclaimer).id || defaultData.disclaimer,
+            disclaimerEn: parseBilingual(d.disclaimer).en || defaultData.disclaimerEn,
+            copyright: parseBilingual(d.copyright).id || defaultData.copyright,
+            copyrightEn: parseBilingual(d.copyright).en || defaultData.copyrightEn,
           });
         }
         setLoading(false);
@@ -92,8 +108,8 @@ export function FooterSettings() {
           emailHref: data.emailHref.trim(),
           playStoreHref: data.playStoreHref.trim(),
           appStoreHref: data.appStoreHref.trim(),
-          disclaimer: data.disclaimer.trim(),
-          copyright: data.copyright.trim(),
+          disclaimer: { id: data.disclaimer.trim(), en: data.disclaimerEn.trim() },
+          copyright: { id: data.copyright.trim(), en: data.copyrightEn.trim() },
         }),
       });
       const json = await res.json();
@@ -265,26 +281,56 @@ export function FooterSettings() {
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Disclaimer</label>
-        <input
-          type="text"
-          value={data.disclaimer ?? ''}
-          onChange={(e) => setData({ ...data, disclaimer: e.target.value })}
-          className="w-full px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-          placeholder="PT ... berizin dan diawasi oleh Otoritas Jasa Keuangan"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Copyright</label>
-        <input
-          type="text"
-          value={data.copyright ?? ''}
-          onChange={(e) => setData({ ...data, copyright: e.target.value })}
-          className="w-full px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-          placeholder="Copyright © 2025 - All Right Reserved"
-        />
+      <div className="border-t border-gray-200 pt-6">
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">Disclaimer & Copyright (dua bahasa)</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Disclaimer</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                value={data.disclaimer ?? ''}
+                onChange={(e) => setData({ ...data, disclaimer: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg text-gray-700 text-sm focus:bg-blue-100/40 focus:ring-0"
+                placeholder="PT ... berizin dan diawasi oleh Otoritas Jasa Keuangan"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                value={data.disclaimerEn ?? ''}
+                onChange={(e) => setData({ ...data, disclaimerEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg text-gray-700 text-sm focus:bg-blue-100/40"
+                placeholder="PT ... is licensed and supervised by OJK"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Copyright</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                value={data.copyright ?? ''}
+                onChange={(e) => setData({ ...data, copyright: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg text-gray-700 text-sm focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Copyright © 2025 - All Right Reserved"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                value={data.copyrightEn ?? ''}
+                onChange={(e) => setData({ ...data, copyrightEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg text-gray-700 text-sm focus:bg-blue-100/40"
+                placeholder="Copyright © 2025 - All Rights Reserved"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-end pt-2">

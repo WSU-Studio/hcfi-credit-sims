@@ -20,16 +20,21 @@ const BANNER_RATIO_OPTIONS = [
 type Article = {
   id: string;
   title: string;
+  titleEn?: string | null;
   slug: string;
   subtitle: string | null;
+  subtitleEn?: string | null;
   excerpt: string | null;
+  excerptEn?: string | null;
   content: string;
+  contentEn?: string | null;
   layout: PageLayout | null;
   imageUrl: string | null;
   bannerImageRatio: string | null;
   bannerUseContainer: boolean;
   showBannerImage: boolean;
   metaDescription: string | null;
+  metaDescriptionEn?: string | null;
   category: string | null;
   tags: string[];
   readingTime: number | null;
@@ -63,12 +68,17 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
   const returnAfterSaveRef = useRef(false);
   const [formData, setFormData] = useState<Partial<Article> & { tagsInput?: string }>({
     title: '',
+    titleEn: '',
     slug: '',
     subtitle: '',
+    subtitleEn: '',
     excerpt: '',
+    excerptEn: '',
     content: '',
+    contentEn: '',
     imageUrl: '',
     metaDescription: '',
+    metaDescriptionEn: '',
     category: '',
     tagsInput: '',
     readingTime: undefined,
@@ -91,12 +101,17 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
             const a = data.article;
             setFormData({
               title: a.title ?? '',
+              titleEn: a.titleEn ?? '',
               slug: a.slug ?? '',
               subtitle: a.subtitle ?? '',
+              subtitleEn: a.subtitleEn ?? '',
               excerpt: a.excerpt ?? '',
+              excerptEn: a.excerptEn ?? '',
               content: a.content ?? '',
+              contentEn: a.contentEn ?? '',
               imageUrl: a.imageUrl ?? '',
               metaDescription: a.metaDescription ?? '',
+              metaDescriptionEn: a.metaDescriptionEn ?? '',
               category: a.category ?? '',
               tagsInput: Array.isArray(a.tags) ? a.tags.join(', ') : '',
               readingTime: a.readingTime ?? undefined,
@@ -147,10 +162,15 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
         ...restForm,
         slug,
         subtitle: formData.subtitle || null,
+        subtitleEn: formData.subtitleEn || null,
         excerpt: formData.excerpt || null,
+        excerptEn: formData.excerptEn || null,
         content: (formData.content ?? '').trim() || '',
+        contentEn: formData.contentEn?.trim() || null,
         imageUrl: formData.imageUrl || null,
         metaDescription: formData.metaDescription || null,
+        metaDescriptionEn: formData.metaDescriptionEn || null,
+        titleEn: formData.titleEn || null,
         category: formData.category || null,
         tags,
         readingTime:
@@ -217,15 +237,29 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              required
-              value={formData.title ?? ''}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Judul artikel"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="title"
+                required
+                value={formData.title ?? ''}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Judul artikel"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="titleEn"
+                value={formData.titleEn ?? ''}
+                onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="Article title (EN)"
+              />
+            </div>
           </div>
 
           <div>
@@ -250,14 +284,28 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
             <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
               Subtitle
             </label>
-            <input
-              type="text"
-              id="subtitle"
-              value={formData.subtitle ?? ''}
-              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Subjudul (opsional)"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="subtitle"
+                value={formData.subtitle ?? ''}
+                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Subjudul (opsional)"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="subtitleEn"
+                value={formData.subtitleEn ?? ''}
+                onChange={(e) => setFormData({ ...formData, subtitleEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="Subtitle (EN)"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -379,42 +427,84 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
           <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1">
             Excerpt (ringkasan)
           </label>
-          <textarea
-            id="excerpt"
-            rows={2}
-            value={formData.excerpt ?? ''}
-            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Ringkasan singkat untuk list/card"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="excerpt"
+              rows={2}
+              value={formData.excerpt ?? ''}
+              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="Ringkasan singkat untuk list/card"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="excerptEn"
+              rows={2}
+              value={formData.excerptEn ?? ''}
+              onChange={(e) => setFormData({ ...formData, excerptEn: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="Short excerpt (EN)"
+            />
+          </div>
         </div>
 
         <div>
           <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">
             Meta Description
           </label>
-          <textarea
-            id="metaDescription"
-            rows={2}
-            value={formData.metaDescription ?? ''}
-            onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Deskripsi untuk search engine (max ~160 karakter)"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="metaDescription"
+              rows={2}
+              value={formData.metaDescription ?? ''}
+              onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="Deskripsi untuk search engine (max ~160 karakter)"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="metaDescriptionEn"
+              rows={2}
+              value={formData.metaDescriptionEn ?? ''}
+              onChange={(e) => setFormData({ ...formData, metaDescriptionEn: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="Meta description for search (EN)"
+            />
+          </div>
         </div>
 
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             Content (optional)
           </label>
-          <textarea
-            id="content"
-            rows={4}
-            value={formData.content ?? ''}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] text-sm"
-            placeholder="Plain HTML used when layout is empty"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="content"
+              rows={4}
+              value={formData.content ?? ''}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0 text-sm"
+              placeholder="Plain HTML used when layout is empty"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="contentEn"
+              rows={4}
+              value={formData.contentEn ?? ''}
+              onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40 text-sm"
+              placeholder="Plain HTML for EN locale"
+            />
+          </div>
           <p className="mt-1 text-xs text-gray-500">Digunakan jika layout kosong</p>
         </div>
 

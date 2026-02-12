@@ -1,17 +1,21 @@
 'use client';
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { NavItem } from "@/app/types";
 import { Container } from "@/app/components/ui/Container";
 import Image from "next/image";
-import Link from "next/link";
+import { Link, usePathname } from "@/i18n/navigation";
 
 type HeaderProps = {
   items: NavItem[];
+  locale: string;
 };
 
-export function Header({ items }: HeaderProps) {
+export function Header({ items, locale }: HeaderProps) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("common");
+  const pathname = usePathname();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
@@ -22,23 +26,45 @@ export function Header({ items }: HeaderProps) {
           </Link>
         </div>
 
-        <nav className="hidden gap-6 text-base lg:text-lg text-white md:flex">
-          {items.map((item, index) => (
-            <Link key={`${item.label}-${index}`} href={item.href} className="hover:text-white/80 transition-colors">
-              {item.label}
+        <div className="hidden md:flex items-center gap-6">
+          <nav className="flex gap-6 text-base lg:text-lg text-white">
+            {items.map((item, index) => (
+              <Link key={`${item.label}-${index}`} href={item.href} className="hover:text-white/80 transition-colors">
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex items-center gap-1 ml-2 border-l border-white/30 pl-4">
+            <Link
+              href={pathname}
+              locale="id"
+              className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
+                locale === "id" ? "bg-white/20 text-white" : "text-white/80 hover:text-white"
+              }`}
+            >
+              ID
             </Link>
-          ))}
-        </nav>
+            <Link
+              href={pathname}
+              locale="en"
+              className={`px-2 py-1 text-sm font-medium rounded transition-colors ${
+                locale === "en" ? "bg-white/20 text-white" : "text-white/80 hover:text-white"
+              }`}
+            >
+              EN
+            </Link>
+          </div>
+        </div>
 
         <button
           type="button"
-          aria-label="Toggle navigation"
+          aria-label={t("menu")}
           aria-expanded={open}
           aria-controls="mobile-menu"
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/30 text-white md:hidden hover:bg-white/10 transition-colors"
           onClick={() => setOpen((prev) => !prev)}
         >
-          <span className="sr-only">Menu</span>
+          <span className="sr-only">{t("menu")}</span>
           <div className="flex flex-col gap-[6px]">
             <span className="block h-0.5 w-5 bg-white" />
             <span className="block h-0.5 w-5 bg-white" />
@@ -60,10 +86,17 @@ export function Header({ items }: HeaderProps) {
                 {item.label}
               </Link>
             ))}
+            <div className="flex gap-2 pt-2 border-t border-white/20">
+              <Link href={pathname} locale="id" className="py-2 text-sm font-medium text-white/90" onClick={() => setOpen(false)}>
+                ID
+              </Link>
+              <Link href={pathname} locale="en" className="py-2 text-sm font-medium text-white/90" onClick={() => setOpen(false)}>
+                EN
+              </Link>
+            </div>
           </Container>
         </div>
       ) : null}
     </header>
   );
 }
-

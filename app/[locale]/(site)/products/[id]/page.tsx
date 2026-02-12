@@ -1,19 +1,29 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 
 export const dynamic = 'force-dynamic';
 
-async function getProductById(id: string) {
+async function getProductById(id: string, locale: Locale) {
   try {
-    return await prisma.product.findUnique({
+    const row = await prisma.product.findUnique({
       where: { id },
     });
+    if (!row) return null;
+    return {
+      ...row,
+      title: pickLocaleString(row.title, row.titleEn ?? undefined, locale),
+      subtitle: pickLocaleString(row.subtitle ?? undefined, row.subtitleEn ?? undefined, locale) || null,
+      content: pickLocaleString(row.content ?? undefined, row.contentEn ?? undefined, locale) || null,
+    };
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
@@ -23,10 +33,10 @@ async function getProductById(id: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ locale: string; id: string }> | { locale: string; id: string };
 }) {
-  const { id } = await Promise.resolve(params);
-  const product = await getProductById(id);
+  const { id, locale } = await Promise.resolve(params);
+  const product = await getProductById(id, locale as Locale);
   if (!product) return { title: 'Hyundai Capital' };
   return {
     title: `Hyundai Capital - ${product.title}`,
@@ -36,10 +46,11 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ locale: string; id: string }> | { locale: string; id: string };
 }) {
-  const { id } = await Promise.resolve(params);
-  const product = await getProductById(id);
+  const { id, locale } = await Promise.resolve(params);
+  const localeTyped = locale as Locale;
+  const [product, tCommon] = await Promise.all([getProductById(id, localeTyped), getTranslations('common')]);
   if (!product) notFound();
 
   const layout = (product as { layout?: unknown }).layout as PageLayout | null;
@@ -75,11 +86,11 @@ export default async function ProductDetailPage({
   const bottomNav = (
     <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-slate-300/50">
       <Link
-        href="/#products"
+        href="/products"
         className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
       >
         <span className="text-sm font-semibold text-slate-700">
-          Kembali ke Daftar Produk
+          {tCommon('backToProductList')}
         </span>
       </Link>
     </div>
@@ -176,7 +187,7 @@ export default async function ProductDetailPage({
                 className="prose prose-sm max-w-none"
               />
             ) : (
-              <p className="text-[var(--muted-foreground)]">Belum ada konten.</p>
+              <p className="text-[var(--muted-foreground)]">{tCommon('noContent')}</p>
             )}
           </div>
 

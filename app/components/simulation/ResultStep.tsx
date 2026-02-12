@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
 import { IconPhone, IconBrandWhatsapp, IconFileDescription } from '@tabler/icons-react';
 import {
@@ -20,6 +21,7 @@ interface ResultStepProps {
 }
 
 export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: ResultStepProps) {
+  const t = useTranslations('creditSimulation');
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
   const [listPromo, setListPromo] = useState<ProductCalculation[]>([]);
@@ -87,7 +89,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
         body: JSON.stringify({ LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memuat produk');
+      if (!res.ok) throw new Error(data.error || t('errorLoadProducts'));
       setListStandard(data.ListDefaultStandardProductObj ?? []);
       setListPromo(data.ListDefaultPromotionProductObj ?? []);
       const first = data.ListDefaultStandardProductObj?.[0];
@@ -96,7 +98,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
         setDpPercent((prev) => (prev === 10 ? first.DPPrcnt : prev));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Gagal memuat produk');
+      setError(e instanceof Error ? e.message : t('errorLoadProducts'));
     } finally {
       setLoading(false);
     }
@@ -119,13 +121,13 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal menghitung');
+      if (!res.ok) throw new Error(data.error || t('errorCalculate'));
       setTableRows(data.ListProductObj ?? []);
       const row36 = (data.ListProductObj ?? []).find((r: ProductCalculation) => r.Tenor === 36);
       const first = (data.ListProductObj ?? [])[0];
       setSelectedTenor(row36?.Tenor ?? first?.Tenor ?? 36);
     } catch (e) {
-      setSimulateError(e instanceof Error ? e.message : 'Gagal menghitung');
+      setSimulateError(e instanceof Error ? e.message : t('errorCalculate'));
       setTableRows([]);
     } finally {
       setSimulateLoading(false);
@@ -144,7 +146,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
   if (loading) {
     return (
       <div className="text-center py-12 text-gray-900">
-        <div className="text-gray-500">Memuat produk kredit...</div>
+        <div className="text-gray-500">{t('loadingProducts')}</div>
       </div>
     );
   }
@@ -161,8 +163,8 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
   return (
     <div className="space-y-6 text-gray-900">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Pilih Produk Kredit</h2>
-        <p className="text-gray-500">Pilih tipe produk, DP %, ADDM/ADDB, lalu hitung simulasi</p>
+        <h2 className="text-2xl font-semibold mb-2">{t('selectCreditProduct')}</h2>
+        <p className="text-gray-500">{t('selectProductSubtitle')}</p>
       </div>
 
       {/* Tabs */}
@@ -174,7 +176,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
             tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
-          Standard
+          {t('standard')}
         </button>
         <button
           type="button"
@@ -183,7 +185,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
             tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
-          Promotion
+          {t('promotion')}
         </button>
       </div>
 
@@ -216,18 +218,18 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
       {selectedProduct && (
         <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-6 space-y-4">
           <div className="text-sm font-medium text-gray-700">
-            Selected: <span className="text-gray-900">{selectedProduct.ProductName}</span>
+            {t('selected')} <span className="text-gray-900">{selectedProduct.ProductName}</span>
           </div>
 
           {/* OTR */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">OTR</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('otr')}</label>
             <div className="text-lg font-semibold">{otrPrice != null ? formatCurrency(otrPrice) : '-'}</div>
           </div>
 
           {/* DP % */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">DP %</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('dpPercent')}</label>
             <div className="flex flex-wrap gap-2 mb-2">
               {[10, 15, 20, 25, 30, 35, 50].map((pct) => (
                 <button
@@ -263,7 +265,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
 
           {/* ADDM / ADDB */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipe Angsuran Pertama</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('firstInstallmentType')}</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -285,7 +287,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
               </button>
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              ADDM = angsuran pertama dibayar di muka; ADDB = angsuran pertama dibayar belakang
+              {t('addmAddbHint')}
             </p>
           </div>
 
@@ -300,7 +302,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
 
           {simulateLoading && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm text-center">
-              Menghitung simulasi...
+              {t('calculating')}
             </div>
           )}
 
@@ -313,15 +315,15 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
           {/* Table */}
           {tableRows.length > 0 && (
             <div className="pt-4 border-t border-gray-200">
-              <div className="text-sm font-medium text-gray-700 mb-3">Hasil per Tenor</div>
+              <div className="text-sm font-medium text-gray-700 mb-3">{t('resultPerTenor')}</div>
               <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-100">
                       <th className="text-left py-2 px-3 font-medium">#</th>
-                      <th className="text-left py-2 px-3 font-medium">Tenor</th>
-                      <th className="text-right py-2 px-3 font-medium">Total DP</th>
-                      <th className="text-right py-2 px-3 font-medium">Angsuran/Bulan</th>
+                      <th className="text-left py-2 px-3 font-medium">{t('tenor')}</th>
+                      <th className="text-right py-2 px-3 font-medium">{t('totalDp')}</th>
+                      <th className="text-right py-2 px-3 font-medium">{t('installmentPerMonth')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -341,7 +343,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                             className="text-[#002c5f]"
                           />
                         </td>
-                        <td className="py-2 px-3">{r.Tenor} bulan</td>
+                        <td className="py-2 px-3">{r.Tenor} {t('months')}</td>
                         <td className="py-2 px-3 text-right font-medium">{formatCurrency(r.TdpAmt)}</td>
                         <td className="py-2 px-3 text-right font-bold text-[#002c5f]">
                           {formatCurrency(r.InstallmentAmt)}
@@ -359,19 +361,19 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
               <h3 className="font-semibold">{selectedProduct.ProductName}</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <div className="text-gray-500">Total DP</div>
+                  <div className="text-gray-500">{t('totalDp')}</div>
                   <div className="font-semibold">{formatCurrency(highlightedRow.TdpAmt)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Angsuran/Bulan</div>
+                  <div className="text-gray-500">{t('installmentPerMonth')}</div>
                   <div className="font-bold text-[#002c5f]">{formatCurrency(highlightedRow.InstallmentAmt)}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Tenor</div>
-                  <div className="font-semibold">{highlightedRow.Tenor} bulan</div>
+                  <div className="text-gray-500">{t('tenor')}</div>
+                  <div className="font-semibold">{highlightedRow.Tenor} {t('months')}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">Bunga Efektif</div>
+                  <div className="text-gray-500">{t('effectiveRate')}</div>
                   <div className="font-semibold">{highlightedRow.EffRatePrcnt}%</div>
                 </div>
               </div>
@@ -385,7 +387,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconBrandWhatsapp size={20} className="text-gray-100" />
-                  <span className="text-gray-100">WhatsApp</span>
+                  <span className="text-gray-100">{t('whatsapp')}</span>
                 </a>
                 <button
                   type="button"
@@ -393,7 +395,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconPhone size={20} />
-                  Contact
+                  {t('contact')}
                 </button>
                 <button
                   type="button"
@@ -401,7 +403,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconFileDescription size={20} />
-                  Lihat Summary
+                  {t('viewSummary')}
                 </button>
               </div>
               <SimulationSummaryModal

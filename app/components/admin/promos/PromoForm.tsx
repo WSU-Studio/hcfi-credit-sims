@@ -20,13 +20,16 @@ const BANNER_RATIO_OPTIONS = [
 type Promo = {
   id: string;
   title: string;
+  titleEn?: string | null;
   slug: string | null;
   description: string | null;
+  descriptionEn?: string | null;
   imageUrl: string | null;
   bannerImageRatio: string | null;
   bannerUseContainer: boolean;
   showBannerImage: boolean;
   content: string | null;
+  contentEn?: string | null;
   layout: PageLayout | null;
   isActive: boolean;
   isHighlight: boolean;
@@ -73,6 +76,9 @@ export function PromoForm({ promoId }: PromoFormProps) {
   const [bannerImageRatio, setBannerImageRatio] = useState('default');
   const [bannerUseContainer, setBannerUseContainer] = useState(true);
   const [showBannerImage, setShowBannerImage] = useState(true);
+  const [titleEn, setTitleEn] = useState('');
+  const [descriptionEn, setDescriptionEn] = useState('');
+  const [contentEn, setContentEn] = useState('');
   const returnAfterSaveRef = useRef(false);
 
   useEffect(() => {
@@ -88,8 +94,11 @@ export function PromoForm({ promoId }: PromoFormProps) {
             setTitle(p.title ?? '');
             setSlug(p.slug ?? '');
             setDescription(p.description ?? '');
+            setTitleEn(p.titleEn ?? '');
+            setDescriptionEn(p.descriptionEn ?? '');
             setImageUrl(p.imageUrl ?? '');
             setContent(p.content ?? '');
+            setContentEn(p.contentEn ?? '');
             setIsActive(p.isActive ?? true);
             setIsHighlight(p.isHighlight ?? false);
             setOrder(p.order ?? 0);
@@ -128,10 +137,13 @@ export function PromoForm({ promoId }: PromoFormProps) {
       const slugFinal = slug.trim() || slugify(title) || `promo-${Date.now()}`;
       const payload = {
         title: title.trim(),
+        titleEn: titleEn.trim() || null,
         slug: slugFinal,
         description: description.trim() || null,
+        descriptionEn: descriptionEn.trim() || null,
         imageUrl: imageUrl.trim() || null,
         content: content.trim() || null,
+        contentEn: contentEn.trim() || null,
         layout,
         isActive,
         isHighlight,
@@ -193,15 +205,29 @@ export function PromoForm({ promoId }: PromoFormProps) {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              required
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Promo title"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="title"
+                required
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Promo title"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="titleEn"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="Promo title (EN)"
+              />
+            </div>
           </div>
 
           <div>
@@ -226,14 +252,28 @@ export function PromoForm({ promoId }: PromoFormProps) {
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description (short)
             </label>
-            <input
-              type="text"
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Short description for listing"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Short description for listing"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="descriptionEn"
+                value={descriptionEn}
+                onChange={(e) => setDescriptionEn(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="Short description for listing (EN)"
+              />
+            </div>
           </div>
         </div>
 
@@ -385,14 +425,28 @@ export function PromoForm({ promoId }: PromoFormProps) {
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             Content (optional)
           </label>
-          <textarea
-            id="content"
-            rows={3}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Plain HTML used when layout is empty"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="content"
+              rows={3}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="Plain HTML used when layout is empty"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="contentEn"
+              rows={3}
+              value={contentEn}
+              onChange={(e) => setContentEn(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="Plain HTML for EN locale"
+            />
+          </div>
         </div>
 
         <LayoutBuilderSection layout={layout} setLayout={setLayout} />

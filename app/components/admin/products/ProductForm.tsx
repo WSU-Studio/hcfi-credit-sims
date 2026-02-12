@@ -10,9 +10,12 @@ import type { PageLayout } from '@/app/types';
 type Product = {
   id: string;
   title: string;
+  titleEn?: string | null;
   subtitle: string | null;
+  subtitleEn?: string | null;
   imageUrl: string;
   content: string | null;
+  contentEn?: string | null;
   layout: PageLayout | null;
   order: number;
   isFeatured: boolean;
@@ -29,9 +32,12 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<Partial<Product>>({
     title: '',
+    titleEn: '',
     subtitle: '',
+    subtitleEn: '',
     imageUrl: '',
     content: '',
+    contentEn: '',
     layout: { rows: [] },
     order: 0,
     isFeatured: false,
@@ -56,9 +62,12 @@ export function ProductForm({ productId }: ProductFormProps) {
                 : { rows: [] };
             setFormData({
               title: product.title || '',
+              titleEn: (product as Product).titleEn ?? '',
               subtitle: product.subtitle || '',
+              subtitleEn: (product as Product).subtitleEn ?? '',
               imageUrl: product.imageUrl || '',
               content: (product as Product).content ?? '',
+              contentEn: (product as Product).contentEn ?? '',
               layout: parsedLayout,
               order: product.order ?? 0,
               isFeatured: (product as Product).isFeatured ?? false,
@@ -87,7 +96,9 @@ export function ProductForm({ productId }: ProductFormProps) {
         ...formData,
         order: Number(formData.order) || 0,
         subtitle: formData.subtitle || null,
+        subtitleEn: (formData as Product).subtitleEn || null,
         content: formData.content || null,
+        contentEn: (formData as Product).contentEn || null,
         layout: formData.layout ?? null,
         isFeatured: formData.isFeatured ?? false,
       };
@@ -141,15 +152,29 @@ export function ProductForm({ productId }: ProductFormProps) {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-              placeholder="e.g., Smart Installment Program"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="title"
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="e.g., Smart Installment Program"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="titleEn"
+                value={(formData as Product).titleEn ?? ''}
+                onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="e.g., Smart Installment Program"
+              />
+            </div>
           </div>
 
           {/* Subtitle */}
@@ -157,14 +182,28 @@ export function ProductForm({ productId }: ProductFormProps) {
             <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-1">
               Subtitle
             </label>
-            <input
-              type="text"
-              id="subtitle"
-              value={formData.subtitle || ''}
-              onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-              placeholder="e.g., Stargazer & Creta"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="subtitle"
+                value={formData.subtitle || ''}
+                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+                placeholder="e.g., Stargazer & Creta (ID)"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="subtitleEn"
+                value={(formData as Product).subtitleEn ?? ''}
+                onChange={(e) => setFormData({ ...formData, subtitleEn: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+                placeholder="e.g., Stargazer & Creta (EN)"
+              />
+            </div>
             <p className="mt-1 text-xs text-gray-500">
               Subtitle yang akan ditampilkan di bawah title pada product card
             </p>
@@ -246,14 +285,28 @@ export function ProductForm({ productId }: ProductFormProps) {
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             Content (opsional)
           </label>
-          <textarea
-            id="content"
-            rows={3}
-            value={formData.content ?? ''}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-            placeholder="Plain HTML digunakan jika layout kosong"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="content"
+              rows={3}
+              value={formData.content ?? ''}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="Plain HTML digunakan jika layout kosong"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="contentEn"
+              rows={3}
+              value={(formData as Product).contentEn ?? ''}
+              onChange={(e) => setFormData({ ...formData, contentEn: e.target.value })}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="Plain HTML for EN locale"
+            />
+          </div>
         </div>
 
         <div className="mt-6">
