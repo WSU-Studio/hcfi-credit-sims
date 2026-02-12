@@ -9,12 +9,17 @@ import Image from 'next/image';
 type Article = {
   id: string;
   title: string;
+  titleEn: string | null;
   slug: string;
   subtitle: string | null;
+  subtitleEn: string | null;
   excerpt: string | null;
+  excerptEn: string | null;
   content: string;
+  contentEn: string | null;
   imageUrl: string | null;
   metaDescription: string | null;
+  metaDescriptionEn: string | null;
   category: string | null;
   tags: string[];
   readingTime: number | null;
@@ -132,12 +137,15 @@ export function ArticlesTable() {
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <div className="text-xs font-medium text-gray-900">{article.title}</div>
-                  {article.excerpt && (
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 text-sm font-medium">{article.title}</span>
+                    <span className="text-gray-500 text-xs italic">{article.titleEn}</span>
+                  </div>
+                  {/* {article.excerpt && (
                     <div className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
                       {article.excerpt}
                     </div>
-                  )}
+                  )} */}
                 </td>
                 {/* <td className="px-3 py-4 text-sm text-gray-500 max-w-[200px] truncate">
                   {article.subtitle || '-'}
