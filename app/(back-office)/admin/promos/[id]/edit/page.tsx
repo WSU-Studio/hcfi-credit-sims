@@ -6,9 +6,9 @@ import { PromoForm } from '@/app/components/admin/promos/PromoForm';
 export default async function EditPromoPage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await Promise.resolve(params);
+  const { id } = await params;
   const session = await auth();
 
   if (!session) {

@@ -33,9 +33,9 @@ async function getProductById(id: string, locale: Locale) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; id: string }> | { locale: string; id: string };
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id, locale } = await Promise.resolve(params);
+  const { id, locale } = await params;
   const product = await getProductById(id, locale as Locale);
   if (!product) return { title: 'Hyundai Capital' };
   return {
@@ -46,9 +46,9 @@ export async function generateMetadata({
 export default async function ProductDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; id: string }> | { locale: string; id: string };
+  params: Promise<{ locale: string; id: string }>;
 }) {
-  const { id, locale } = await Promise.resolve(params);
+  const { id, locale } = await params;
   const localeTyped = locale as Locale;
   const [product, tCommon] = await Promise.all([getProductById(id, localeTyped), getTranslations('common')]);
   if (!product) notFound();

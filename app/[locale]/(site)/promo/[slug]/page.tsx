@@ -34,9 +34,9 @@ async function getPromoBySlug(slug: string, locale: Locale) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug, locale } = await Promise.resolve(params);
+  const { slug, locale } = await params;
   const promo = await getPromoBySlug(slug, locale as Locale);
   if (!promo) return { title: 'Hyundai Capital' };
   return {
@@ -47,9 +47,9 @@ export async function generateMetadata({
 export default async function PromoDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug, locale } = await Promise.resolve(params);
+  const { slug, locale } = await params;
   const localeTyped = locale as Locale;
   const [promo, tCommon] = await Promise.all([getPromoBySlug(slug, localeTyped), getTranslations('common')]);
   if (!promo) notFound();

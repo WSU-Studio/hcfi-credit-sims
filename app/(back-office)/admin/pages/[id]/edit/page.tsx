@@ -6,9 +6,9 @@ import { PageForm } from '@/app/components/admin/pages/PageForm';
 export default async function EditPagePage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await Promise.resolve(params);
+  const { id } = await params;
   const session = await auth();
 
   if (!session) {

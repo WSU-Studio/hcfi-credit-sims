@@ -39,9 +39,9 @@ async function getArticleBySlug(slug: string, locale: Locale) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug, locale } = await Promise.resolve(params);
+  const { slug, locale } = await params;
   const article = await getArticleBySlug(slug, locale as Locale);
   if (!article) return { title: 'Hyundai Capital' };
   return {
@@ -53,9 +53,9 @@ export async function generateMetadata({
 export default async function ArticleDetailPage({
   params,
 }: {
-  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug, locale } = await Promise.resolve(params);
+  const { slug, locale } = await params;
   const localeTyped = locale as Locale;
   const [article, tCommon] = await Promise.all([getArticleBySlug(slug, localeTyped), getTranslations('common')]);
   if (!article) notFound();
