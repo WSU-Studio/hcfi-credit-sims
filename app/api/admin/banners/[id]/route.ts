@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -16,7 +16,7 @@ export async function GET(
 
     await requirePermission('BANNERS', 'view');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     const banner = await prisma.banner.findUnique({
       where: { id },
     });
@@ -46,7 +46,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -56,7 +56,7 @@ export async function PUT(
 
     await requirePermission('BANNERS', 'edit');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     const body = await request.json();
 
     // Clean up empty strings and invalid URLs
@@ -104,7 +104,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -114,7 +114,7 @@ export async function DELETE(
 
     await requirePermission('BANNERS', 'delete');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     await prisma.banner.delete({
       where: { id },
     });

@@ -8,7 +8,7 @@ import { validateLayout } from '@/lib/validate-layout';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -18,7 +18,7 @@ export async function GET(
 
     await requirePermission('PRODUCTS', 'view');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     const product = await prisma.product.findUnique({
       where: { id },
     });
@@ -42,7 +42,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -52,7 +52,7 @@ export async function PUT(
 
     await requirePermission('PRODUCTS', 'edit');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     const body = await request.json();
     const { title, titleEn, subtitle, subtitleEn, imageUrl, order, content, contentEn, layout, isFeatured } = body;
 
@@ -96,7 +96,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -106,7 +106,7 @@ export async function DELETE(
 
     await requirePermission('PRODUCTS', 'delete');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     await prisma.product.delete({
       where: { id },
     });
