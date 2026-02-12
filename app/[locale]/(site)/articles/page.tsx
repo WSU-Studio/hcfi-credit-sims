@@ -1,53 +1,57 @@
+import { getTranslations, getLocale } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { ArticleCard } from '@/app/components/ui/ArticleCard';
 import type { Article } from '@/app/types';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 
 export const dynamic = 'force-dynamic';
 
-async function getPublishedArticles(): Promise<Article[]> {
+async function getPublishedArticles(locale: Locale): Promise<Article[]> {
   const articles = await prisma.article.findMany({
     where: { isPublished: true },
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
-    select: {
-      title: true,
-      slug: true,
-      imageUrl: true,
-    },
   });
   return articles.map((a) => ({
-    title: a.title,
+    title: pickLocaleString(a.title, a.titleEn ?? undefined, locale),
     image: a.imageUrl ?? '/images/main-banner.jpg',
     slug: a.slug,
   }));
 }
 
 export async function generateMetadata() {
+  const t = await getTranslations('articles');
   return {
-    title: 'Hyundai Capital - Artikel',
-    description: 'Artikel dan informasi terbaru dari Hyundai Capital.',
+    title: t('metaTitle'),
+    description: t('metaDescription'),
   };
 }
 
 export default async function ArticlesListPage() {
-  const articles = await getPublishedArticles();
+  const locale = (await getLocale()) as Locale;
+  const [articles, t, tCommon] = await Promise.all([
+    getPublishedArticles(locale),
+    getTranslations('articles'),
+    getTranslations('common'),
+  ]);
 
   return (
     <section className="min-h-[40vh] py-8 md:py-12">
       <Container className="space-y-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl">
-            Artikel
+            {t('pageTitle')}
           </h1>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Artikel dan informasi terbaru dari Hyundai Capital
+            {t('pageDescription')}
           </p>
         </div>
 
         {articles.length === 0 ? (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center">
             <p className="text-[var(--muted-foreground)]">
-              Belum ada artikel saat ini.
+              {tCommon('noArticles')}
             </p>
           </div>
         ) : (

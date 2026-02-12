@@ -54,7 +54,7 @@ export async function PUT(
 
     const { id } = await Promise.resolve(params);
     const body = await request.json();
-    const { title, subtitle, imageUrl, order, content, layout } = body;
+    const { title, titleEn, subtitle, subtitleEn, imageUrl, order, content, contentEn, layout, isFeatured } = body;
 
     if (title !== undefined && (!title || typeof title !== 'string')) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -66,11 +66,15 @@ export async function PUT(
 
     const updateData = {
       ...(title !== undefined && { title: String(title).trim() }),
+      ...(titleEn !== undefined && { titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim() }),
       ...(subtitle !== undefined && { subtitle: subtitle === null || subtitle === '' ? null : String(subtitle).trim() }),
+      ...(subtitleEn !== undefined && { subtitleEn: subtitleEn === null || subtitleEn === '' ? null : String(subtitleEn).trim() }),
       ...(imageUrl !== undefined && { imageUrl: imageUrl == null || imageUrl === '' ? '' : String(imageUrl) }),
       ...(order !== undefined && { order: Number(order) ?? 0 }),
       ...(content !== undefined && { content: content === null || content === '' ? null : String(content) }),
+      ...(contentEn !== undefined && { contentEn: contentEn === null || contentEn === '' ? null : String(contentEn) }),
       ...(layout !== undefined && { layout: layout ?? null }),
+      ...(isFeatured !== undefined && { isFeatured: Boolean(isFeatured) }),
     } as unknown as Prisma.ProductUpdateInput;
     const product = await prisma.product.update({
       where: { id },

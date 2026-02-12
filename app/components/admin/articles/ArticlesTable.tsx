@@ -2,19 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import { CldImage } from 'next-cloudinary';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Article = {
   id: string;
   title: string;
+  titleEn: string | null;
   slug: string;
   subtitle: string | null;
+  subtitleEn: string | null;
   excerpt: string | null;
+  excerptEn: string | null;
   content: string;
+  contentEn: string | null;
   imageUrl: string | null;
   metaDescription: string | null;
+  metaDescriptionEn: string | null;
   category: string | null;
   tags: string[];
   readingTime: number | null;
@@ -132,12 +138,15 @@ export function ArticlesTable() {
                   </div>
                 </td>
                 <td className="px-3 py-2">
-                  <div className="text-xs font-medium text-gray-900">{article.title}</div>
-                  {article.excerpt && (
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 text-sm font-medium">{article.title}</span>
+                    <span className="text-gray-500 text-xs italic">{article.titleEn}</span>
+                  </div>
+                  {/* {article.excerpt && (
                     <div className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
                       {article.excerpt}
                     </div>
-                  )}
+                  )} */}
                 </td>
                 {/* <td className="px-3 py-4 text-sm text-gray-500 max-w-[200px] truncate">
                   {article.subtitle || '-'}
@@ -191,6 +200,14 @@ export function ArticlesTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </AdminLink>
+                    <Link
+                      href={`/articles/${article.slug}`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Preview Article"
+                      target="_blank"
+                    >
+                      <IconLink size={18} className="text-blue-500" />
+                    </Link>
                     <button
                       type="button"
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"

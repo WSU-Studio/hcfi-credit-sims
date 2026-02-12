@@ -1,11 +1,14 @@
 import type { Prisma } from '@prisma/client';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { PromoCard } from '@/app/components/ui/PromoCard';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 
 export const dynamic = 'force-dynamic';
 
-export async function getActivePromos() {
+export async function getActivePromos(locale: Locale) {
   const now = new Date();
   const where = {
     isActive: true,
@@ -17,48 +20,54 @@ export async function getActivePromos() {
       },
     ],
   } as unknown as Prisma.PromoWhereInput;
-  const select = {
-    id: true,
-    title: true,
-    slug: true,
-    description: true,
-    imageUrl: true,
-    isHighlight: true,
-  } as unknown as Prisma.PromoSelect;
   const promos = await prisma.promo.findMany({
     where,
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-    select,
   });
-  return promos.filter((p): p is typeof p & { slug: string } => (p as { slug?: string | null }).slug != null);
+  return promos
+    .filter((p): p is typeof p & { slug: string } => (p as { slug?: string | null }).slug != null)
+    .map((p) => ({
+      id: p.id,
+      title: pickLocaleString(p.title, p.titleEn ?? undefined, locale),
+      slug: p.slug,
+      description: pickLocaleString(p.description ?? undefined, p.descriptionEn ?? undefined, locale),
+      imageUrl: p.imageUrl,
+      isHighlight: p.isHighlight ?? false,
+    }));
 }
 
 export async function generateMetadata() {
+  const t = await getTranslations('promo');
   return {
-    title: 'Hyundai Capital - Promosi',
-    description: 'Lihat promosi dan penawaran terbaru dari Hyundai Capital.',
+    title: t('metaTitle'),
+    description: t('metaDescription'),
   };
 }
 
 export default async function PromoListPage() {
-  const promos = await getActivePromos();
+  const locale = (await getLocale()) as Locale;
+  const [promos, t, tCommon] = await Promise.all([
+    getActivePromos(locale),
+    getTranslations('promo'),
+    getTranslations('common'),
+  ]);
 
   return (
     <section className="min-h-[40vh] py-8 md:py-12">
       <Container>
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-800 md:text-3xl">
-            Promosi
+            {t('pageTitle')}
           </h1>
           <p className="mt-1 text-slate-600">
-            Penawaran dan promosi dari Hyundai Capital
+            {t('pageDescription')}
           </p>
         </div>
 
         {promos.length === 0 ? (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center">
             <p className="text-[var(--muted-foreground)]">
-              Belum ada promosi aktif saat ini.
+              {tCommon('noPromos')}
             </p>
           </div>
         ) : (

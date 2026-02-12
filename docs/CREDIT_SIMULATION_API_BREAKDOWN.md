@@ -9,6 +9,19 @@ Dokumentasi breakdown API untuk Credit Simulation berdasarkan Postman Collection
 
 ---
 
+## Authentication
+
+Semua request ke API data (vendor, asset, simulate, dll) memerlukan token dari Login.
+
+1. **Login:** `POST {{base_url}}/v3/Auth/Login`
+   - Body: `{ "username": "...", "password": "...", "IsRememberMe": true }`
+   - Response: `{ "Token": "..." }`
+2. **Header untuk request data:** Setiap panggilan ke endpoint data harus menyertakan header **`AdInsKey`** dengan nilai token dari Login (bukan `Authorization: Bearer`).
+
+Env: `CREDIT_SIMULATION_USERNAME`, `CREDIT_SIMULATION_PASSWORD`. Implementasi: `lib/hyundai-api-client.ts` (`getHyundaiRequestHeaders()`).
+
+---
+
 ## FASE 1: LEAD ASSET (Pemilihan Kendaraan)
 
 ### 1. Get List Vendor by Asset Code

@@ -9,8 +9,10 @@ import type { PageLayout } from '@/app/types';
 type StaticPage = {
   id: string;
   title: string;
+  titleEn?: string | null;
   slug: string;
   content: string | null;
+  contentEn?: string | null;
   layout: PageLayout | null;
   showInMenu: boolean;
   menuOrder: number;
@@ -29,6 +31,8 @@ export function PageForm({ pageId }: PageFormProps) {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [content, setContent] = useState('');
+  const [titleEn, setTitleEn] = useState('');
+  const [contentEn, setContentEn] = useState('');
   const [showInMenu, setShowInMenu] = useState(false);
   const [menuOrder, setMenuOrder] = useState(0);
   const [showBasicContent, setShowBasicContent] = useState(true);
@@ -48,6 +52,8 @@ export function PageForm({ pageId }: PageFormProps) {
             setTitle(p.title ?? '');
             setSlug(p.slug ?? '');
             setContent(p.content ?? '');
+            setTitleEn(p.titleEn ?? '');
+            setContentEn(p.contentEn ?? '');
             setShowInMenu(p.showInMenu ?? false);
             setMenuOrder(p.menuOrder ?? 0);
             setShowBasicContent(p.showBasicContent ?? true);
@@ -88,8 +94,10 @@ export function PageForm({ pageId }: PageFormProps) {
       const slugFinal = slug.trim() || slugify(title) || `page-${Date.now()}`;
       const payload = {
         title: title.trim(),
+        titleEn: titleEn.trim() || null,
         slug: slugFinal,
         content: content.trim() || null,
+        contentEn: contentEn.trim() || null,
         showInMenu,
         menuOrder: Number(menuOrder) || 0,
         showBasicContent,
@@ -146,15 +154,29 @@ export function PageForm({ pageId }: PageFormProps) {
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="title"
-              required
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-              placeholder="Page title"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-red-500">ID</span>
+              <input
+                type="text"
+                id="title"
+                required
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+                placeholder="Page title"
+              />
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-500">EN</span>
+              <input
+                type="text"
+                id="titleEn"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                className="w-full pl-9 pr-3 h-10 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+                placeholder="Page title (EN)"
+              />
+            </div>
           </div>
           <div>
             <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,14 +234,28 @@ export function PageForm({ pageId }: PageFormProps) {
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             Content (optional)
           </label>
-          <textarea
-            id="content"
-            rows={3}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
-            placeholder="Plain HTML used when layout is empty"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-red-500">ID</span>
+            <textarea
+              id="content"
+              rows={3}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-t-lg focus:bg-blue-100/40 focus:ring-0"
+              placeholder="Plain HTML used when layout is empty"
+            />
+          </div>
+          <div className="relative -mt-1">
+            <span className="absolute left-3 top-2.5 text-sm font-bold text-blue-500">EN</span>
+            <textarea
+              id="contentEn"
+              rows={3}
+              value={contentEn}
+              onChange={(e) => setContentEn(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:bg-blue-100/40"
+              placeholder="Plain HTML for EN locale"
+            />
+          </div>
         </div>
 
         <LayoutBuilderSection layout={layout} setLayout={setLayout} />

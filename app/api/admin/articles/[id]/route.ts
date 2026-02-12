@@ -84,6 +84,11 @@ export async function PUT(
       ...(rest.bannerImageRatio !== undefined && { bannerImageRatio: rest.bannerImageRatio }),
       ...(rest.bannerUseContainer !== undefined && { bannerUseContainer: Boolean(rest.bannerUseContainer) }),
       ...(rest.showBannerImage !== undefined && { showBannerImage: Boolean(rest.showBannerImage) }),
+      ...(rest.titleEn !== undefined && { titleEn: rest.titleEn && String(rest.titleEn).trim() ? String(rest.titleEn).trim() : null }),
+      ...(rest.subtitleEn !== undefined && { subtitleEn: rest.subtitleEn && String(rest.subtitleEn).trim() ? String(rest.subtitleEn).trim() : null }),
+      ...(rest.excerptEn !== undefined && { excerptEn: rest.excerptEn && String(rest.excerptEn).trim() ? String(rest.excerptEn).trim() : null }),
+      ...(rest.contentEn !== undefined && { contentEn: rest.contentEn && String(rest.contentEn).trim() ? String(rest.contentEn).trim() : null }),
+      ...(rest.metaDescriptionEn !== undefined && { metaDescriptionEn: rest.metaDescriptionEn && String(rest.metaDescriptionEn).trim() ? String(rest.metaDescriptionEn).trim() : null }),
     };
     const article = await prisma.article.update({
       where: { id },

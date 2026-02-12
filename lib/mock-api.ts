@@ -520,11 +520,32 @@ export const mockApi = {
   },
 };
 
+/** Pesan error ketika akses data gagal dan tidak boleh fallback ke mock. */
+export const PRODUCTION_DATA_ERROR_MESSAGE =
+  'Saat ini terjadi kendala dalam akses data.';
+
 /**
- * Check if mock mode is enabled
+ * Jangan fallback ke mock: production ATAU USE_MOCK_API=false.
+ */
+export function shouldNotUseMockFallback(): boolean {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    process.env.USE_MOCK_API === 'false'
+  );
+}
+
+/**
+ * Check if mock mode is enabled.
+ * - Production: never mock.
+ * - USE_MOCK_API='false': never mock (termasuk saat npm run dev yang set NODE_ENV=development).
+ * - USE_MOCK_API='true': selalu mock.
+ * - USE_MOCK_API tidak di-set: mock hanya di development.
  */
 export function isMockModeEnabled(): boolean {
-  return process.env.USE_MOCK_API === 'true' || process.env.NODE_ENV === 'development';
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.USE_MOCK_API === 'true') return true;
+  if (process.env.USE_MOCK_API === 'false') return false;
+  return process.env.NODE_ENV === 'development';
 }
 
 /**

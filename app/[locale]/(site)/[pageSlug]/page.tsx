@@ -1,21 +1,30 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 
 export const dynamic = 'force-dynamic';
 
 const RESERVED_SLUGS = ['credit-simulation', 'admin', 'auth', 'api'];
 
-async function getPageBySlug(slug: string) {
+async function getPageBySlug(slug: string, locale: Locale) {
   if (RESERVED_SLUGS.includes(slug)) return null;
   try {
-    return await prisma.staticPage.findUnique({
+    const row = await prisma.staticPage.findUnique({
       where: { slug },
     });
+    if (!row) return null;
+    return {
+      ...row,
+      title: pickLocaleString(row.title, row.titleEn ?? undefined, locale),
+      content: pickLocaleString(row.content ?? undefined, row.contentEn ?? undefined, locale),
+    };
   } catch (error) {
     console.error('Error fetching page:', error);
     return null;
@@ -37,10 +46,10 @@ async function getPageBySlug(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ pageSlug: string }> | { pageSlug: string };
+  params: Promise<{ locale: string; pageSlug: string }> | { locale: string; pageSlug: string };
 }) {
-  const { pageSlug } = await Promise.resolve(params);
-  const page = await getPageBySlug(pageSlug);
+  const { pageSlug, locale } = await Promise.resolve(params);
+  const page = await getPageBySlug(pageSlug, locale as Locale);
   if (!page) return { title: 'Hyundai Capital' };
   return {
     title: `Hyundai Capital - ${page.title}`,
@@ -50,10 +59,11 @@ export async function generateMetadata({
 export default async function StaticPageBySlug({
   params,
 }: {
-  params: Promise<{ pageSlug: string }> | { pageSlug: string };
+  params: Promise<{ locale: string; pageSlug: string }> | { locale: string; pageSlug: string };
 }) {
-  const { pageSlug } = await Promise.resolve(params);
-  const page = await getPageBySlug(pageSlug);
+  const { pageSlug, locale } = await Promise.resolve(params);
+  const localeTyped = locale as Locale;
+  const [page, tCommon] = await Promise.all([getPageBySlug(pageSlug, localeTyped), getTranslations('common')]);
   if (!page) notFound();
 
   const layout = page.layout as PageLayout | null;
@@ -88,7 +98,7 @@ export default async function StaticPageBySlug({
       >
         {row.cells.map((cell) => (
           <div key={cell.id} className="min-w-0">
-            <WidgetRenderer cell={cell} fullWidth={fullWidth} />
+            <WidgetRenderer cell={cell} fullWidth={fullWidth} locale={localeTyped} />
           </div>
         ))}
       </div>
@@ -102,7 +112,7 @@ export default async function StaticPageBySlug({
         className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
       >
         <span className="text-sm font-semibold text-slate-700">
-          Kembali ke Beranda
+          {tCommon('backToHome')}
         </span>
       </Link>
       {/* <div className="flex flex-wrap items-center gap-3">
@@ -143,30 +153,34 @@ export default async function StaticPageBySlug({
   return (
     <section className="min-h-[40vh]">
       {hasLayout ? (
-        <div className="space-y-8">
-          {basicContentBlock}
-          {layout.rows.map((row) => {
-            const marginClass = [
-              row.marginTop === true ? 'mt-4' : '',
-              row.marginBottom === true ? 'mb-4' : '',
-            ].filter(Boolean).join(' ');
-            return row.useContainer !== false ? (
-              <Container key={row.id} className={`py-0 ${marginClass}`.trim()}>
-                <RowGrid row={row} />
-              </Container>
-            ) : (
-              <div key={row.id} className={`w-full ${marginClass}`.trim()}>
-                <RowGrid row={row} />
-              </div>
-            );
-          })}
-          <Container>{bottomNav}</Container>
+        <div>
+          <Container>
+            {basicContentBlock}
+          </Container>
+          <div className="space-y-8">
+            {layout.rows.map((row) => {
+              const marginClass = [
+                row.marginTop === true ? 'mt-4' : '',
+                row.marginBottom === true ? 'mb-4' : '',
+              ].filter(Boolean).join(' ');
+              return row.useContainer !== false ? (
+                <Container key={row.id} className={`py-0 ${marginClass}`.trim()}>
+                  <RowGrid row={row} />
+                </Container>
+              ) : (
+                <div key={row.id} className={`w-full ${marginClass}`.trim()}>
+                  <RowGrid row={row} />
+                </div>
+              );
+            })}
+            <Container>{bottomNav}</Container>
+          </div>
         </div>
       ) : (
         <Container>
           {basicContentBlock}
           {showBasicContent && !page.content && (
-            <p className="text-white/70">Belum ada konten.</p>
+            <p className="text-white/70">{tCommon('noContent')}</p>
           )}
           {bottomNav}
         </Container>

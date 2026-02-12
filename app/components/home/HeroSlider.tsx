@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import type { Slide } from "@/app/types";
 import { Container } from "../ui/Container";
 import Image from "next/image";
@@ -42,6 +43,7 @@ function CTAButton({ label, href }: { label: string; href: string }) {
 }
 
 export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
+  const t = useTranslations("common");
   const [index, setIndex] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
@@ -294,7 +296,7 @@ export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
             <button
               key={`${slide.title}-${idx}`}
               type="button"
-              aria-label={`Slide ${idx + 1}`}
+              aria-label={t("slideLabel", { n: idx + 1 })}
               aria-pressed={idx === index}
               onClick={() => goTo(idx)}
               className={`h-2 w-8 rounded-full transition cursor-pointer duration-300 ${

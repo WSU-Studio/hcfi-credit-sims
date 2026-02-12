@@ -37,9 +37,13 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
   const [selectedExtColor, setSelectedExtColor] = useState<string>(initialSpecs?.exteriorColorCode || '');
   const [selectedIntColor, setSelectedIntColor] = useState<string>(initialSpecs?.interiorColorCode || '');
 
-  const [loading, setLoading] = useState(false);
+  const [loadingYears, setLoadingYears] = useState(false);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [loadingExterior, setLoadingExterior] = useState(false);
+  const [loadingInterior, setLoadingInterior] = useState(false);
 
   const fetchManufacturingYears = useCallback(async () => {
+    setLoadingYears(true);
     try {
       const response = await fetch('/api/simulation/manufacturing-years', {
         method: 'POST',
@@ -50,11 +54,13 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
       if (data.ReturnObject) setManufacturingYears(data.ReturnObject);
     } catch (err) {
       console.error('Error fetching manufacturing years:', err);
+    } finally {
+      setLoadingYears(false);
     }
   }, [modelCode, dealerCode]);
 
   const fetchVariants = useCallback(async () => {
-    setLoading(true);
+    setLoadingVariants(true);
     try {
       const response = await fetch('/api/simulation/variants', {
         method: 'POST',
@@ -66,11 +72,12 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
     } catch (err) {
       console.error('Error fetching variants:', err);
     } finally {
-      setLoading(false);
+      setLoadingVariants(false);
     }
   }, [modelCode, dealerCode, selectedYear]);
 
   const fetchExteriorColors = useCallback(async () => {
+    setLoadingExterior(true);
     try {
       const response = await fetch('/api/simulation/colors/exterior', {
         method: 'POST',
@@ -81,10 +88,13 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
       if (data.ReturnObject) setExteriorColors(data.ReturnObject);
     } catch (err) {
       console.error('Error fetching exterior colors:', err);
+    } finally {
+      setLoadingExterior(false);
     }
   }, [selectedVariant, selectedYear]);
 
   const fetchInteriorColors = useCallback(async () => {
+    setLoadingInterior(true);
     try {
       const response = await fetch('/api/simulation/colors/interior', {
         method: 'POST',
@@ -99,6 +109,8 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
       if (data.ReturnObject) setInteriorColors(data.ReturnObject);
     } catch (err) {
       console.error('Error fetching interior colors:', err);
+    } finally {
+      setLoadingInterior(false);
     }
   }, [selectedExtColor, selectedVariant, selectedYear]);
 
@@ -198,14 +210,25 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition"
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
             required
+            disabled={loadingYears}
+            aria-busy={loadingYears}
+            aria-describedby={loadingYears ? 'loading-years-desc' : undefined}
           >
-            <option value="">Pilih Tahun Produksi</option>
-            {manufacturingYears.map((year) => (
-              <option key={year.Key} value={year.Key}>{year.Value}</option>
-            ))}
+            <option value="">
+              {loadingYears ? 'Memuat tahun produksi...' : 'Pilih Tahun Produksi'}
+            </option>
+            {!loadingYears &&
+              manufacturingYears.map((year) => (
+                <option key={year.Key} value={year.Key}>{year.Value}</option>
+              ))}
           </select>
+          {loadingYears && (
+            <p id="loading-years-desc" className="mt-1.5 text-sm text-gray-500">
+              Mengambil data tahun produksi...
+            </p>
+          )}
         </div>
 
         {/* Variant/Trim */}
@@ -214,21 +237,27 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <label className="block text-sm font-medium mb-2">
               Varian/Trim <span className="text-red-500">*</span>
             </label>
-            {loading ? (
-              <div className="text-gray-500">Memuat varian...</div>
-            ) : (
-              <select
-                value={selectedVariant}
-                onChange={(e) => setSelectedVariant(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-                required
-                disabled={!selectedYear}
-              >
-                <option value="">Pilih Varian</option>
-                {variants.map((variant) => (
+            <select
+              value={selectedVariant}
+              onChange={(e) => setSelectedVariant(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+              required
+              disabled={loadingVariants}
+              aria-busy={loadingVariants}
+              aria-describedby={loadingVariants ? 'loading-variants-desc' : undefined}
+            >
+              <option value="">
+                {loadingVariants ? 'Memuat varian...' : 'Pilih Varian'}
+              </option>
+              {!loadingVariants &&
+                variants.map((variant) => (
                   <option key={variant.Key} value={variant.Key}>{variant.Value}</option>
                 ))}
-              </select>
+            </select>
+            {loadingVariants && (
+              <p id="loading-variants-desc" className="mt-1.5 text-sm text-gray-500">
+                Mengambil data varian/trim...
+              </p>
             )}
           </div>
         )}
@@ -242,15 +271,25 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedExtColor}
               onChange={(e) => setSelectedExtColor(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               required
-              disabled={!selectedVariant}
+              disabled={loadingExterior}
+              aria-busy={loadingExterior}
+              aria-describedby={loadingExterior ? 'loading-exterior-desc' : undefined}
             >
-              <option value="">Pilih Warna Eksterior</option>
-              {exteriorColors.map((color) => (
-                <option key={color.Key} value={color.Key}>{color.Value}</option>
-              ))}
+              <option value="">
+                {loadingExterior ? 'Memuat warna eksterior...' : 'Pilih Warna Eksterior'}
+              </option>
+              {!loadingExterior &&
+                exteriorColors.map((color) => (
+                  <option key={color.Key} value={color.Key}>{color.Value}</option>
+                ))}
             </select>
+            {loadingExterior && (
+              <p id="loading-exterior-desc" className="mt-1.5 text-sm text-gray-500">
+                Mengambil data warna eksterior...
+              </p>
+            )}
           </div>
         )}
 
@@ -263,15 +302,25 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             <select
               value={selectedIntColor}
               onChange={(e) => setSelectedIntColor(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               required
-              disabled={!selectedExtColor}
+              disabled={loadingInterior}
+              aria-busy={loadingInterior}
+              aria-describedby={loadingInterior ? 'loading-interior-desc' : undefined}
             >
-              <option value="">Pilih Warna Interior</option>
-              {interiorColors.map((color) => (
-                <option key={color.Key} value={color.Key}>{color.Value}</option>
-              ))}
+              <option value="">
+                {loadingInterior ? 'Memuat warna interior...' : 'Pilih Warna Interior'}
+              </option>
+              {!loadingInterior &&
+                interiorColors.map((color) => (
+                  <option key={color.Key} value={color.Key}>{color.Value}</option>
+                ))}
             </select>
+            {loadingInterior && (
+              <p id="loading-interior-desc" className="mt-1.5 text-sm text-gray-500">
+                Mengambil data warna interior...
+              </p>
+            )}
           </div>
         )}
       </div>

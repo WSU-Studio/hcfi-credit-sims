@@ -201,6 +201,7 @@ export function LayoutBuilderSection({ layout, setLayout }: LayoutBuilderSection
                 </select>
                 {cell.widgetType === 'text' && (
                   <>
+                    <p className="text-xs text-gray-500 mb-1">Content (ID / EN)</p>
                     <textarea
                       value={(cell.payload?.content as string) ?? ''}
                       onChange={(e) =>
@@ -209,9 +210,21 @@ export function LayoutBuilderSection({ layout, setLayout }: LayoutBuilderSection
                           content: e.target.value,
                         })
                       }
-                      rows={4}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      placeholder="HTML or plain text"
+                      rows={3}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg text-sm border-b-0"
+                      placeholder="HTML or plain text (ID)"
+                    />
+                    <textarea
+                      value={(cell.payload?.contentEn as string) ?? ''}
+                      onChange={(e) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          contentEn: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg -mt-1 text-sm"
+                      placeholder="HTML or plain text (EN)"
                     />
                     <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
                       <p className="text-xs font-medium text-gray-600">Pengaturan teks</p>
@@ -254,31 +267,60 @@ export function LayoutBuilderSection({ layout, setLayout }: LayoutBuilderSection
                 )}
                 {cell.widgetType === 'text_image' && (
                   <div className="space-y-2 text-sm">
-                    <p className="text-xs text-gray-500">Text (opsional)</p>
-                    <input
-                      type="text"
-                      value={(cell.payload?.title as string) ?? ''}
-                      onChange={(e) =>
-                        setCellPayload(rowIndex, cellIndex, {
-                          ...cell.payload,
-                          title: e.target.value,
-                        })
-                      }
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded"
-                      placeholder="Title"
-                    />
-                    <textarea
-                      value={(cell.payload?.body as string) ?? ''}
-                      onChange={(e) =>
-                        setCellPayload(rowIndex, cellIndex, {
-                          ...cell.payload,
-                          body: e.target.value,
-                        })
-                      }
-                      rows={2}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded"
-                      placeholder="Body"
-                    />
+                    <p className="text-xs text-gray-500">Title (ID / EN)</p>
+                    <div>
+                      <input
+                        type="text"
+                        value={(cell.payload?.title as string) ?? ''}
+                        onChange={(e) =>
+                          setCellPayload(rowIndex, cellIndex, {
+                            ...cell.payload,
+                            title: e.target.value,
+                          })
+                        }
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg border-b-0"
+                        placeholder="Title (ID)"
+                        />
+                      <input
+                        type="text"
+                        value={(cell.payload?.titleEn as string) ?? ''}
+                        onChange={(e) =>
+                          setCellPayload(rowIndex, cellIndex, {
+                            ...cell.payload,
+                            titleEn: e.target.value,
+                          })
+                        }
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg"
+                        placeholder="Title (EN)"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Body (ID / EN)</p>
+                    <div>
+                      <textarea
+                        value={(cell.payload?.body as string) ?? ''}
+                        onChange={(e) =>
+                          setCellPayload(rowIndex, cellIndex, {
+                            ...cell.payload,
+                            body: e.target.value,
+                          })
+                        }
+                        rows={2}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg border-b-0"
+                        placeholder="Body (ID)"
+                      />
+                      <textarea
+                        value={(cell.payload?.bodyEn as string) ?? ''}
+                        onChange={(e) =>
+                          setCellPayload(rowIndex, cellIndex, {
+                            ...cell.payload,
+                            bodyEn: e.target.value,
+                          })
+                        }
+                        rows={2}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg -mt-1"
+                        placeholder="Body (EN)"
+                      />
+                    </div>
                     <p className="text-xs text-gray-500 mt-2">Gambar</p>
                     <div className="flex gap-2">
                       <input

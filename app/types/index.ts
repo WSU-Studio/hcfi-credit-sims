@@ -9,6 +9,7 @@ export type Benefit = {
 };
 
 export type Product = {
+  id?: string;
   title: string;
   subtitle?: string;
   image: string;

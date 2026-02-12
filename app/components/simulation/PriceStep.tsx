@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface PriceStepProps {
   modelName: string;
@@ -9,6 +10,7 @@ interface PriceStepProps {
 }
 
 export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepProps) {
+  const t = useTranslations('creditSimulation');
   const [price, setPrice] = useState<number | ''>(suggestedPrice || '');
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +33,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
     e.preventDefault();
     setError(null);
     if (!price || price <= 0) {
-      setError('Harga OTR harus diisi');
+      setError(t('otrRequired'));
       return;
     }
 
@@ -58,23 +60,23 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
   return (
     <div className="space-y-6 text-gray-900">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Harga Kendaraan (OTR)</h2>
+        <h2 className="text-2xl font-semibold mb-2">{t('priceStepTitle')}</h2>
         <p className="text-[var(--muted)]">
-          Masukkan <strong>total harga On The Road</strong> untuk {modelName}. OTR = harga mobil lengkap (bukan uang muka). Sistem akan menghitung DP, tenor, dan angsuran berdasarkan OTR ini.
+          {t('priceStepDescription', { modelName })}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">
-            Harga OTR <span className="text-red-500">*</span>
+            {t('otrLabel')} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <input
               type="text"
               value={price === '' ? '' : formatPrice(price)}
               onChange={handlePriceChange}
-              placeholder="Masukkan harga OTR"
+              placeholder={t('otrPlaceholder')}
               className={`w-full px-4 py-3 border rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent text-lg ${
                 error ? 'border-red-500' : 'border-[var(--border)]'
               }`}
@@ -98,10 +100,10 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
                 }}
                 className="text-sm text-[#002c5f] hover:underline"
               >
-                Gunakan harga starting: {formatPrice(suggestedPrice)}
+                {t('useSuggestedPrice', { price: formatPrice(suggestedPrice) })}
               </button>
               <p className="text-xs text-gray-500">
-                Harga dapat berbeda tergantung dealer, diskon, dan aksesoris. Range wajar: ±30% dari harga starting.
+                {t('priceHint')}
               </p>
             </div>
           )}
@@ -112,7 +114,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
           disabled={!price || price <= 0}
           className="w-full px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
         >
-          Hitung Simulasi Kredit
+          {t('submitPrice')}
         </button>
       </form>
     </div>

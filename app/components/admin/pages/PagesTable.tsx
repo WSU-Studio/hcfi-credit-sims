@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconLink, IconPlus, IconTrash } from '@tabler/icons-react';
+import Link from 'next/link';
 
 type Page = {
   id: string;
   title: string;
+  titleEn: string | null;
   slug: string;
   showInMenu: boolean;
   menuOrder: number;
@@ -74,7 +76,10 @@ export function PagesTable() {
             {pages.map((page) => (
               <tr key={page.id}>
                 <td className="px-3 py-2 text-sm font-medium text-gray-900">
-                  {page.title}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{page.title}</span>
+                    <span className="text-gray-500 text-xs font-normal italic">{page.titleEn}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-sm text-gray-500">
                   {page.slug}
@@ -102,6 +107,14 @@ export function PagesTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" title="Edit Page" />
                     </AdminLink>
+                    <Link
+                      href={`/${page.slug}`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Preview Page"
+                      target="_blank"
+                    >
+                      <IconLink size={18} className="text-blue-500" />
+                    </Link>
                     <button
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
                       onClick={() => {

@@ -173,6 +173,7 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                 </select>
                 {cell.widgetType === 'text' && (
                   <>
+                    <p className="text-xs text-gray-500 mb-1">Content (ID)</p>
                     <textarea
                       value={(cell.payload?.content as string) ?? ''}
                       onChange={(e) =>
@@ -181,9 +182,22 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                           content: e.target.value,
                         })
                       }
-                      rows={4}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                      placeholder="HTML or plain text"
+                      rows={3}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg border-b-0 text-sm"
+                      placeholder="HTML or plain text (ID)"
+                    />
+                    <p className="text-xs text-gray-500 mb-1 mt-2">Content (EN)</p>
+                    <textarea
+                      value={(cell.payload?.contentEn as string) ?? ''}
+                      onChange={(e) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          contentEn: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg text-sm"
+                      placeholder="HTML or plain text (EN)"
                     />
                     <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
                       <p className="text-xs font-medium text-gray-600">Pengaturan teks</p>
@@ -206,7 +220,7 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                 )}
                 {cell.widgetType === 'text_image' && (
                   <div className="space-y-2 text-sm">
-                    <p className="text-xs text-gray-500">Text (opsional)</p>
+                    <p className="text-xs text-gray-500">Title (ID / EN)</p>
                     <input
                       type="text"
                       value={(cell.payload?.title as string) ?? ''}
@@ -216,9 +230,22 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                           title: e.target.value,
                         })
                       }
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded"
-                      placeholder="Title"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg border-b-0"
+                      placeholder="Title (ID)"
                     />
+                    <input
+                      type="text"
+                      value={(cell.payload?.titleEn as string) ?? ''}
+                      onChange={(e) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          titleEn: e.target.value,
+                        })
+                      }
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg"
+                      placeholder="Title (EN)"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Body (ID / EN)</p>
                     <textarea
                       value={(cell.payload?.body as string) ?? ''}
                       onChange={(e) =>
@@ -228,8 +255,20 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                         })
                       }
                       rows={2}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded"
-                      placeholder="Body"
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-t-lg border-b-0"
+                      placeholder="Body (ID)"
+                    />
+                    <textarea
+                      value={(cell.payload?.bodyEn as string) ?? ''}
+                      onChange={(e) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          bodyEn: e.target.value,
+                        })
+                      }
+                      rows={2}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg"
+                      placeholder="Body (EN)"
                     />
                     <p className="text-xs text-gray-500 mt-2">Gambar</p>
                     <div className="flex gap-2">

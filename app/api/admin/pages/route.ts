@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('PAGES', 'create');
 
     const body = await request.json();
-    const { title, slug, content, layout, showInMenu, menuOrder, showBasicContent } = body;
+    const { title, titleEn, slug, content, contentEn, layout, showInMenu, menuOrder, showBasicContent } = body;
     if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
       return NextResponse.json(
         { error: 'Title and slug are required' },
@@ -73,8 +73,10 @@ export async function POST(request: NextRequest) {
     }
     const createData = {
       title: String(title).trim(),
+      titleEn: titleEn && String(titleEn).trim() ? String(titleEn).trim() : null,
       slug: String(slug).trim(),
       content: content ?? null,
+      contentEn: contentEn && String(contentEn).trim() ? String(contentEn).trim() : null,
       layout: layout ?? undefined,
       showInMenu: Boolean(showInMenu ?? false),
       menuOrder: Number(menuOrder ?? 0),

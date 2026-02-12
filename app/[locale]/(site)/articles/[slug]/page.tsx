@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { prisma } from '@/lib/prisma';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 import { Container } from '@/app/components/ui/Container';
 import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
@@ -10,14 +13,23 @@ import { IconQuoteFilled } from '@tabler/icons-react';
 
 export const dynamic = 'force-dynamic';
 
-async function getArticleBySlug(slug: string) {
+async function getArticleBySlug(slug: string, locale: Locale) {
   try {
-    return await prisma.article.findFirst({
+    const row = await prisma.article.findFirst({
       where: {
         slug,
         isPublished: true,
       },
     });
+    if (!row) return null;
+    return {
+      ...row,
+      title: pickLocaleString(row.title, row.titleEn ?? undefined, locale),
+      subtitle: pickLocaleString(row.subtitle ?? undefined, row.subtitleEn ?? undefined, locale),
+      excerpt: pickLocaleString(row.excerpt ?? undefined, row.excerptEn ?? undefined, locale),
+      content: pickLocaleString(row.content, row.contentEn ?? undefined, locale),
+      metaDescription: pickLocaleString(row.metaDescription ?? undefined, row.metaDescriptionEn ?? undefined, locale),
+    };
   } catch (error) {
     console.error('Error fetching article:', error);
     return null;
@@ -27,10 +39,10 @@ async function getArticleBySlug(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
 }) {
-  const { slug } = await Promise.resolve(params);
-  const article = await getArticleBySlug(slug);
+  const { slug, locale } = await Promise.resolve(params);
+  const article = await getArticleBySlug(slug, locale as Locale);
   if (!article) return { title: 'Hyundai Capital' };
   return {
     title: `Hyundai Capital - ${article.title}`,
@@ -41,10 +53,11 @@ export async function generateMetadata({
 export default async function ArticleDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }> | { slug: string };
+  params: Promise<{ locale: string; slug: string }> | { locale: string; slug: string };
 }) {
-  const { slug } = await Promise.resolve(params);
-  const article = await getArticleBySlug(slug);
+  const { slug, locale } = await Promise.resolve(params);
+  const localeTyped = locale as Locale;
+  const [article, tCommon] = await Promise.all([getArticleBySlug(slug, localeTyped), getTranslations('common')]);
   if (!article) notFound();
 
   const layout = (article as { layout?: unknown }).layout as PageLayout | null;
@@ -106,7 +119,7 @@ export default async function ArticleDetailPage({
       >
         {row.cells.map((cell) => (
           <div key={cell.id} className="min-w-0">
-            <WidgetRenderer cell={cell} fullWidth={fullWidth} />
+            <WidgetRenderer cell={cell} fullWidth={fullWidth} locale={localeTyped} />
           </div>
         ))}
       </div>
@@ -120,7 +133,7 @@ export default async function ArticleDetailPage({
         className="inline-flex items-center justify-center px-5 py-2.5 bg-gray-100/80 rounded-lg hover:bg-slate-200 transition-colors duration-300 border border-slate-500"
       >
         <span className="text-sm font-semibold text-slate-700">
-          Kembali ke Daftar Artikel
+          {tCommon('backToArticleList')}
         </span>
       </Link>
     </div>
@@ -271,7 +284,7 @@ export default async function ArticleDetailPage({
             {article.content ? (
               <SanitizedHtml html={article.content.replace(/\n/g, '<br>')} />
             ) : (
-              <p className="text-[var(--muted-foreground)]">Belum ada konten.</p>
+              <p className="text-[var(--muted-foreground)]">{tCommon('noContent')}</p>
             )}
           </div>
 

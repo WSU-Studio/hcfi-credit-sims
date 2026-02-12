@@ -3,7 +3,13 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
-const KEYS = ['gtmId', 'gaMeasurementId', 'whatsappFabPhone', 'whatsappFabMessage'] as const;
+const KEYS = [
+  'gtmId',
+  'gaMeasurementId',
+  'whatsappFabPhone',
+  'whatsappFabMessage',
+  'whatsappLeadPhone',
+] as const;
 
 function toPayload(settings: { key: string; value: string }[]) {
   const data: Record<string, string> = {};

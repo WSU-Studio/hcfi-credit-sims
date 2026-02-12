@@ -1,7 +1,20 @@
+import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
-import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
+import {
+  mockApi,
+  isMockModeEnabled,
+  simulateDelay,
+  shouldNotUseMockFallback,
+  PRODUCTION_DATA_ERROR_MESSAGE,
+} from '@/lib/mock-api';
+import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
-const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
+const CONNECT_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+
+const hyundaiAgent = new Agent({
+  connectTimeout: CONNECT_TIMEOUT_MS,
+});
 
 // Get List Vendor And Vendor City
 export async function POST(request: NextRequest) {
@@ -17,33 +30,55 @@ export async function POST(request: NextRequest) {
   }
 
   let timeoutId: NodeJS.Timeout | null = null;
-  
+
   try {
+    const headers = await getHyundaiRequestHeaders();
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
 
-    // Increase timeout for API calls (30 seconds)
     const controller = new AbortController();
-    timeoutId = setTimeout(() => controller.abort(), 30000);
+    timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    const response = await fetch(`${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
-        hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
-      }),
-      signal: controller.signal,
-    });
+    const response = await undiciFetch(
+      `${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
+          hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
+        }),
+        signal: controller.signal,
+        dispatcher: hyundaiAgent,
+      }
+    );
 
     if (timeoutId) clearTimeout(timeoutId);
 
-    const data = await response.json();
+    const text = await response.text();
+    let data: unknown;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid response from vendor API' },
+        { status: 502 }
+      );
+    }
 
     if (!response.ok) {
+      const errMsg =
+        data && typeof data === 'object' && 'Message' in data
+          ? String((data as { Message?: string }).Message)
+          : 'Failed to fetch vendors';
       return NextResponse.json(
-        { error: data.Message || 'Failed to fetch vendors' },
+        { error: errMsg },
         { status: response.status }
       );
     }
@@ -51,23 +86,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error: unknown) {
     if (timeoutId) clearTimeout(timeoutId);
-    
     console.error('Error fetching vendors:', error);
-    console.log('Falling back to mock API...');
-    
-    // Fallback to mock API on error
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     try {
-      const body = await request.json();
       const mockResponse = mockApi.getVendorsAndCities({
-        hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
-        hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
+        hasAvailableAssetOnly: true,
+        hasCmoAssignedOnly: true,
       });
       return NextResponse.json(mockResponse);
     } catch (mockError) {
       console.error('Error fetching vendors:', mockError);
       return NextResponse.json(
-        { 
-          error: 'Internal server error', 
+        {
+          error: 'Internal server error',
           message: error instanceof Error ? error.message : 'Unknown error',
         },
         { status: 500 }

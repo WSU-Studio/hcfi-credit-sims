@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
 
 interface ContactModalProps {
@@ -22,6 +23,7 @@ export function ContactModal({
   tenor,
   onSubmit,
 }: ContactModalProps) {
+  const t = useTranslations('creditSimulation');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -56,19 +58,19 @@ export function ContactModal({
     setError(null);
 
     if (!name.trim() || !phone.trim() || !email.trim()) {
-      setError('Mohon lengkapi semua field');
+      setError(t('pleaseFillAll'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Format email tidak valid');
+      setError(t('invalidEmail'));
       return;
     }
 
     const phoneRegex = /^[0-9+\-\s()]+$/;
     if (!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 10) {
-      setError('Format nomor telepon tidak valid');
+      setError(t('invalidPhone'));
       return;
     }
 
@@ -89,7 +91,7 @@ export function ContactModal({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengirim data');
+      if (!res.ok) throw new Error(data.error || t('submitError'));
 
       setSuccess(true);
       onSubmit?.({ name: name.trim(), phone: phone.trim(), email: email.trim() });
@@ -98,7 +100,7 @@ export function ContactModal({
         setSuccess(false);
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      setError(err instanceof Error ? err.message : t('submitError'));
     } finally {
       setLoading(false);
     }
@@ -118,13 +120,13 @@ export function ContactModal({
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 id="contact-title" className="text-lg font-semibold text-gray-900">
-            Hubungi Kami
+            {t('contactModalTitle')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
-            aria-label="Tutup"
+            aria-label={t('close')}
           >
             <IconX size={22} />
           </button>
@@ -141,7 +143,7 @@ export function ContactModal({
 
           <div>
             <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Nama Lengkap <span className="text-red-500">*</span>
+              {t('fullName')} <span className="text-red-500">*</span>
             </label>
             <input
               id="contact-name"
@@ -151,13 +153,13 @@ export function ContactModal({
               required
               disabled={loading || success}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder="Masukkan nama lengkap"
+              placeholder={t('fullNamePlaceholder')}
             />
           </div>
 
           <div>
             <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Nomor Telepon <span className="text-red-500">*</span>
+              {t('phone')} <span className="text-red-500">*</span>
             </label>
             <input
               id="contact-phone"
@@ -173,7 +175,7 @@ export function ContactModal({
 
           <div>
             <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Email <span className="text-red-500">*</span>
+              {t('email')} <span className="text-red-500">*</span>
             </label>
             <input
               id="contact-email"
@@ -196,7 +198,7 @@ export function ContactModal({
           {success && (
             <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
               <IconCheck size={18} />
-              <span>Data berhasil dikirim! Terima kasih.</span>
+              <span>{t('success')}</span>
             </div>
           )}
 
@@ -207,14 +209,14 @@ export function ContactModal({
               disabled={loading}
               className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Batal
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || success}
               className="flex-1 px-4 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Mengirim...' : success ? 'Berhasil!' : 'Kirim'}
+              {loading ? t('sending') : success ? t('success') : t('submitContact')}
             </button>
           </div>
         </form>

@@ -1,13 +1,15 @@
 import type { Product } from "@/app/types";
 import Image from "next/image";
+import { Link } from "@/i18n/navigation";
 
 type ProductCardProps = Product & {
   className?: string;
 };
 
-export function ProductCard({ title, subtitle, image, className }: ProductCardProps) {
+export function ProductCard({ id, title, subtitle, image, className }: ProductCardProps) {
   const base =
     "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[5/2] md:aspect-[4/3]";
+  const linkClass = `${base} block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[var(--action)] focus:ring-offset-2`;
 
   // Add cache busting for local images - use URL hash to force reload when URL changes
   const getImageUrl = (url: string) => {
@@ -25,8 +27,8 @@ export function ProductCard({ title, subtitle, image, className }: ProductCardPr
 
   const imageSrc = getImageUrl(image);
 
-  return (
-    <div className={className ? `${base} ${className}` : base} role="img" aria-label={title}>
+  const cardContent = (
+    <>
       <Image
         src={imageSrc}
         alt={title}
@@ -44,6 +46,24 @@ export function ProductCard({ title, subtitle, image, className }: ProductCardPr
           <p className="text-sm text-gray-300 leading-snug">{subtitle}</p>
         ) : null}
       </div>
+    </>
+  );
+
+  if (id) {
+    return (
+      <Link
+        href={`/products/${id}`}
+        className={className ? `${linkClass} ${className}` : linkClass}
+        aria-label={`Lihat detail ${title}`}
+      >
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={className ? `${base} ${className}` : base} role="img" aria-label={title}>
+      {cardContent}
     </div>
   );
 }

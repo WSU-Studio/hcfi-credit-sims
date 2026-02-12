@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('PROMOS', 'create');
 
     const body = await request.json();
-    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
+    const { title, titleEn, slug, description, descriptionEn, imageUrl, content, contentEn, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -75,10 +75,13 @@ export async function POST(request: NextRequest) {
 
     const createData = {
       title: title.trim(),
+      titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim(),
       slug: slugTrimmed ?? undefined,
       description: description === null || description === '' ? null : (description ?? undefined),
+      descriptionEn: descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn).trim(),
       imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
       content: content === null || content === '' ? null : (content ?? undefined),
+      contentEn: contentEn === null || contentEn === '' ? null : String(contentEn),
       layout: layout ?? undefined,
       isActive: isActive !== undefined ? Boolean(isActive) : true,
       isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,

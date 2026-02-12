@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import { WhatsappFAB } from "../components/layout/WhatsappFAB";
-import { AnalyticsScripts } from "../components/layout/AnalyticsScripts";
-import { CompanyInfo, NavItem } from "../types";
+import { getTranslations } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { Header } from "@/app/components/layout/Header";
+import { Footer } from "@/app/components/layout/Footer";
+import { WhatsappFAB } from "@/app/components/layout/WhatsappFAB";
+import { AnalyticsScripts } from "@/app/components/layout/AnalyticsScripts";
+import { CompanyInfo, NavItem } from "@/app/types";
 import { IconBrandWhatsapp, IconBrandInstagram, IconPhone, IconMail } from "@tabler/icons-react";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings";
+import { pickLocaleString } from "@/lib/pick-locale";
+import type { Locale } from "@/lib/pick-locale";
 
 async function getStaticPages() {
   try {
@@ -20,21 +25,42 @@ async function getStaticPages() {
 }
 
 function buildNavItems(
-  pages: Awaited<ReturnType<typeof getStaticPages>>
+  pages: Awaited<ReturnType<typeof getStaticPages>>,
+  t: (key: string) => string,
+  locale: Locale
 ): NavItem[] {
   const fixed: NavItem[] = [
-    { label: "Simulasi Kredit", href: "/credit-simulation" },
-    { label: "Promosi", href: "/promo" },
-    { label: "Informasi", href: "/informasi" },
+    { label: t("creditSimulation"), href: "/credit-simulation" },
+    { label: t("promo"), href: "/promo" },
+    { label: t("information"), href: "/informasi" },
   ];
   const menuPages = pages
     .filter((p) => p.showInMenu)
-    .map((p) => ({ label: p.title, href: `/${p.slug}` }));
+    .map((p) => ({
+      label: pickLocaleString(p.title, p.titleEn ?? undefined, locale),
+      href: `/${p.slug}`,
+    }));
   return [...fixed, ...menuPages];
 }
 
+function getLocalizedFooterValue(
+  value: unknown,
+  locale: Locale
+): string | string[] {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && "id" in value && "en" in value) {
+    const o = value as { id?: string; en?: string };
+    if (locale === "en" && o.en != null && String(o.en).trim() !== "") return o.en;
+    return o.id ?? "";
+  }
+  if (Array.isArray(value)) return value.map((v) => String(v));
+  return String(value);
+}
+
 async function getFooterData(
-  pages: Awaited<ReturnType<typeof getStaticPages>>
+  pages: Awaited<ReturnType<typeof getStaticPages>>,
+  locale: Locale
 ): Promise<CompanyInfo> {
   try {
     const settings = await prisma.footerSetting.findMany();
@@ -52,7 +78,7 @@ async function getFooterData(
       (p) => p.slug === "privacy-policy" || p.slug === "terms-condition"
     );
     const legalLinks = legalPages.map((page) => ({
-      label: page.title,
+      label: pickLocaleString(page.title, page.titleEn ?? undefined, locale),
       href: `/${page.slug}`,
     }));
 
@@ -143,9 +169,12 @@ async function getFooterData(
           ? appsFromData.map((a) => ({ label: a.label || "", src: a.src || "", href: a.href || "#" }))
           : defaultApps;
 
+    const disclaimerVal = getLocalizedFooterValue(data.disclaimer, locale);
+    const copyrightVal = getLocalizedFooterValue(data.copyright, locale);
+
     return {
       name: "Hyundai Capital",
-      address: Array.isArray(data.address) ? data.address : defaultAddress,
+      address: Array.isArray(data.address) ? (data.address as string[]) : defaultAddress,
       legalLinks: legalLinks.length > 0 ? legalLinks : [
         { label: "Privacy Policy", href: "#" },
         { label: "Terms & Condition", href: "#" },
@@ -153,13 +182,10 @@ async function getFooterData(
       contact,
       apps,
       disclaimer:
-        typeof data.disclaimer === "string" && data.disclaimer.trim()
-          ? data.disclaimer
-          : "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
+        (typeof disclaimerVal === "string" ? disclaimerVal : "").trim() ||
+        "PT Hyundai Capital Finance Indonesia berizin dan diawasi oleh Otoritas Jasa Keuangan",
       copyright:
-        typeof data.copyright === "string" && data.copyright.trim()
-          ? data.copyright
-          : "Copyright © 2025 - All Right Reserved",
+        (typeof copyrightVal === "string" ? copyrightVal : "").trim() || "Copyright © 2025 - All Right Reserved",
     };
   } catch {
     // Fallback to default
@@ -190,32 +216,42 @@ async function getFooterData(
   }
 }
 
-export const metadata: Metadata = {
-  title: "Hyundai Capital - Simulasi Kredit",
-  description: "Simulasi kredit pembiayaan kendaraan dengan layanan profesional",
+type Props = {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 };
 
-export default async function SiteLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pages = await getStaticPages();
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("siteTitle"),
+    description: t("siteDescription"),
+  };
+}
+
+export default async function SiteLayout({ children, params }: Props) {
+  const { locale } = await params;
+  const [t, messages, pages] = await Promise.all([
+    getTranslations("nav"),
+    getMessages(),
+    getStaticPages(),
+  ]);
+  const localeTyped = locale as Locale;
   const [companyInfo, siteSettings] = await Promise.all([
-    getFooterData(pages),
+    getFooterData(pages, localeTyped),
     getSiteSettings(),
   ]);
-  const navItems = buildNavItems(pages);
+  const navItems = buildNavItems(pages, (key) => t(key), localeTyped);
   const fabPhone = siteSettings.whatsappFabPhone.trim() || undefined;
   const fabMessage = siteSettings.whatsappFabMessage.trim() || undefined;
 
   return (
-    <>
+    <NextIntlClientProvider locale={locale} messages={messages}>
       <AnalyticsScripts
         gtmId={siteSettings.gtmId}
         gaMeasurementId={siteSettings.gaMeasurementId}
       />
-      <Header items={navItems} />
+      <Header items={navItems} locale={locale} />
       <main className="pt-14 pb-16">
         {children}
       </main>
@@ -225,7 +261,7 @@ export default async function SiteLayout({
       <div id="footer">
         <Footer company={companyInfo} />
       </div>
-    </>
+    </NextIntlClientProvider>
   );
 }
 

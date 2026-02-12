@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import { CldImage } from 'next-cloudinary';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Product = {
   id: string;
   title: string;
+  titleEn: string | null;
   subtitle: string | null;
+  subtitleEn: string | null;
   imageUrl: string;
   order: number;
+  isFeatured: boolean;
 };
 
 export function ProductsTable() {
@@ -60,6 +64,9 @@ export function ProductsTable() {
                 Subtitle
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Featured
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Order
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -92,10 +99,19 @@ export function ProductsTable() {
                   </div>
                 </td>
                 <td className="px-3 py-2 text-xs font-medium text-gray-900">
-                  {product.title}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{product.title}</span>
+                    <span className="text-gray-500 font-normal italic">{product.titleEn}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-500">
-                  {product.subtitle || '-'}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{product.subtitle}</span>
+                    <span className="text-gray-500 font-normal italic">{product.subtitleEn}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                  {product.isFeatured ? 'Yes' : 'No'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                   {product.order}
@@ -109,6 +125,14 @@ export function ProductsTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </AdminLink>
+                    <Link
+                      href={`/products/${product.id}`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Preview Product"
+                      target="_blank"
+                    >
+                      <IconLink size={18} className="text-blue-500" />
+                    </Link>
                     <button
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
                       title="Delete Product"

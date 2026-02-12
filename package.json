@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3070 --webpack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "node scripts/setup-prisma.js",
@@ -27,11 +27,13 @@
     "next": "16.1.2",
     "next-auth": "^5.0.0-beta.30",
     "next-cloudinary": "^6.17.5",
+    "next-intl": "^3.26.5",
     "pg": "^8.17.1",
     "prisma": "^6.19.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.68.0",
+    "undici": "^7.21.0",
     "zod": "^4.2.1"
   },
   "devDependencies": {

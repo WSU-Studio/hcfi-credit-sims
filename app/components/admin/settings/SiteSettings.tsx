@@ -8,6 +8,7 @@ type SiteSettingsData = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  whatsappLeadPhone: string;
 };
 
 const defaultData: SiteSettingsData = {
@@ -15,6 +16,7 @@ const defaultData: SiteSettingsData = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappLeadPhone: '',
 };
 
 function ensureString(v: unknown): string {
@@ -39,6 +41,7 @@ export function SiteSettings() {
             gaMeasurementId: ensureString(d.gaMeasurementId ?? ''),
             whatsappFabPhone: ensureString(d.whatsappFabPhone ?? ''),
             whatsappFabMessage: ensureString(d.whatsappFabMessage ?? ''),
+            whatsappLeadPhone: ensureString(d.whatsappLeadPhone ?? ''),
           });
         }
         setLoading(false);
@@ -61,6 +64,7 @@ export function SiteSettings() {
           gaMeasurementId: data.gaMeasurementId.trim(),
           whatsappFabPhone: data.whatsappFabPhone.trim(),
           whatsappFabMessage: data.whatsappFabMessage.trim(),
+          whatsappLeadPhone: data.whatsappLeadPhone.trim(),
         }),
       });
       const json = await res.json();
@@ -168,6 +172,29 @@ export function SiteSettings() {
               placeholder="Halo, saya ingin bertanya..."
             />
           </div>
+        </div>
+      </section>
+
+      {/* WhatsApp Leads (Simulasi) */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+          WhatsApp Leads (Hasil Simulasi)
+        </h2>
+        <p className="text-sm text-gray-600">
+          Nomor WhatsApp untuk tombol di halaman hasil simulasi kredit (leads CS/SDR). Jika kosong, akan memakai nomor FAB di atas. Format: 62xxx atau 08xxx.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nomor WhatsApp Leads / CS / SDR
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={data.whatsappLeadPhone}
+            onChange={(e) => setData({ ...data, whatsappLeadPhone: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="628111500708"
+          />
         </div>
       </section>
 

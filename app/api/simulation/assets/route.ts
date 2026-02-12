@@ -1,67 +1,106 @@
+import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
-import { mockApi, isMockModeEnabled, simulateDelay } from '@/lib/mock-api';
+import {
+  mockApi,
+  isMockModeEnabled,
+  simulateDelay,
+  shouldNotUseMockFallback,
+  PRODUCTION_DATA_ERROR_MESSAGE,
+} from '@/lib/mock-api';
+import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
-const API_BASE_URL = process.env.CREDIT_SIMULATION_API_URL || 'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
+const CONNECT_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
+
+const hyundaiAgent = new Agent({
+  connectTimeout: CONNECT_TIMEOUT_MS,
+});
 
 // Get All Asset Master Lv2 with Starting Price
 export async function POST(request: NextRequest) {
-  // Check if mock mode is enabled
+  const body = await request.json().catch(() => ({}));
+  const payload = {
+    AssetHierarchyLv1Code: 'HYUNDAI' as const,
+    CmoEmpNo: body.CmoEmpNo || '',
+    DealerCode: body.DealerCode as string,
+    GetLatestAsset: body.GetLatestAsset ?? true,
+  };
+
   if (isMockModeEnabled()) {
     await simulateDelay(300);
-    const body = await request.json();
-    const mockResponse = mockApi.getAssetMasters({
-      AssetHierarchyLv1Code: 'HYUNDAI',
-      CmoEmpNo: body.CmoEmpNo || '',
-      DealerCode: body.DealerCode,
-      GetLatestAsset: body.GetLatestAsset ?? true,
-    });
+    const mockResponse = mockApi.getAssetMasters(payload);
     return NextResponse.json(mockResponse);
   }
 
+  let timeoutId: NodeJS.Timeout | null = null;
+
   try {
-    const body = await request.json();
+    const headers = await getHyundaiRequestHeaders();
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
 
-    const response = await fetch(`${API_BASE_URL}/Foundation/v1/AssetMasterX/GetAllAssetMasterLvl2AndStartingPrice`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        AssetHierarchyLv1Code: 'HYUNDAI', // Hardcoded as per API spec
-        CmoEmpNo: body.CmoEmpNo || '',
-        DealerCode: body.DealerCode,
-        GetLatestAsset: body.GetLatestAsset ?? true,
-      }),
-    });
+    const controller = new AbortController();
+    timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    const data = await response.json();
+    const response = await undiciFetch(
+      `${API_BASE_URL}/Foundation/v1/AssetMasterX/GetAllAssetMasterLvl2AndStartingPrice`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+        dispatcher: hyundaiAgent,
+      }
+    );
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    const text = await response.text();
+    let data: unknown;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid response from asset API' },
+        { status: 502 }
+      );
+    }
 
     if (!response.ok) {
+      const errMsg =
+        data && typeof data === 'object' && 'Message' in data
+          ? String((data as { Message?: string }).Message)
+          : 'Failed to fetch assets';
       return NextResponse.json(
-        { error: data.Message || 'Failed to fetch assets' },
+        { error: errMsg },
         { status: response.status }
       );
     }
 
     return NextResponse.json(data);
   } catch (error: unknown) {
+    if (timeoutId) clearTimeout(timeoutId);
     console.error('Error fetching assets:', error);
-    console.log('Falling back to mock API...');
-    
-    // Fallback to mock API on error
+    if (shouldNotUseMockFallback()) {
+      return NextResponse.json(
+        { error: PRODUCTION_DATA_ERROR_MESSAGE },
+        { status: 503 }
+      );
+    }
     try {
-      const body = await request.json();
-      const mockResponse = mockApi.getAssetMasters({
-        AssetHierarchyLv1Code: 'HYUNDAI',
-        CmoEmpNo: body.CmoEmpNo || '',
-        DealerCode: body.DealerCode,
-        GetLatestAsset: body.GetLatestAsset ?? true,
-      });
+      const mockResponse = mockApi.getAssetMasters(payload);
       return NextResponse.json(mockResponse);
     } catch (mockError) {
       console.error('Error fetching assets:', mockError);
       return NextResponse.json(
-        { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+        {
+          error: 'Internal server error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
         { status: 500 }
       );
     }
