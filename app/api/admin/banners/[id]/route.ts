@@ -73,6 +73,10 @@ export async function PUT(
     if (cleanedData.description === '') {
       cleanedData.description = null;
     }
+    if (cleanedData.titleEn === '') cleanedData.titleEn = null;
+    if (cleanedData.highlightEn === '') cleanedData.highlightEn = null;
+    if (cleanedData.descriptionEn === '') cleanedData.descriptionEn = null;
+    if (cleanedData.ctaLabelEn === '') cleanedData.ctaLabelEn = null;
 
     const banner = await prisma.banner.update({
       where: { id },

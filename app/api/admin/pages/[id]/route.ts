@@ -53,7 +53,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, slug, content, layout, showInMenu, menuOrder, showBasicContent } = body;
+    const { title, titleEn, slug, content, contentEn, layout, showInMenu, menuOrder, showBasicContent } = body;
 
     if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
       return NextResponse.json(
@@ -79,6 +79,8 @@ export async function PUT(
     const existingFields = existing as typeof existing & {
       slug?: string;
       content?: string | null;
+      contentEn?: string | null;
+      titleEn?: string | null;
       layout?: unknown;
       showInMenu?: boolean;
       menuOrder?: number;
@@ -98,8 +100,10 @@ export async function PUT(
 
     const updateData = {
       title: title.trim(),
+      titleEn: titleEn !== undefined ? (titleEn && String(titleEn).trim() ? String(titleEn).trim() : null) : existingFields.titleEn,
       slug: slug.trim(),
       content: content ?? existingFields.content,
+      contentEn: contentEn !== undefined ? (contentEn && String(contentEn).trim() ? String(contentEn).trim() : null) : existingFields.contentEn,
       layout: layout ?? existingFields.layout,
       showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
       menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,

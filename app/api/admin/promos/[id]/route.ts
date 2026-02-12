@@ -53,7 +53,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { title, slug, description, imageUrl, content, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
+    const { title, titleEn, slug, description, descriptionEn, imageUrl, content, contentEn, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json(
@@ -79,8 +79,11 @@ export async function PUT(
     const existingFields = existing as typeof existing & {
       slug?: string | null;
       description?: string | null;
+      descriptionEn?: string | null;
       imageUrl?: string | null;
       content?: string | null;
+      contentEn?: string | null;
+      titleEn?: string | null;
       layout?: unknown;
       bannerImageRatio?: string | null;
       bannerUseContainer?: boolean;
@@ -101,10 +104,13 @@ export async function PUT(
 
     const updateData = {
       title: title.trim(),
+      titleEn: titleEn !== undefined ? (titleEn === null || titleEn === '' ? null : String(titleEn).trim()) : existingFields.titleEn,
       slug: slugTrimmed ?? undefined,
       description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existingFields.description,
+      descriptionEn: descriptionEn !== undefined ? (descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn)) : existingFields.descriptionEn,
       imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existingFields.imageUrl,
       content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existingFields.content,
+      contentEn: contentEn !== undefined ? (contentEn === null || contentEn === '' ? null : String(contentEn)) : existingFields.contentEn,
       layout: layout !== undefined ? layout : existingFields.layout,
       isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
       isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,

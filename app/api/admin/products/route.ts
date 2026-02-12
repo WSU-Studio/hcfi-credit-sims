@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('PRODUCTS', 'create');
 
     const body = await request.json();
-    const { title, subtitle, imageUrl, order, content, layout, isFeatured } = body;
+    const { title, titleEn, subtitle, subtitleEn, imageUrl, order, content, contentEn, layout, isFeatured } = body;
 
     if (!title || typeof title !== 'string') {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -56,10 +56,13 @@ export async function POST(request: NextRequest) {
 
     const createData = {
       title: String(title).trim(),
+      titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim(),
       subtitle: subtitle === null || subtitle === '' ? null : String(subtitle).trim(),
+      subtitleEn: subtitleEn === null || subtitleEn === '' ? null : String(subtitleEn).trim(),
       imageUrl: imageUrl == null || imageUrl === '' ? '' : String(imageUrl),
       order: Number(order) ?? 0,
       content: content === null || content === '' ? null : String(content),
+      contentEn: contentEn === null || contentEn === '' ? null : String(contentEn),
       layout: layout ?? undefined,
       isFeatured: Boolean(isFeatured ?? false),
     } as unknown as Prisma.ProductCreateInput;
