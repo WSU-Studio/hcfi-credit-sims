@@ -110,7 +110,7 @@ export default async function PromoDetailPage({
       >
         {row.cells.map((cell) => (
           <div key={cell.id} className="min-w-0">
-            <WidgetRenderer cell={cell} fullWidth={fullWidth} />
+            <WidgetRenderer cell={cell} fullWidth={fullWidth} locale={localeTyped} />
           </div>
         ))}
       </div>
