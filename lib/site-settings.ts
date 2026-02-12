@@ -5,6 +5,8 @@ export type SiteSettingsPublic = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
+  whatsappLeadPhone: string;
 };
 
 const DEFAULT: SiteSettingsPublic = {
@@ -12,6 +14,7 @@ const DEFAULT: SiteSettingsPublic = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappLeadPhone: '',
 };
 
 /**
@@ -22,7 +25,15 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
   try {
     const rows = await prisma.siteSetting.findMany({
       where: {
-        key: { in: ['gtmId', 'gaMeasurementId', 'whatsappFabPhone', 'whatsappFabMessage'] },
+        key: {
+          in: [
+            'gtmId',
+            'gaMeasurementId',
+            'whatsappFabPhone',
+            'whatsappFabMessage',
+            'whatsappLeadPhone',
+          ],
+        },
       },
     });
     const data = { ...DEFAULT };

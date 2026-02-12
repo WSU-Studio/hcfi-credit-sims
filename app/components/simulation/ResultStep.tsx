@@ -36,8 +36,23 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
 
   const products = tab === 'Standard' ? listStandard : listPromo;
+
+  useEffect(() => {
+    fetch('/api/public/site-settings')
+      .then((res) => res.json())
+      .then((data) => {
+        const lead = (data.whatsappLeadPhone ?? '').trim();
+        const fab = (data.whatsappFabPhone ?? '').trim();
+        let digits = (lead || fab || '628111500708').replace(/\D/g, '');
+        if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+        else if (!digits.startsWith('62')) digits = '62' + digits;
+        setWhatsappLeadPhone(digits || '628111500708');
+      })
+      .catch(() => setWhatsappLeadPhone('628111500708'));
+  }, []);
 
   useEffect(() => {
     if (!otrPrice && !leadNo) return;
@@ -362,7 +377,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(
+                  href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
                     `Halo, saya tertarik simulasi:\n${selectedProduct.ProductName}\nDP ${dpPercent}%\nTenor ${highlightedRow.Tenor} bln\nAngsuran ${formatCurrency(highlightedRow.InstallmentAmt)}/bln`
                   )}`}
                   target="_blank"
