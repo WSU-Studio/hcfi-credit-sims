@@ -6,9 +6,9 @@ import { ArticleForm } from '@/app/components/admin/articles/ArticleForm';
 export default async function EditArticlePage({
   params,
 }: {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await Promise.resolve(params);
+  const { id } = await params;
   const session = await auth();
 
   if (!session) {

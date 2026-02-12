@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -15,7 +15,7 @@ export async function DELETE(
 
     await requirePermission('MEDIA', 'delete');
 
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     await prisma.media.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

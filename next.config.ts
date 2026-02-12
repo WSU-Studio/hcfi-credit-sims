@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
-// Path explicitly so production/Vercel can resolve the config (avoids "Couldn't find next-intl config file")
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+// Relative path (Turbopack rejects absolute). Plugin aliases "next-intl/config" -> this file.
+const withNextIntl = createNextIntlPlugin("i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // Using Webpack for better Prisma compatibility

@@ -46,9 +46,9 @@ async function getPageBySlug(slug: string, locale: Locale) {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string; pageSlug: string }> | { locale: string; pageSlug: string };
+  params: Promise<{ locale: string; pageSlug: string }>;
 }) {
-  const { pageSlug, locale } = await Promise.resolve(params);
+  const { pageSlug, locale } = await params;
   const page = await getPageBySlug(pageSlug, locale as Locale);
   if (!page) return { title: 'Hyundai Capital' };
   return {
@@ -59,9 +59,9 @@ export async function generateMetadata({
 export default async function StaticPageBySlug({
   params,
 }: {
-  params: Promise<{ locale: string; pageSlug: string }> | { locale: string; pageSlug: string };
+  params: Promise<{ locale: string; pageSlug: string }>;
 }) {
-  const { pageSlug, locale } = await Promise.resolve(params);
+  const { pageSlug, locale } = await params;
   const localeTyped = locale as Locale;
   const [page, tCommon] = await Promise.all([getPageBySlug(pageSlug, localeTyped), getTranslations('common')]);
   if (!page) notFound();
