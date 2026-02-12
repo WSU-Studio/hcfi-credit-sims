@@ -182,6 +182,18 @@ export default async function PromoDetailPage({
       )}
       {hasLayout ? (
         <div className="space-y-8">
+          <Container>
+            <header className="mt-6 mb-4">
+              <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl leading-tight">
+                {promo.title}
+              </h1>
+              {promo.description?.trim() && (
+                <p className="mt-2 text-lg text-slate-600 text-justify">
+                  {promo.description}
+                </p>
+              )}
+            </header>
+          </Container>
           {imageUrl && showBannerImage && bannerUseContainer && (
             <Container className="py-0">
               <div className={bannerWrapperClass}>
@@ -214,10 +226,28 @@ export default async function PromoDetailPage({
               </div>
             );
           })}
+          {promo.content?.trim() ? (
+            <Container>
+              <SanitizedHtml
+                html={promo.content.replace(/\n/g, '<br>')}
+                className="prose prose-sm max-w-none text-slate-600 text-justify"
+              />
+            </Container>
+          ) : null}
           <Container>{bottomNav}</Container>
         </div>
       ) : (
         <Container>
+          <header className="mt-6 mb-4">
+            <h1 className="text-2xl font-bold text-[var(--foreground)] md:text-3xl leading-tight">
+              {promo.title}
+            </h1>
+            {promo.description?.trim() && (
+              <p className="mt-2 text-lg text-slate-600 text-justify">
+                {promo.description}
+              </p>
+            )}
+          </header>
           {imageUrl && showBannerImage && bannerUseContainer && (
             <div className={`mb-6 ${bannerWrapperClass}`}>
               <Image
@@ -231,13 +261,13 @@ export default async function PromoDetailPage({
               />
             </div>
           )}
-          {promo.content ? (
+          {promo.content?.trim() ? (
             <SanitizedHtml
               html={promo.content.replace(/\n/g, '<br>')}
-              className="prose prose-sm max-w-none"
+              className="prose prose-sm max-w-none text-slate-600 text-justify"
             />
           ) : (
-            <p className="text-white/70">{tCommon('noContent')}</p>
+            <p className="text-[var(--muted-foreground)]">{tCommon('noContent')}</p>
           )}
           {bottomNav}
         </Container>
