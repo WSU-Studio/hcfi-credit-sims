@@ -1,10 +1,13 @@
 import Image from 'next/image';
 import type { LayoutCell } from '@/app/types';
+import { pickLocaleString } from '@/lib/pick-locale';
+import type { Locale } from '@/lib/pick-locale';
 import { getTextSettingsClasses } from './textSettings';
 
 type TextImageWidgetProps = {
   cell: LayoutCell;
   fullWidth?: boolean;
+  locale?: Locale;
 };
 
 const RATIO_CLASSES: Record<string, string> = {
@@ -85,10 +88,12 @@ function ImageBlock({
   );
 }
 
-export function TextImageWidget({ cell, fullWidth }: TextImageWidgetProps) {
+export function TextImageWidget({ cell, fullWidth, locale = 'id' }: TextImageWidgetProps) {
   const payload = cell.payload as {
     title?: string;
+    titleEn?: string;
     body?: string;
+    bodyEn?: string;
     imageUrl?: string;
     imagePosition?: 'left' | 'right' | 'above' | 'below';
     imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
@@ -98,13 +103,17 @@ export function TextImageWidget({ cell, fullWidth }: TextImageWidgetProps) {
     textSize?: '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64';
   };
   const {
-    title,
-    body,
+    title: titleId,
+    titleEn,
+    body: bodyId,
+    bodyEn,
     imageUrl,
     imagePosition = 'left',
     imageRatio = 'default',
     textPlacement = 'outside',
   } = payload ?? {};
+  const title = pickLocaleString(titleId ?? '', titleEn ?? undefined, locale);
+  const body = pickLocaleString(bodyId ?? '', bodyEn ?? undefined, locale);
   const { className: textSettingsClassName, style: textSettingsStyle } =
     getTextSettingsClasses(payload);
   const hasImage = imageUrl && imageUrl.trim().length > 0;
