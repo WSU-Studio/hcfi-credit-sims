@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import { CldImage } from 'next-cloudinary';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Article = {
   id: string;
@@ -199,6 +200,14 @@ export function ArticlesTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </AdminLink>
+                    <Link
+                      href={`/articles/${article.slug}`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Preview Article"
+                      target="_blank"
+                    >
+                      <IconLink size={18} className="text-blue-500" />
+                    </Link>
                     <button
                       type="button"
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconLink, IconPlus, IconTrash } from '@tabler/icons-react';
+import Link from 'next/link';
 
 type Page = {
   id: string;
@@ -106,6 +107,14 @@ export function PagesTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" title="Edit Page" />
                     </AdminLink>
+                    <Link
+                      href={`/${page.slug}`}
+                      className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-[#008AEC]/80 transition-colors bg-blue-50/80 rounded-lg hover:bg-blue-100/80 border border-blue-200/80"
+                      title="Preview Page"
+                      target="_blank"
+                    >
+                      <IconLink size={18} className="text-blue-500" />
+                    </Link>
                     <button
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:text-red-500/80 transition-colors bg-red-50/80 rounded-lg hover:bg-red-100/80 border border-red-200/80"
                       onClick={() => {
