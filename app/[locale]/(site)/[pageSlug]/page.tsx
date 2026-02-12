@@ -153,24 +153,28 @@ export default async function StaticPageBySlug({
   return (
     <section className="min-h-[40vh]">
       {hasLayout ? (
-        <div className="space-y-8">
-          {basicContentBlock}
-          {layout.rows.map((row) => {
-            const marginClass = [
-              row.marginTop === true ? 'mt-4' : '',
-              row.marginBottom === true ? 'mb-4' : '',
-            ].filter(Boolean).join(' ');
-            return row.useContainer !== false ? (
-              <Container key={row.id} className={`py-0 ${marginClass}`.trim()}>
-                <RowGrid row={row} />
-              </Container>
-            ) : (
-              <div key={row.id} className={`w-full ${marginClass}`.trim()}>
-                <RowGrid row={row} />
-              </div>
-            );
-          })}
-          <Container>{bottomNav}</Container>
+        <div>
+          <Container>
+            {basicContentBlock}
+          </Container>
+          <div className="space-y-8">
+            {layout.rows.map((row) => {
+              const marginClass = [
+                row.marginTop === true ? 'mt-4' : '',
+                row.marginBottom === true ? 'mb-4' : '',
+              ].filter(Boolean).join(' ');
+              return row.useContainer !== false ? (
+                <Container key={row.id} className={`py-0 ${marginClass}`.trim()}>
+                  <RowGrid row={row} />
+                </Container>
+              ) : (
+                <div key={row.id} className={`w-full ${marginClass}`.trim()}>
+                  <RowGrid row={row} />
+                </div>
+              );
+            })}
+            <Container>{bottomNav}</Container>
+          </div>
         </div>
       ) : (
         <Container>

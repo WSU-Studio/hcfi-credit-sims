@@ -7,6 +7,7 @@ import { IconEdit, IconPlus, IconTrash } from '@tabler/icons-react';
 type Page = {
   id: string;
   title: string;
+  titleEn: string | null;
   slug: string;
   showInMenu: boolean;
   menuOrder: number;
@@ -74,7 +75,10 @@ export function PagesTable() {
             {pages.map((page) => (
               <tr key={page.id}>
                 <td className="px-3 py-2 text-sm font-medium text-gray-900">
-                  {page.title}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{page.title}</span>
+                    <span className="text-gray-500 text-xs font-normal italic">{page.titleEn}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-sm text-gray-500">
                   {page.slug}
