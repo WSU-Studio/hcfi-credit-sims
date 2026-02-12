@@ -9,7 +9,9 @@ import Image from 'next/image';
 type Product = {
   id: string;
   title: string;
+  titleEn: string | null;
   subtitle: string | null;
+  subtitleEn: string | null;
   imageUrl: string;
   order: number;
   isFeatured: boolean;
@@ -96,10 +98,16 @@ export function ProductsTable() {
                   </div>
                 </td>
                 <td className="px-3 py-2 text-xs font-medium text-gray-900">
-                  {product.title}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{product.title}</span>
+                    <span className="text-gray-500 font-normal italic">{product.titleEn}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-500">
-                  {product.subtitle || '-'}
+                  <div className="flex flex-col">
+                    <span className="text-gray-900">{product.subtitle}</span>
+                    <span className="text-gray-500 font-normal italic">{product.subtitleEn}</span>
+                  </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                   {product.isFeatured ? 'Yes' : 'No'}
