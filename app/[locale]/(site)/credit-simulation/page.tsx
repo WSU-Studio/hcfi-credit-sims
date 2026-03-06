@@ -30,6 +30,7 @@ export default function SimulasiKreditPage() {
     interiorColorName?: string;
   }>({});
   const [otrPrice, setOtrPrice] = useState<number | null>(null);
+  const [discount, setDiscount] = useState<number>(0);
   const [leadNo, setLeadNo] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
 
@@ -40,6 +41,7 @@ export default function SimulasiKreditPage() {
     setSelectedAsset(null);
     setSpecs({});
     setOtrPrice(null);
+    setDiscount(0);
     setLeadNo(null);
   };
 
@@ -49,6 +51,7 @@ export default function SimulasiKreditPage() {
     // Reset step 3–5: user harus ulang spesifikasi, harga, hasil. Tidak bisa lompat ke step 4.
     setSpecs({});
     setOtrPrice(null);
+    setDiscount(0);
     setLeadNo(null);
   };
 
@@ -68,9 +71,10 @@ export default function SimulasiKreditPage() {
     setLeadNo(null);
   };
 
-  const handlePriceComplete = async (price: number) => {
-    setOtrPrice(price);
-    
+  const handlePriceComplete = async (netPrice: number, discountAmount: number) => {
+    setOtrPrice(netPrice);
+    setDiscount(discountAmount);
+
     // TODO: Create Lead via API first to get LeadNo
     // For now, we'll simulate with a placeholder
     // In production, you would call: POST /v1/IntegrationWebsite/CreateLead
