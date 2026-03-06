@@ -5,18 +5,32 @@ import type { Vendor } from '@/app/types/credit-simulation';
 
 interface DealerStepProps {
   onSelect: (dealer: Vendor) => void;
-  selectedDealer?: Vendor;
+  selectedDealer?: Vendor | null;
 }
 
 export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>(selectedDealer?.City ?? '');
 
   useEffect(() => {
     fetchVendors();
   }, []);
+
+  useEffect(() => {
+    if (selectedDealer?.City) {
+      setSelectedCity(selectedDealer.City);
+    }
+  }, [selectedDealer?.City]);
+
+  const handleCityClick = (city: string) => {
+    setSelectedCity(city);
+    const filtered = vendors.filter(v => v.City === city);
+    if (filtered.length > 0) {
+      onSelect(filtered[0]);
+    }
+  };
 
   const fetchVendors = async () => {
     setLoading(true);
@@ -39,8 +53,8 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
       if (data.ReturnObject) {
         setVendors(data.ReturnObject);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load vendors');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load vendors');
       console.error('Error fetching vendors:', err);
     } finally {
       setLoading(false);
@@ -48,9 +62,6 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
   };
 
   const cities = Array.from(new Set(vendors.map(v => v.City))).sort();
-  const filteredVendors = selectedCity
-    ? vendors.filter(v => v.City === selectedCity)
-    : vendors;
 
   return (
     <div className="space-y-6 text-gray-900">
@@ -66,63 +77,46 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
       )}
 
       <div className="space-y-4">
-        {/* City Filter - always show select; disabled with loading message while fetching */}
+        {/* Pilihan kota dengan button - lebih mudah terlihat */}
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Pilih Kota <span className="text-gray-400 font-normal">(opsional)</span>
+          <label className="block text-sm font-medium mb-3">
+            Pilih Kota <span className="text-red-500">*</span>
           </label>
-          <select
-            value={selectedCity}
-            onChange={(e) => setSelectedCity(e.target.value)}
-            disabled={loading}
-            aria-busy={loading}
-            aria-describedby={loading ? 'loading-dealer-desc' : undefined}
-            className="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-          >
-            <option value="">
-              {loading ? 'Memuat data dealer...' : 'Semua Kota'}
-            </option>
-            {!loading &&
-              cities.map(city => (
-                <option key={city} value={city}>{city}</option>
+          {loading ? (
+            <div className="flex flex-wrap gap-3 py-4">
+              <div className="h-10 w-24 rounded-lg bg-gray-200 animate-pulse" />
+              <div className="h-10 w-28 rounded-lg bg-gray-200 animate-pulse" />
+              <div className="h-10 w-20 rounded-lg bg-gray-200 animate-pulse" />
+              <p className="w-full mt-2 text-sm text-[var(--muted)]">
+                Mengambil daftar dealer...
+              </p>
+            </div>
+          ) : cities.length === 0 ? (
+            <p className="py-4 text-[var(--muted)]">Tidak ada kota tersedia</p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {cities.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => handleCityClick(city)}
+                  className={`px-5 py-3 rounded-lg border-2 font-medium transition-colors cursor-pointer ${
+                    selectedCity === city
+                      ? 'border-[#002c5f] bg-[#002c5f] text-white ring-2 ring-[#002c5f]/40 ring-offset-2'
+                      : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  {city}
+                </button>
               ))}
-          </select>
-          {loading && (
-            <p id="loading-dealer-desc" className="mt-1.5 text-sm text-[var(--muted)]">
-              Mengambil daftar dealer...
-            </p>
+            </div>
           )}
+          {/* {!loading && selectedCity && (
+            <p className="mt-3 text-sm text-[var(--muted)]">
+              Dealer pertama di {selectedCity} akan dipilih secara otomatis
+            </p>
+          )} */}
         </div>
-
-        {/* Vendor List */}
-        {loading ? (
-          <div className="text-center py-8 text-[var(--muted)] flex flex-col items-center gap-2">
-            <span className="inline-block w-6 h-6 border-2 border-[#002c5f] border-t-transparent rounded-full animate-spin" aria-hidden />
-            Memuat dealer...
-          </div>
-        ) : filteredVendors.length === 0 ? (
-          <div className="text-center py-8 text-[var(--muted)]">Tidak ada dealer tersedia</div>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {filteredVendors.map((vendor) => (
-              <button
-                key={vendor.VendorCode}
-                type="button"
-                onClick={() => onSelect(vendor)}
-                className={`p-4 border-2 rounded-lg text-left transition ${
-                  selectedDealer?.VendorCode === vendor.VendorCode
-                    ? 'border-[#002c5f] bg-[#002c5f]/10'
-                    : 'border-[var(--border)] hover:border-[#002c5f]/50'
-                }`}
-              >
-                <div className="font-semibold">{vendor.VendorName}</div>
-                <div className="text-sm text-[var(--muted)] mt-1">
-                  {vendor.City} • {vendor.ZipCode}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

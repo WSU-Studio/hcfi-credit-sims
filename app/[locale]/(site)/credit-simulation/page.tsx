@@ -251,7 +251,7 @@ export default function SimulasiKreditPage() {
               {currentStep === 1 && (
                 <DealerStep
                   onSelect={handleDealerSelect}
-                  selectedDealer={selectedDealer || undefined}
+                  selectedDealer={selectedDealer}
                 />
               )}
               {currentStep === 2 && selectedDealer && (
