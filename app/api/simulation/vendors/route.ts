@@ -7,6 +7,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
+import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -18,10 +19,11 @@ const hyundaiAgent = new Agent({
 
 // Get List Vendor And Vendor City
 export async function POST(request: NextRequest) {
-  // Check if mock mode is enabled
-  if (isMockModeEnabled()) {
+  const body = await request.json().catch(() => ({}));
+  const siteMock = await getMockApiSettings();
+  // Mock dari Site Settings (centang "Aktifkan Mock API") atau dari env
+  if (siteMock.enabled || isMockModeEnabled()) {
     await simulateDelay(300);
-    const body = await request.json();
     const mockResponse = mockApi.getVendorsAndCities({
       hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
       hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
@@ -39,8 +41,6 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-
-    const body = await request.json();
 
     const controller = new AbortController();
     timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

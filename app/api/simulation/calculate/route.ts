@@ -7,6 +7,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
+import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -30,9 +31,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if mock mode is enabled
-    if (isMockModeEnabled()) {
+    // Check if mock mode is enabled (site settings or env)
+    const siteMock = await getMockApiSettings();
+    if (siteMock.enabled || isMockModeEnabled()) {
       await simulateDelay(400);
+      const custom = siteMock.content?.calculate;
+      if (
+        custom &&
+        Array.isArray(custom.ListDefaultStandardProductObj) &&
+        custom.ListDefaultStandardProductObj.length > 0
+      ) {
+        return NextResponse.json({
+          ListDefaultStandardProductObj: custom.ListDefaultStandardProductObj,
+          ListDefaultPromotionProductObj:
+            Array.isArray(custom.ListDefaultPromotionProductObj) ? custom.ListDefaultPromotionProductObj : [],
+          dataSource: 'mock-site-settings',
+        });
+      }
       const mockResponse = mockApi.getListDefaultProducts({
         LeadNo: body.LeadNo || 'MOCK-LEAD-001',
         otrPrice: body.otrPrice,

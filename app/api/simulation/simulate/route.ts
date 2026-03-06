@@ -6,6 +6,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
+import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 /**
@@ -34,8 +35,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isMockModeEnabled()) {
+    const siteMock = await getMockApiSettings();
+    if (siteMock.enabled || isMockModeEnabled()) {
       await simulateDelay(400);
+      const custom = siteMock.content?.simulate;
+      if (custom && Array.isArray(custom.ListProductObj) && custom.ListProductObj.length > 0) {
+        return NextResponse.json({ ...custom, dataSource: 'mock-site-settings' });
+      }
       const res = mockApi.calculateProductFromRule({
         otrPrice: Number(otrPrice),
         dpPrcnt: Number(dpPrcnt),
