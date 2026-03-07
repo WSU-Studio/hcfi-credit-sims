@@ -1,1 +1,1 @@
-web: node server.js
+web: node_modules/.bin/next start -p ${PORT:-8080}
