@@ -1,8 +1,7 @@
-name: Deploy to AWS Elastic Beanstalk
+name: Build & Deploy to AWS Elastic Beanstalk
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,11 +17,20 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Prune devDependencies
+        run: npm prune --omit=dev
+
       - name: Create deployment package
         run: |
           zip -r deploy.zip . \
-            -x "node_modules/*" \
-            -x ".next/*" \
             -x ".git/*" \
             -x "*.env*" \
             -x ".github/*" \
@@ -30,7 +38,8 @@ jobs:
             -x ".DS_Store" \
             -x "deploy.zip" \
             -x "coverage/*" \
-            -x ".vercel/*"
+            -x ".vercel/*" \
+            -x "node_modules/.cache/*"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -55,7 +64,7 @@ jobs:
             --application-name ${{ secrets.EB_APP_NAME }} \
             --version-label ${{ github.sha }} \
             --source-bundle S3Bucket=${{ steps.s3.outputs.bucket }},S3Key=deploy-${{ github.sha }}.zip \
-            --description "Deploy from GitHub - ${{ github.event.head_commit.message }}"
+            --description "Build & deploy from GitHub - ${{ github.sha }}"
 
       - name: Update Elastic Beanstalk environment
         run: |
