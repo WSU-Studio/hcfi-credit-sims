@@ -9,6 +9,8 @@ const KEYS = [
   'whatsappFabPhone',
   'whatsappFabMessage',
   'whatsappLeadPhone',
+  'mockApiEnabled',
+  'mockApiContent',
 ] as const;
 
 function toPayload(settings: { key: string; value: string }[]) {

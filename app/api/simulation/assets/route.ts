@@ -7,6 +7,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
+import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -26,7 +27,8 @@ export async function POST(request: NextRequest) {
     GetLatestAsset: body.GetLatestAsset ?? true,
   };
 
-  if (isMockModeEnabled()) {
+  const siteMock = await getMockApiSettings();
+  if (siteMock.enabled || isMockModeEnabled()) {
     await simulateDelay(300);
     const mockResponse = mockApi.getAssetMasters(payload);
     return NextResponse.json(mockResponse);

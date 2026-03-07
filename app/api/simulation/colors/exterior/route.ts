@@ -7,6 +7,7 @@ import {
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
+import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -24,7 +25,8 @@ export async function POST(request: NextRequest) {
     ManufYear: body.ManufYear as number,
   };
 
-  if (isMockModeEnabled()) {
+  const siteMock = await getMockApiSettings();
+  if (siteMock.enabled || isMockModeEnabled()) {
     await simulateDelay(200);
     const mockResponse = mockApi.getExteriorColors(payload);
     return NextResponse.json(mockResponse);

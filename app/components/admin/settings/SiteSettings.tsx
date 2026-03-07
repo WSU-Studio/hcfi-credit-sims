@@ -9,6 +9,8 @@ type SiteSettingsData = {
   whatsappFabPhone: string;
   whatsappFabMessage: string;
   whatsappLeadPhone: string;
+  mockApiEnabled: string;
+  mockApiContent: string;
 };
 
 const defaultData: SiteSettingsData = {
@@ -17,6 +19,8 @@ const defaultData: SiteSettingsData = {
   whatsappFabPhone: '',
   whatsappFabMessage: '',
   whatsappLeadPhone: '',
+  mockApiEnabled: 'false',
+  mockApiContent: '',
 };
 
 function ensureString(v: unknown): string {
@@ -42,6 +46,8 @@ export function SiteSettings() {
             whatsappFabPhone: ensureString(d.whatsappFabPhone ?? ''),
             whatsappFabMessage: ensureString(d.whatsappFabMessage ?? ''),
             whatsappLeadPhone: ensureString(d.whatsappLeadPhone ?? ''),
+            mockApiEnabled: ensureString(d.mockApiEnabled ?? 'false'),
+            mockApiContent: ensureString(d.mockApiContent ?? ''),
           });
         }
         setLoading(false);
@@ -65,6 +71,8 @@ export function SiteSettings() {
           whatsappFabPhone: data.whatsappFabPhone.trim(),
           whatsappFabMessage: data.whatsappFabMessage.trim(),
           whatsappLeadPhone: data.whatsappLeadPhone.trim(),
+          mockApiEnabled: data.mockApiEnabled.trim(),
+          mockApiContent: data.mockApiContent.trim(),
         }),
       });
       const json = await res.json();
@@ -171,6 +179,45 @@ export function SiteSettings() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Halo, saya ingin bertanya..."
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Mock API */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+          Mock API
+        </h2>
+        <p className="text-sm text-gray-600">
+          Aktifkan untuk menggunakan mock API instead of Hyundai API real. Konten JSON dapat diset di bawah untuk mengoverride response bawaan.
+        </p>
+        <div className="space-y-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.mockApiEnabled.toLowerCase() === 'true'}
+              onChange={(e) =>
+                setData({ ...data, mockApiEnabled: e.target.checked ? 'true' : 'false' })
+              }
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Aktifkan Mock API</span>
+          </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Konten JSON Mock (opsional)
+            </label>
+            <textarea
+              value={data.mockApiContent}
+              onChange={(e) => setData({ ...data, mockApiContent: e.target.value })}
+              rows={12}
+              placeholder={`{\n  "calculate": {\n    "ListDefaultStandardProductObj": [...],\n    "ListDefaultPromotionProductObj": []\n  },\n  "simulate": {\n    "ListProductObj": [...]\n  }\n}`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              JSON dengan kunci <code className="bg-gray-100 px-1 rounded">calculate</code> dan/atau{' '}
+              <code className="bg-gray-100 px-1 rounded">simulate</code>. Kosongkan untuk memakai mock bawaan.
+            </p>
           </div>
         </div>
       </section>

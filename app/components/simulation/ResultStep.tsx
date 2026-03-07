@@ -16,11 +16,12 @@ type FirstInstallment = 'ADDM' | 'ADDB';
 interface ResultStepProps {
   leadNo?: string;
   otrPrice?: number;
+  discount?: number;
   vehicle?: VehicleSummaryInfo;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: ResultStepProps) {
+export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, onSelectProduct }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
@@ -412,6 +413,7 @@ export function ResultStep({ leadNo, otrPrice, vehicle, onSelectProduct }: Resul
                 product={highlightedRow}
                 vehicle={vehicle}
                 otrPrice={otrPrice ?? 0}
+                discount={discount}
                 dpPercent={dpPercent}
                 firstInstallment={firstInstallment}
               />

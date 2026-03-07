@@ -1,0 +1,65 @@
+name: Deploy to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Create deployment package
+        run: |
+          zip -r deploy.zip . \
+            -x "node_modules/*" \
+            -x ".next/*" \
+            -x ".git/*" \
+            -x "*.env*" \
+            -x ".github/*" \
+            -x "*.md" \
+            -x ".DS_Store" \
+            -x "deploy.zip" \
+            -x "coverage/*" \
+            -x ".vercel/*"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get Elastic Beanstalk S3 bucket
+        id: s3
+        run: |
+          S3_BUCKET=$(aws elasticbeanstalk create-storage-location --query 'S3Bucket' --output text)
+          echo "bucket=$S3_BUCKET" >> $GITHUB_OUTPUT
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp deploy.zip s3://${{ steps.s3.outputs.bucket }}/deploy-${{ github.sha }}.zip
+
+      - name: Create Elastic Beanstalk application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ secrets.EB_APP_NAME }} \
+            --version-label ${{ github.sha }} \
+            --source-bundle S3Bucket=${{ steps.s3.outputs.bucket }},S3Key=deploy-${{ github.sha }}.zip \
+            --description "Deploy from GitHub - ${{ github.event.head_commit.message }}"
+
+      - name: Update Elastic Beanstalk environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --application-name ${{ secrets.EB_APP_NAME }} \
+            --environment-name ${{ secrets.EB_ENV_NAME }} \
+            --version-label ${{ github.sha }}

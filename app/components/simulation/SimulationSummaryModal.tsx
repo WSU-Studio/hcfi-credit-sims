@@ -17,6 +17,7 @@ interface SimulationSummaryModalProps {
   product: ProductCalculation;
   vehicle?: VehicleSummaryInfo;
   otrPrice: number;
+  discount?: number;
   dpPercent: number;
   firstInstallment: 'ADDM' | 'ADDB';
 }
@@ -30,6 +31,7 @@ export function SimulationSummaryModal({
   product,
   vehicle,
   otrPrice,
+  discount = 0,
   dpPercent,
   firstInstallment,
 }: SimulationSummaryModalProps) {
@@ -185,6 +187,14 @@ export function SimulationSummaryModal({
               | NTF (Net Total Financing)
             </h3>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              {discount > 0 && (
+                <>
+                  <dt className="text-gray-500">Harga OTR (Harga Aset Awal)</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(otrPrice + discount)}</dd>
+                  <dt className="text-gray-500">Diskon</dt>
+                  <dd className="font-medium text-red-600">({formatRp(discount)})</dd>
+                </>
+              )}
               <dt className="text-gray-500">Total Asset Price</dt>
               <dd className="font-medium text-gray-900">{formatRp(otrPrice)}</dd>
               <dt className="text-gray-500">Down Payment</dt>
