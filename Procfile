@@ -1,1 +1,1 @@
-web: node_modules/.bin/next start -p ${PORT:-8080}
+web: node node_modules/next/dist/bin/next start -p ${PORT:-8080}
