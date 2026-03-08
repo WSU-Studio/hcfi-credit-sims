@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
-import { CldImage } from 'next-cloudinary';
 import Image from 'next/image';
 
 type Banner = {
@@ -90,17 +89,6 @@ export function BannersTable() {
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
                         No image
                       </div>
-                    ) : banner.imageUrl.includes('cloudinary') ? (
-                      <CldImage
-                        src={banner.imageUrl}
-                        width={80}
-                        height={48}
-                        alt={banner.title}
-                        className="object-cover"
-                        onError={() => {
-                          setImageErrors((prev) => new Set(prev).add(banner.id));
-                        }}
-                      />
                     ) : banner.imageUrl.startsWith('http') ? (
                       // Use regular img for external URLs to avoid Next.js Image restrictions
                       // eslint-disable-next-line @next/next/no-img-element

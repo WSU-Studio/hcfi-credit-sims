@@ -311,7 +311,7 @@ export function BannerForm({ bannerId }: BannerFormProps) {
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="/images/banner.jpg or Cloudinary URL"
+                  placeholder="/images/banner.jpg or S3/URL"
                 />
                 <MediaPicker
                   onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}

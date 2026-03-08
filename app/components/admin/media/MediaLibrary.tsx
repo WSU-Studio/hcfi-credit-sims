@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { IconUpload, IconCopy, IconCheck, IconLink, IconCloudDownload, IconTrash } from '@tabler/icons-react';
+import { IconUpload, IconCopy, IconCheck, IconLink, IconTrash } from '@tabler/icons-react';
 
 type Media = {
   id: string;
@@ -46,9 +46,6 @@ export function MediaLibrary() {
   const [addFilename, setAddFilename] = useState('');
   const [addingUrl, setAddingUrl] = useState(false);
   const [addUrlError, setAddUrlError] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -137,7 +134,7 @@ export function MediaLibrary() {
   };
 
   const handleDelete = (item: Media) => {
-    if (!confirm('Hapus dari Media Library? (Record di database akan dihapus. File di Cloudinary tidak terpengaruh.)')) return;
+    if (!confirm('Hapus dari Media Library? (Record di database akan dihapus. File di S3 tidak terpengaruh.)')) return;
     setDeletingId(item.id);
     fetch(`/api/admin/media/${item.id}`, { method: 'DELETE' })
       .then((res) => res.json())
@@ -147,21 +144,6 @@ export function MediaLibrary() {
       })
       .catch(() => loadMedia())
       .finally(() => setDeletingId(null));
-  };
-
-  const handleImportFromCloudinary = () => {
-    setSyncError(null);
-    setSyncMessage(null);
-    setSyncing(true);
-    fetch('/api/admin/media/sync', { method: 'POST' })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error);
-        setSyncMessage(data.message ?? `Impor berhasil. ${data.imported ?? 0} media ditambahkan.`);
-        loadMedia();
-      })
-      .catch((err) => setSyncError(err?.message ?? 'Gagal import'))
-      .finally(() => setSyncing(false));
   };
 
   return (
@@ -193,26 +175,7 @@ export function MediaLibrary() {
             <IconLink size={20} />
             Tambah dari URL
           </button>
-          <button
-            type="button"
-            onClick={handleImportFromCloudinary}
-            disabled={syncing}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <IconCloudDownload size={20} />
-            {syncing ? 'Mengimpor...' : 'Import dari Cloudinary'}
-          </button>
         </div>
-        {syncMessage && (
-          <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-            {syncMessage}
-          </div>
-        )}
-        {syncError && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {syncError}
-          </div>
-        )}
         {(saveError || uploadError) && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
             {uploadError ?? saveError}
@@ -220,14 +183,14 @@ export function MediaLibrary() {
         )}
         {addUrlOpen && (
           <form onSubmit={handleAddByUrl} className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
-            <p className="text-sm text-gray-600">Paste URL gambar (mis. dari Cloudinary) untuk menambah ke Media Library.</p>
+            <p className="text-sm text-gray-600">Paste URL gambar untuk menambah ke Media Library.</p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">URL <span className="text-red-500">*</span></label>
               <input
                 type="url"
                 value={addUrl}
                 onChange={(e) => setAddUrl(e.target.value)}
-                placeholder="https://res.cloudinary.com/..."
+                placeholder="https://..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               />
             </div>
@@ -261,7 +224,7 @@ export function MediaLibrary() {
           </form>
         )}
         <p className="text-xs text-gray-500">
-          Upload dan Import dari Cloudinary memakai env server-only (aman): <code className="bg-gray-100 px-1 rounded">CLOUDINARY_CLOUD_NAME</code>, <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_KEY</code>, <code className="bg-gray-100 px-1 rounded">CLOUDINARY_API_SECRET</code> — jangan pakai <code className="bg-gray-100 px-1 rounded">NEXT_PUBLIC_</code>.
+          Upload ke S3 memakai env server-only: <code className="bg-gray-100 px-1 rounded">AWS_S3_BUCKET</code>, <code className="bg-gray-100 px-1 rounded">AWS_REGION</code>, <code className="bg-gray-100 px-1 rounded">AWS_ACCESS_KEY_ID</code>, <code className="bg-gray-100 px-1 rounded">AWS_SECRET_ACCESS_KEY</code>.
         </p>
       </div>
 

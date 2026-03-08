@@ -222,7 +222,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                 value={formData.imageUrl}
                 onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                 className="flex-1 px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-                placeholder="/images/product.jpg or Cloudinary URL"
+                placeholder="/images/product.jpg or S3/URL"
               />
               <MediaPicker
                 onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}

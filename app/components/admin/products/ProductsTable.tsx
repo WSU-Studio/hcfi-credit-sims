@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
-import { CldImage } from 'next-cloudinary';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -79,23 +78,13 @@ export function ProductsTable() {
               <tr key={product.id}>
                 <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden">
-                    {product.imageUrl.includes('cloudinary') ? (
-                      <CldImage
-                        src={product.imageUrl}
-                        width={80}
-                        height={48}
-                        alt={product.title}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <Image
+                    <Image
                         src={product.imageUrl}
                         alt={product.title}
                         className="w-full h-full object-cover"
                         width={80}
                         height={48}
                       />
-                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2 text-xs font-medium text-gray-900">

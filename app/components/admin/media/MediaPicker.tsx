@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CldImage } from 'next-cloudinary';
-import { IconCheck, IconFileMinus } from '@tabler/icons-react';
+import { IconFileMinus } from '@tabler/icons-react';
 
 type Media = {
   id: string;
