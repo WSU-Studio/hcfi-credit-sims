@@ -178,9 +178,15 @@ Jika ada media lama di Cloudinary yang perlu dipindah ke S3:
 ## Step 7: Deploy ke Elastic Beanstalk
 
 1. Tambahkan env vars di EB:
-   - AWS Console → Elastic Beanstalk → Environment → Configuration → Software → Environment properties
-2. Tambah: `AWS_S3_BUCKET`, `AWS_REGION`, dan `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (jika tidak pakai IAM Role)
-3. Deploy ulang aplikasi
+   - AWS Console → Elastic Beanstalk → pilih Application & Environment
+   - Configuration → Software → Edit → Environment properties
+   - Tambah:
+     - `AWS_S3_BUCKET` = `hcfi-credit-sims-media`
+     - `AWS_REGION` = `ap-southeast-1`
+     - `AWS_ACCESS_KEY_ID` = (dari IAM)
+     - `AWS_SECRET_ACCESS_KEY` = (dari IAM)
+   - Juga hapus jika ada: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+2. Apply & Deploy ulang aplikasi
 
 ---
 

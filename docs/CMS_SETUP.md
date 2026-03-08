@@ -8,7 +8,7 @@ Sistem CMS telah diimplementasikan dengan fitur-fitur berikut:
 - ✅ Role-Based Access Control (RBAC) dengan granular permission per menu
 - ✅ User Management
 - ✅ Role & Permission Management
-- ✅ Media Library dengan Cloudinary integration
+- ✅ Media Library dengan S3 integration
 - ✅ CMS Modules: Banner, Product, Promo, Article, Static Pages, Footer Settings
 
 ## Setup Instructions
@@ -25,10 +25,11 @@ DATABASE_URL="postgresql://username:password@localhost:5432/hcfi_credit?schema=p
 NEXTAUTH_URL="http://localhost:3070"
 NEXTAUTH_SECRET="your-secret-key-here" # Generate dengan: openssl rand -base64 32
 
-# Cloudinary (optional, untuk media upload & import - pakai server-only, jangan NEXT_PUBLIC)
-CLOUDINARY_CLOUD_NAME="your-cloud-name"
-CLOUDINARY_API_KEY="your-api-key"
-CLOUDINARY_API_SECRET="your-api-secret"
+# S3 Media Storage
+AWS_S3_BUCKET="your-bucket-name"
+AWS_REGION="ap-southeast-1"
+AWS_ACCESS_KEY_ID="your-access-key"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
 ```
 
 ### 2. Database Setup
@@ -55,16 +56,17 @@ npm run db:seed
 
 ⚠️ **PENTING:** Ganti password default setelah login pertama kali!
 
-### 3. Cloudinary Setup (Optional)
+### 3. S3 Setup (untuk Media Library)
 
-1. Daftar di [Cloudinary](https://cloudinary.com) (free tier available)
-2. Dari Dashboard: Cloud name, API Key, API Secret (Settings → Access keys)
-3. Tambahkan di `.env` **tanpa prefix NEXT_PUBLIC** (agar credential tidak terbuka di browser):
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
+1. Buat S3 bucket di AWS (lihat `docs/MIGRATION_CLOUDINARY_TO_S3.md`)
+2. Buat IAM user dengan permission S3 (PutObject, GetObject)
+3. Tambahkan di `.env`:
+   - `AWS_S3_BUCKET`
+   - `AWS_REGION`
+   - `AWS_ACCESS_KEY_ID`
+   - `AWS_SECRET_ACCESS_KEY`
 
-Upload media dilakukan di server; Import dari Cloudinary juga memakai env ini. Jangan pakai `NEXT_PUBLIC_CLOUDINARY_*` untuk keamanan.
+Upload media dilakukan di server ke S3.
 
 ## Struktur CMS Modules
 
@@ -148,7 +150,7 @@ npm run db:studio
 4. ✅ Buat roles sesuai kebutuhan (Editor, Viewer, dll)
 5. ✅ Assign permissions ke masing-masing role
 6. ✅ Buat user baru dan assign roles
-7. ✅ Upload media ke Cloudinary (jika digunakan)
+7. ✅ Upload media ke S3 (jika digunakan)
 8. ✅ Mulai manage content melalui CMS
 
 ## Notes
@@ -156,7 +158,7 @@ npm run db:studio
 - Semua route `/admin/*` protected dengan middleware
 - Permission check dilakukan di server-side untuk security
 - Site components sudah terintegrasi dengan CMS (fallback ke default jika DB kosong)
-- Media upload menggunakan Cloudinary widget (jika configured)
+- Media upload ke S3 (jika dikonfigurasi)
 
 ## Troubleshooting
 
@@ -174,7 +176,7 @@ npm run db:studio
 - Pastikan database `hcfi_credit` sudah dibuat
 
 **Media upload tidak bekerja**
-- Pastikan Cloudinary environment variables sudah di-set
-- Check upload preset name di Cloudinary dashboard
+- Pastikan AWS_S3_BUCKET, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY di-set
+- Pastikan IAM user memiliki permission S3 PutObject, GetObject
 
 
