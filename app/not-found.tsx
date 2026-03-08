@@ -20,13 +20,13 @@ export default function NotFound() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
+          {/* <Link
             href="/admin"
             className="inline-flex items-center justify-center gap-2 px-6 h-10 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#003d7a] transition-colors shadow-sm"
           >
             <IconLayoutDashboardFilled size={16} className="text-slate-100 -mt-0.5" />
             <span className="text-sm font-medium text-slate-100">Ke Dashboard Admin</span>
-          </Link>
+          </Link> */}
           <Link
             href="/"
             className="inline-flex items-center justify-center gap-2 px-6 h-10 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
