@@ -1,24 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const cloudinary = require('cloudinary').v2;
+import { randomUUID } from 'crypto';
 
-function uploadBufferToCloudinary(
-  buffer: Buffer,
-  options: { folder?: string }
-): Promise<{ secure_url: string; public_id: string; format?: string; bytes?: number; width?: number; height?: number; original_filename?: string }> {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.v2.uploader.upload_stream(
-      { folder: options.folder ?? 'hcfi_media' },
-      (err: Error | undefined, result: any) => {
-        if (err) return reject(err);
-        resolve(result);
-      }
+const FOLDER = 'hcfi_media';
+
+function getS3Client() {
+  const region = process.env.AWS_REGION;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  if (!region || !accessKeyId || !secretAccessKey) {
+    throw new Error(
+      'Set di .env: AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY'
     );
-    uploadStream.end(buffer);
+  }
+
+  return new S3Client({
+    region,
+    credentials: { accessKeyId, secretAccessKey },
   });
+}
+
+function getPublicUrl(bucket: string, region: string, key: string): string {
+  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -30,25 +37,16 @@ export async function POST(request: NextRequest) {
 
     await requirePermission('MEDIA', 'create');
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
+    const bucket = process.env.AWS_S3_BUCKET;
+    const region = process.env.AWS_REGION;
+    if (!bucket || !region) {
       return NextResponse.json(
         {
-          error:
-            'Set di .env: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (tanpa NEXT_PUBLIC)',
+          error: 'Set di .env: AWS_S3_BUCKET, AWS_REGION',
         },
         { status: 400 }
       );
     }
-
-    cloudinary.config({
-      cloud_name: cloudName,
-      api_key: apiKey,
-      api_secret: apiSecret,
-    });
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -56,21 +54,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File wajib diisi' }, { status: 400 });
     }
 
+    const ext = file.name.split('.').pop() || 'jpg';
+    const key = `${FOLDER}/${randomUUID()}-${Date.now()}.${ext}`;
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const result = await uploadBufferToCloudinary(buffer, { folder: 'hcfi_media' });
+    const client = getS3Client();
+    await client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type || `image/${ext}`,
+      })
+    );
 
-    const filename = result.original_filename ?? file.name ?? result.public_id?.split('/').pop() ?? 'image';
+    const url = getPublicUrl(bucket, region, key);
+
     const media = await prisma.media.create({
       data: {
-        filename,
-        url: result.secure_url,
-        cloudinaryId: result.public_id,
-        mimeType: result.format ?? file.type ?? null,
-        size: result.bytes ?? null,
-        width: result.width ?? null,
-        height: result.height ?? null,
+        filename: file.name,
+        url,
+        cloudinaryId: key,
+        mimeType: file.type ?? null,
+        size: buffer.length,
+        width: null,
+        height: null,
       },
     });
 
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Upload gagal';
     if (message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: message }, { status: 403 });
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }
