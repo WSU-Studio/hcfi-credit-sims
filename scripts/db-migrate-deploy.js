@@ -3,7 +3,7 @@
  * Runs pending Prisma migrations via pg (no Prisma CLI needed).
  * Use when Prisma CLI fails on server (e.g. missing WASM).
  * Requires: DATABASE_URL env, pg package
- * Adds sslmode=require for RDS if not present.
+ * Adds sslmode=no-verify for RDS (bypasses cert validation, fixes SELF_SIGNED_CERT_IN_CHAIN).
  */
 const { Client } = require('pg');
 const crypto = require('crypto');
@@ -19,8 +19,11 @@ function getConnectionConfig() {
     console.error('DATABASE_URL is required');
     process.exit(1);
   }
-  if (!url.includes('sslmode=')) {
-    url += url.includes('?') ? '&sslmode=require' : '?sslmode=require';
+  // RDS needs sslmode=no-verify to avoid SELF_SIGNED_CERT_IN_CHAIN
+  if (url.includes('sslmode=')) {
+    url = url.replace(/sslmode=[^&]+/, 'sslmode=no-verify');
+  } else {
+    url += url.includes('?') ? '&sslmode=no-verify' : '?sslmode=no-verify';
   }
   return { connectionString: url };
 }
