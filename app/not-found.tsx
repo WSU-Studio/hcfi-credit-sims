@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { IconHome, IconArrowLeft, IconLayoutDashboardFilled } from '@tabler/icons-react';
+import { IconHome } from '@tabler/icons-react';
 
 export default function NotFound() {
   return (

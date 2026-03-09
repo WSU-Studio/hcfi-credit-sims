@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, db:seed) */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 

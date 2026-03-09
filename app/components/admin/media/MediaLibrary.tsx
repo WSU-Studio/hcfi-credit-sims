@@ -223,9 +223,6 @@ export function MediaLibrary() {
             </div>
           </form>
         )}
-        <p className="text-xs text-gray-500">
-          Upload ke S3 memakai env server-only: <code className="bg-gray-100 px-1 rounded">AWS_S3_BUCKET</code>, <code className="bg-gray-100 px-1 rounded">AWS_REGION</code>, <code className="bg-gray-100 px-1 rounded">AWS_ACCESS_KEY_ID</code>, <code className="bg-gray-100 px-1 rounded">AWS_SECRET_ACCESS_KEY</code>.
-        </p>
       </div>
 
       {loading ? (
