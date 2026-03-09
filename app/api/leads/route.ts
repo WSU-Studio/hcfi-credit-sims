@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const { success } = leadsLimiter.limit(ip);
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Too many submissions. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { name, phone, email, productName, otrPrice, dpPercent, tenor } = body;
