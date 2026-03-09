@@ -10,6 +10,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +24,7 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
+        rememberMe: String(rememberMe),
         redirect: false,
       });
 
@@ -89,6 +91,23 @@ function LoginForm() {
                 placeholder="Password"
               />
             </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              name="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label
+              htmlFor="rememberMe"
+              className="ml-2 block text-sm text-gray-700"
+            >
+              Ingat saya (30 hari)
+            </label>
           </div>
 
           <div>

@@ -10,6 +10,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        rememberMe: { label: 'Remember me', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -31,10 +32,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error('Invalid credentials');
         }
 
+        const rememberMe =
+          credentials.rememberMe === true || credentials.rememberMe === 'true';
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
+          rememberMe,
         };
       },
     }),
@@ -48,6 +53,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        const rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
+        const maxAgeSec = rememberMe ? 30 * 24 * 60 * 60 : 6 * 60 * 60; // 30 days or 6 hours
+        token.exp = Math.floor(Date.now() / 1000) + maxAgeSec;
       }
       return token;
     },
