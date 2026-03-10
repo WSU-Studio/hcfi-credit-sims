@@ -35,6 +35,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // API admin routes require authentication (defense-in-depth)
+  if (pathname.startsWith("/api/admin")) {
+    const session = await getSessionFromRequest(request);
+    if (!session?.authenticated) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/api") || pathname.startsWith("/auth")) {
     return NextResponse.next();
   }
