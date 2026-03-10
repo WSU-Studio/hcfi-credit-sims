@@ -7,8 +7,44 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+function getCorsHeaders(request: NextRequest): Record<string, string> | null {
+  const allowed =
+    process.env.ALLOWED_ORIGINS?.split(",").map((o) => o.trim()) ?? [];
+  if (allowed.length === 0) return null;
+
+  const origin = request.headers.get("origin");
+  if (!origin || !allowed.includes(origin)) return null;
+
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
+function withCors(response: NextResponse, request: NextRequest): NextResponse {
+  if (!request.nextUrl.pathname.startsWith("/api")) return response;
+  const cors = getCorsHeaders(request);
+  if (cors) {
+    Object.entries(cors).forEach(([k, v]) => response.headers.set(k, v));
+  }
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // CORS for API routes (only when ALLOWED_ORIGINS is set)
+  if (pathname.startsWith("/api")) {
+    if (request.method === "OPTIONS") {
+      const cors = getCorsHeaders(request);
+      return new NextResponse(null, {
+        status: 204,
+        headers: cors ?? {},
+      });
+    }
+  }
 
   // Rate limit login attempts (brute-force protection)
   if (
@@ -18,9 +54,12 @@ export async function middleware(request: NextRequest) {
     const ip = getClientIp(request);
     const { success } = loginLimiter.limit(ip);
     if (!success) {
-      return NextResponse.json(
-        { error: "Too many login attempts. Please try again later." },
-        { status: 429 }
+      return withCors(
+        NextResponse.json(
+          { error: "Too many login attempts. Please try again later." },
+          { status: 429 }
+        ),
+        request
       );
     }
   }
@@ -39,13 +78,16 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/api/admin")) {
     const session = await getSessionFromRequest(request);
     if (!session?.authenticated) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return withCors(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        request
+      );
     }
-    return NextResponse.next();
+    return withCors(NextResponse.next(), request);
   }
 
   if (pathname.startsWith("/api") || pathname.startsWith("/auth")) {
-    return NextResponse.next();
+    return withCors(NextResponse.next(), request);
   }
 
   return intlMiddleware(request);
