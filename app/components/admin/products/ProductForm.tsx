@@ -225,6 +225,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                 placeholder="/images/product.jpg or S3/URL"
               />
               <MediaPicker
+                value={formData.imageUrl}
                 onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
               />
             </div>

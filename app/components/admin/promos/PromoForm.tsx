@@ -289,7 +289,7 @@ export function PromoForm({ promoId }: PromoFormProps) {
                   className="flex-1 px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
                   placeholder="Image URL"
                 />
-                <MediaPicker onSelect={(m) => setImageUrl(m?.url ?? '')} />
+                <MediaPicker value={imageUrl} onSelect={(m) => setImageUrl(m?.url ?? '')} />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

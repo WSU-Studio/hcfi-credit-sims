@@ -336,6 +336,7 @@ export function LayoutBuilderSection({ layout, setLayout }: LayoutBuilderSection
                         placeholder="Image URL"
                       />
                       <MediaPicker
+                        value={(cell.payload?.imageUrl as string) ?? ''}
                         onSelect={(m) =>
                           setCellPayload(rowIndex, cellIndex, {
                             ...cell.payload,

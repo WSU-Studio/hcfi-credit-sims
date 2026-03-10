@@ -314,6 +314,7 @@ export function BannerForm({ bannerId }: BannerFormProps) {
                   placeholder="/images/banner.jpg or S3/URL"
                 />
                 <MediaPicker
+                  value={formData.imageUrl}
                   onSelect={(media) => setFormData({ ...formData, imageUrl: media?.url || '' })}
                 />
               </div>
