@@ -18,8 +18,10 @@ export function useUserPermissions() {
     if (status === 'loading') return;
 
     if (!session?.user?.id) {
-      setPermissions(null);
-      setLoading(false);
+      queueMicrotask(() => {
+        setPermissions(null);
+        setLoading(false);
+      });
       return;
     }
 
@@ -47,8 +49,10 @@ export function usePermission(menuCode: string, action: PermissionAction = 'view
     if (status === 'loading') return;
 
     if (!session?.user?.id) {
-      setHasPermission(false);
-      setLoading(false);
+      queueMicrotask(() => {
+        setHasPermission(false);
+        setLoading(false);
+      });
       return;
     }
 
