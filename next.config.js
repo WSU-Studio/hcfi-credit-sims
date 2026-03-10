@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, next.config.js) */
 /** @type {import('next').NextConfig} */
 const createNextIntlPlugin = require("next-intl/plugin");
 

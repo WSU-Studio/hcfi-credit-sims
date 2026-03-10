@@ -5,6 +5,7 @@
  * Requires: DATABASE_URL env, pg package
  * Adds sslmode=no-verify for RDS (bypasses cert validation, fixes SELF_SIGNED_CERT_IN_CHAIN).
  */
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, db:migrate) */
 const { Client } = require('pg');
 const crypto = require('crypto');
 const { readFileSync } = require('fs');
