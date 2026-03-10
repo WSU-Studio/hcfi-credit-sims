@@ -36,6 +36,7 @@ function LoginForm() {
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
+      console.error('Error logging in:', err);
     } finally {
       setLoading(false);
     }
