@@ -340,6 +340,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
                   placeholder="URL gambar atau pilih dari media"
                 />
                 <MediaPicker
+                  value={formData.imageUrl ?? ''}
                   onSelect={(media) =>
                     setFormData({ ...formData, imageUrl: media?.url ?? '' })
                   }
