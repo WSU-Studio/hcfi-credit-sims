@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import sharp from 'sharp';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
+import { validateImageFile } from '@/lib/image-utils';
 
 const FOLDER = 'hcfi_media';
 
@@ -54,19 +56,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File wajib diisi' }, { status: 400 });
     }
 
-    const ext = file.name.split('.').pop() || 'jpg';
-    const key = `${FOLDER}/${randomUUID()}-${Date.now()}.${ext}`;
-
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    const validation = validateImageFile(inputBuffer);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const webpBuffer = await sharp(inputBuffer)
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    const metadata = await sharp(webpBuffer).metadata();
+    const key = `${FOLDER}/${randomUUID()}-${Date.now()}.webp`;
 
     const client = getS3Client();
     await client.send(
       new PutObjectCommand({
         Bucket: bucket,
         Key: key,
-        Body: buffer,
-        ContentType: file.type || `image/${ext}`,
+        Body: webpBuffer,
+        ContentType: 'image/webp',
       })
     );
 
@@ -77,10 +88,10 @@ export async function POST(request: NextRequest) {
         filename: file.name,
         url,
         cloudinaryId: key,
-        mimeType: file.type ?? null,
-        size: buffer.length,
-        width: null,
-        height: null,
+        mimeType: 'image/webp',
+        size: webpBuffer.length,
+        width: metadata.width ?? null,
+        height: metadata.height ?? null,
       },
     });
 
