@@ -5,6 +5,8 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import Link from 'next/link';
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+
 type Promo = {
   id: string;
   title: string;
@@ -13,6 +15,8 @@ type Promo = {
   isActive: boolean;
   isHighlight: boolean;
   order: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export function PromosTable() {
@@ -52,6 +56,9 @@ export function PromosTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Title
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -71,6 +78,12 @@ export function PromosTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {promos.map((promo) => (
               <tr key={promo.id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(promo.createdAt)}
+                  <span className="text-xs text-gray-500 block">
+                    Last updated at {formatDate(promo.updatedAt)}
+                  </span>
+                </td>
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-gray-900">{promo.title}</div>
                   {promo.description && (
