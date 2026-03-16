@@ -297,6 +297,10 @@ model Lead {
   motherName  String?  // Nama ibu kandung
   homeOwnershipStatus String? // Status kepemilikan rumah/bangunan
   consentAccepted     Boolean  @default(false) // Persetujuan pemrosesan data
+  slikStatus          String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, QUALIFIED, NOT_QUALIFIED, ERROR
+  slikResultCode      String?
+  slikResultDescr     String?
+  slikRawResponse     Json?
   status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
