@@ -27,6 +27,12 @@ export function ContactModal({
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [ktpUrl, setKtpUrl] = useState<string | null>(null);
+  const [ktpUploading, setKtpUploading] = useState(false);
+  const [ktpError, setKtpError] = useState<string | null>(null);
+  const [motherName, setMotherName] = useState('');
+  const [homeOwnership, setHomeOwnership] = useState<string>('');
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,10 +54,41 @@ export function ContactModal({
       setName('');
       setPhone('');
       setEmail('');
+       setKtpUrl(null);
+       setKtpUploading(false);
+       setKtpError(null);
+       setMotherName('');
+       setHomeOwnership('');
+       setConsent(false);
       setSuccess(false);
       setError(null);
     }
   }, [open]);
+
+  const handleKtpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setKtpError(null);
+    setKtpUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/leads/upload-ktp', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Upload gagal');
+      }
+      setKtpUrl(data.url);
+    } catch (err) {
+      setKtpError(err instanceof Error ? err.message : 'Upload gagal');
+    } finally {
+      setKtpUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +124,10 @@ export function ContactModal({
           otrPrice: otrPrice || null,
           dpPercent: dpPercent || null,
           tenor: tenor || null,
+          ktpUrl,
+          motherName: motherName.trim() || null,
+          homeOwnershipStatus: homeOwnership || null,
+          consentAccepted: consent,
         }),
       });
 
@@ -116,7 +157,7 @@ export function ContactModal({
         aria-modal="true"
         aria-labelledby="contact-title"
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md rounded-xl bg-white shadow-xl"
+        className="relative z-10 w-full max-w-4xl rounded-xl bg-white shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 id="contact-title" className="text-lg font-semibold text-gray-900">
@@ -141,52 +182,130 @@ export function ContactModal({
             </div>
           )}
 
-          <div>
-            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1.5">
-              {t('fullName')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="contact-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder={t('fullNamePlaceholder')}
-            />
+          <div className="grid lg:grid-cols-3 grid-cols-1 gap-4">
+            <div>
+              <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('fullName')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="contact-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={loading || success}
+                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder={t('fullNamePlaceholder')}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('phone')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="contact-phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                disabled={loading || success}
+                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="081234567890"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('email')} <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="contact-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading || success}
+                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="nama@email.com"
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1.5">
-              {t('phone')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="contact-phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder="081234567890"
-            />
-          </div>
+          <div className="pt-2 space-y-3 border-t border-gray-200 mt-2">
+            <p className="text-sm font-semibold text-gray-900">
+              {t('creditScoringSectionTitle')}
+            </p>
+            <p className="text-xs text-gray-500">
+              {t('creditScoringSectionHint')}
+            </p>
 
-          <div>
-            <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1.5">
-              {t('email')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="contact-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading || success}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              placeholder="nama@email.com"
-            />
+            <div className="grid lg:grid-cols-3 grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {t('ktpUploadLabel')}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleKtpChange}
+                    disabled={ktpUploading || loading || success}
+                    className="block w-full text-sm text-gray-700 file:mr-3 file:h-11 file:px-3 file:rounded-lg file:border-0 file:bg-[#002c5f] file:text-white file:text-sm hover:file:bg-[#002c5f]/90 disabled:opacity-50 cursor-pointer"
+                  />
+                </div>
+                {ktpUploading && (
+                  <p className="mt-1 text-xs text-gray-500">{t('ktpUploading')}</p>
+                )}
+                {ktpUrl && !ktpUploading && (
+                  <p className="mt-1 text-xs text-green-600">
+                    {t('ktpUploadSuccess')}
+                  </p>
+                )}
+                {ktpError && (
+                  <p className="mt-1 text-xs text-red-600">{ktpError}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('ktpUploadHint')}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="mother-name" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {t('motherNameLabel')}
+                </label>
+                <input
+                  id="mother-name"
+                  type="text"
+                  value={motherName}
+                  onChange={(e) => setMotherName(e.target.value)}
+                  disabled={loading || success}
+                  className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  placeholder={t('motherNamePlaceholder')}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="home-ownership" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {t('homeOwnershipLabel')}
+                </label>
+                <select
+                  id="home-ownership"
+                  value={homeOwnership}
+                  onChange={(e) => setHomeOwnership(e.target.value)}
+                  disabled={loading || success}
+                  className="w-full h-11 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                >
+                  <option value="">{t('homeOwnershipPlaceholder')}</option>
+                  <option value="OWN">{t('homeOwnershipOwn')}</option>
+                  <option value="FAMILY">{t('homeOwnershipFamily')}</option>
+                  <option value="RENT">{t('homeOwnershipRent')}</option>
+                  <option value="COMPANY">{t('homeOwnershipCompany')}</option>
+                  <option value="OTHER">{t('homeOwnershipOther')}</option>
+                </select>
+              </div>
+            </div>
+
           </div>
 
           {error && (
@@ -194,6 +313,20 @@ export function ContactModal({
               {error}
             </div>
           )}
+
+          <div className="flex items-start gap-2 text-xs text-gray-600">
+            <input
+              id="consent"
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              disabled={loading || success}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#002c5f] focus:ring-[#002c5f] disabled:opacity-50"
+            />
+            <label htmlFor="consent" className="cursor-pointer">
+              {t('consentLabel')}
+            </label>
+          </div>
 
           {success && (
             <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">

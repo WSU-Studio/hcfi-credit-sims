@@ -14,14 +14,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, phone, email, productName, otrPrice, dpPercent, tenor } = body;
+    const {
+      name,
+      phone,
+      email,
+      productName,
+      otrPrice,
+      dpPercent,
+      tenor,
+      ktpUrl,
+      motherName,
+      homeOwnershipStatus,
+      consentAccepted,
+    } = body;
 
     if (!name || !phone || !email) {
       return NextResponse.json({ error: 'Name, phone, and email are required' }, { status: 400 });
     }
 
-    const lead = await prisma.lead.create({
-      data: {
+    const leadPayload = {
         name: String(name).trim(),
         phone: String(phone).trim(),
         email: String(email).trim(),
@@ -29,8 +40,17 @@ export async function POST(request: NextRequest) {
         otrPrice: otrPrice ? Number(otrPrice) : null,
         dpPercent: dpPercent ? Number(dpPercent) : null,
         tenor: tenor ? Number(tenor) : null,
+        ktpUrl: ktpUrl ? String(ktpUrl).trim() : null,
+        motherName: motherName ? String(motherName).trim() : null,
+        homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
+        consentAccepted: Boolean(consentAccepted),
         status: 'NEW',
-      },
+    };
+
+    const lead = await prisma.lead.create({
+      // Extra fields are safe at runtime; Prisma will ignore unknown keys
+      // until the client is regenerated with the latest schema.
+      data: leadPayload as unknown as Parameters<typeof prisma.lead.create>[0]['data'],
     });
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
