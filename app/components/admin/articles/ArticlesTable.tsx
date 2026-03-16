@@ -69,6 +69,12 @@ export function ArticlesTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Updated
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -96,12 +102,6 @@ export function ArticlesTable() {
                 Status
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Created
-              </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Updated
-              </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -109,6 +109,12 @@ export function ArticlesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {articles.map((article) => (
               <tr key={article.id}>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                  {new Date(article.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                  {new Date(article.updatedAt).toLocaleDateString()}
+                </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100">
                     {article.imageUrl ? (
@@ -173,12 +179,6 @@ export function ArticlesTable() {
                   >
                     {article.isPublished ? 'Published' : 'Draft'}
                   </span>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                  {new Date(article.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
-                  {new Date(article.updatedAt).toLocaleDateString()}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center gap-2">
