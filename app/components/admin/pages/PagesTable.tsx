@@ -5,6 +5,8 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconLink, IconPlus, IconTrash } from '@tabler/icons-react';
 import Link from 'next/link';
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+
 type Page = {
   id: string;
   title: string;
@@ -12,8 +14,8 @@ type Page = {
   slug: string;
   showInMenu: boolean;
   menuOrder: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export function PagesTable() {
@@ -53,6 +55,9 @@ export function PagesTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Title
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -65,9 +70,6 @@ export function PagesTable() {
                 Order
               </th> */}
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Last Updated
-              </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -75,6 +77,12 @@ export function PagesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {pages.map((page) => (
               <tr key={page.id}>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(page.createdAt)}
+                  <span className="text-xs text-gray-500 block">
+                    Last updated at {formatDate(page.updatedAt)}
+                  </span>
+                </td>
                 <td className="px-3 py-2 text-sm font-medium text-gray-900">
                   <div className="flex flex-col">
                     <span className="text-gray-900">{page.title}</span>
@@ -96,9 +104,7 @@ export function PagesTable() {
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                   {page.menuOrder}
                 </td> */}
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(page.updatedAt).toLocaleDateString()}
-                </td>
+                
                 <td className="px-3 py-2 text-sm font-medium">
                   <div className="flex items-center gap-2">
                     <AdminLink
