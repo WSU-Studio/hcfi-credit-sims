@@ -150,14 +150,14 @@ export function ContactModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" aria-hidden onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex sm:items-center justify-center p-4 overflow-y-auto">
+      <div className="fixed inset-0 bg-white sm:bg-black/50" aria-hidden onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="contact-title"
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-4xl rounded-xl bg-white shadow-xl"
+        className="relative z-10 w-full max-w-4xl rounded-xl bg-white sm:shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 id="contact-title" className="text-lg font-semibold text-gray-900">
@@ -182,7 +182,7 @@ export function ContactModal({
             </div>
           )}
 
-          <div className="grid lg:grid-cols-3 grid-cols-1 gap-4">
+          <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
             <div>
               <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1.5">
                 {t('fullName')} <span className="text-red-500">*</span>
@@ -240,7 +240,7 @@ export function ContactModal({
               {t('creditScoringSectionHint')}
             </p>
 
-            <div className="grid lg:grid-cols-3 grid-cols-1 gap-4">
+            <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   {t('ktpUploadLabel')}
@@ -340,14 +340,14 @@ export function ContactModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {t('cancel')}
             </button>
             <button
               type="submit"
-              disabled={loading || success}
-              className="flex-1 px-4 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || success || !consent}
+              className="flex-1 px-4 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? t('sending') : success ? t('success') : t('submitContact')}
             </button>
