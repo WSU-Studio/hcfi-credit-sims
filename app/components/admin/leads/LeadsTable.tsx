@@ -13,6 +13,8 @@ type Lead = {
   otrPrice: number | null;
   dpPercent: number | null;
   tenor: number | null;
+  slikStatus?: string | null;
+  slikResultCode?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -36,6 +38,7 @@ export function LeadsTable() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLeads();
@@ -52,6 +55,25 @@ export function LeadsTable() {
       console.error('Error fetching leads:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runSlik = async (id: string) => {
+    setRunningSlikId(id);
+    try {
+      const res = await fetch('/api/admin/leads/run-slik', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        console.error('Failed to run SLIK', await res.json());
+      }
+      await fetchLeads();
+    } catch (err) {
+      console.error('Error running SLIK:', err);
+    } finally {
+      setRunningSlikId((current) => (current === id ? null : current));
     }
   };
 
@@ -116,6 +138,9 @@ export function LeadsTable() {
                 Status
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                SLIK
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -170,7 +195,29 @@ export function LeadsTable() {
                         {statusOpt.label}
                       </span>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full ${
+                          lead.slikStatus === 'QUALIFIED'
+                            ? 'bg-green-100 text-green-800'
+                            : lead.slikStatus === 'NOT_QUALIFIED'
+                            ? 'bg-red-100 text-red-800'
+                            : lead.slikStatus === 'ERROR'
+                            ? 'bg-red-50 text-red-700'
+                            : lead.slikStatus === 'IN_PROGRESS'
+                            ? 'bg-yellow-50 text-yellow-700'
+                            : 'bg-gray-50 text-gray-500'
+                        }`}
+                      >
+                        {lead.slikStatus ?? 'NOT_STARTED'}
+                      </span>
+                      {lead.slikResultCode && (
+                        <div className="mt-0.5 text-[10px] text-gray-500">
+                          Code: {lead.slikResultCode}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-sm space-x-2">
                       <select
                         value={lead.status}
                         onChange={(e) => updateStatus(lead.id, e.target.value)}
@@ -182,6 +229,14 @@ export function LeadsTable() {
                           </option>
                         ))}
                       </select>
+                      <button
+                        type="button"
+                        onClick={() => runSlik(lead.id)}
+                        disabled={runningSlikId === lead.id}
+                        className="inline-flex items-center px-2 py-1 border border-blue-500 text-blue-600 rounded text-xs hover:bg-blue-50 disabled:opacity-50"
+                      >
+                        {runningSlikId === lead.id ? 'Running…' : 'Run SLIK'}
+                      </button>
                     </td>
                   </tr>
                 );
