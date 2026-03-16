@@ -122,9 +122,9 @@ export function LeadsTable() {
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tanggal
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {/* <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nama
-              </th>
+              </th> */}
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Kontak
               </th>
@@ -135,13 +135,13 @@ export function LeadsTable() {
                 Simulasi
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 SLIK
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                Status
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Follow Up
               </th>
             </tr>
           </thead>
@@ -163,8 +163,6 @@ export function LeadsTable() {
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{lead.phone}</div>
                       <div className="text-xs text-gray-500">{lead.email}</div>
                     </td>
@@ -187,26 +185,18 @@ export function LeadsTable() {
                         <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap text-xs flex flex-col">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusOpt.color}`}
-                      >
-                        <StatusIcon size={14} />
-                        {statusOpt.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full ${
+                        className={`inline-flex items-center rounded-full ${
                           lead.slikStatus === 'QUALIFIED'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'text-green-800'
                             : lead.slikStatus === 'NOT_QUALIFIED'
-                            ? 'bg-red-100 text-red-800'
+                            ? 'text-red-800'
                             : lead.slikStatus === 'ERROR'
-                            ? 'bg-red-50 text-red-700'
+                            ? 'text-red-700'
                             : lead.slikStatus === 'IN_PROGRESS'
-                            ? 'bg-yellow-50 text-yellow-700'
-                            : 'bg-gray-50 text-gray-500'
+                            ? 'text-yellow-700'
+                            : 'text-gray-500'
                         }`}
                       >
                         {lead.slikStatus ?? 'NOT_STARTED'}
@@ -216,6 +206,22 @@ export function LeadsTable() {
                           Code: {lead.slikResultCode}
                         </div>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => runSlik(lead.id)}
+                        disabled={runningSlikId === lead.id}
+                        className="inline-flex items-center px-1.5 py-0.5 border border-blue-500 text-blue-600 rounded text-xs hover:bg-blue-50 disabled:opacity-50 w-fit"
+                      >
+                        {runningSlikId === lead.id ? 'Running…' : 'Run SLIK'}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusOpt.color}`}
+                      >
+                        <StatusIcon size={14} />
+                        {statusOpt.label}
+                      </span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm space-x-2">
                       <select
@@ -229,14 +235,6 @@ export function LeadsTable() {
                           </option>
                         ))}
                       </select>
-                      <button
-                        type="button"
-                        onClick={() => runSlik(lead.id)}
-                        disabled={runningSlikId === lead.id}
-                        className="inline-flex items-center px-2 py-1 border border-blue-500 text-blue-600 rounded text-xs hover:bg-blue-50 disabled:opacity-50"
-                      >
-                        {runningSlikId === lead.id ? 'Running…' : 'Run SLIK'}
-                      </button>
                     </td>
                   </tr>
                 );
