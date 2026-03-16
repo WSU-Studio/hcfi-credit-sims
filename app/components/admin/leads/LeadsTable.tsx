@@ -235,6 +235,12 @@ export function LeadsTable() {
                         <StatusIcon size={14} />
                         {statusOpt.label}
                       </span>
+                      <span className="text-xs text-gray-500 block">
+                        Last updated at
+                      </span>
+                      <span className="text-xs text-gray-800 block">
+                        {formatDate(lead.updatedAt)}
+                      </span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm space-x-2">
                       {canChangeFollowUp ? (
