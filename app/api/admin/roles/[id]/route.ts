@@ -61,7 +61,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, description, permissionIds } = body;
+    const { name, description, permissionIds, activities } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json(
@@ -94,6 +94,9 @@ export async function PUT(
     const ids = Array.isArray(permissionIds)
       ? permissionIds.filter((p: unknown) => typeof p === 'string')
       : [];
+    const activityIds = Array.isArray(activities)
+      ? activities.filter((a: unknown) => typeof a === 'string')
+      : [];
 
     await prisma.$transaction([
       prisma.rolePermission.deleteMany({ where: { roleId: id } }),
@@ -105,6 +108,7 @@ export async function PUT(
             description !== undefined && description !== null
               ? (description === '' ? null : String(description))
               : existing.description,
+          activities: activityIds,
         },
       }),
     ]);

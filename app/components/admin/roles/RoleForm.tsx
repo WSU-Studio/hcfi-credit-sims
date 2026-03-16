@@ -14,6 +14,18 @@ type Permission = {
   menu: { name: string; code: string; order: number };
 };
 
+type Activity = {
+  id: string;
+  name: string;
+};
+
+const ACTIVITIES: Activity[] = [
+  {
+    id: 'leads.changeFollowUpStatus',
+    name: 'Boleh mengubah status follow up pada Leads',
+  },
+];
+
 type RoleFormProps = {
   roleId?: string;
 };
@@ -27,6 +39,7 @@ export function RoleForm({ roleId }: RoleFormProps) {
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
+  const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadPermissions = () =>
@@ -44,7 +57,7 @@ export function RoleForm({ roleId }: RoleFormProps) {
         }),
         loadPermissions(),
       ])
-        .then(([roleData, _]) => {
+        .then(([roleData]) => {
           const role = roleData.role;
           if (role) {
             setName(role.name ?? '');
@@ -52,6 +65,9 @@ export function RoleForm({ roleId }: RoleFormProps) {
             setSelectedPermissionIds(
               new Set((role.permissionIds as string[]) || [])
             );
+            if (Array.isArray(role.activities)) {
+              setSelectedActivityIds(new Set(role.activities as string[]));
+            }
           } else setError('Role not found');
           setLoading(false);
         })
@@ -73,6 +89,15 @@ export function RoleForm({ roleId }: RoleFormProps) {
     });
   };
 
+  const toggleActivity = (id: string) => {
+    setSelectedActivityIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -82,6 +107,7 @@ export function RoleForm({ roleId }: RoleFormProps) {
         name: name.trim(),
         description: description.trim() || null,
         permissionIds: Array.from(selectedPermissionIds),
+        activities: Array.from(selectedActivityIds),
       };
       const url = roleId ? `/api/admin/roles/${roleId}` : '/api/admin/roles';
       const method = roleId ? 'PUT' : 'POST';
@@ -170,6 +196,23 @@ export function RoleForm({ roleId }: RoleFormProps) {
             {permissions.length === 0 && (
               <p className="text-sm text-gray-500">Tidak ada permission. Jalankan seed.</p>
             )}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Activities</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Centang aktivitas yang boleh dilakukan oleh role ini.
+          </p>
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 max-h-80 overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {ACTIVITIES.map((activity: Activity) => (
+                <label key={activity.id} className="flex items-center gap-2 cursor-pointer hover:bg-white/60 rounded px-2 py-1.5">
+                  <input type="checkbox" checked={selectedActivityIds.has(activity.id)} onChange={() => toggleActivity(activity.id)} className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]" />
+                  <span className="text-sm text-gray-800">{activity.name}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       </div>

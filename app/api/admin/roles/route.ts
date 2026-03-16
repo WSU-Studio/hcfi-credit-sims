@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     await requirePermission('ROLES', 'create');
 
     const body = await request.json();
-    const { name, description, permissionIds } = body;
+    const { name, description, permissionIds, activities } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json(
@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
     const ids = Array.isArray(permissionIds)
       ? permissionIds.filter((p: unknown) => typeof p === 'string')
       : [];
+    const activityIds = Array.isArray(activities)
+      ? activities.filter((a: unknown) => typeof a === 'string')
+      : [];
 
     const role = await prisma.role.create({
       data: {
@@ -79,6 +82,7 @@ export async function POST(request: NextRequest) {
           description !== undefined && description !== null && description !== ''
             ? String(description)
             : null,
+        activities: activityIds,
       },
     });
 
