@@ -39,10 +39,23 @@ export function LeadsTable() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
+  const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
 
   useEffect(() => {
     fetchLeads();
   }, [statusFilter]);
+
+  useEffect(() => {
+    fetch('/api/admin/me/activities')
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data) => {
+        const acts: string[] = data.activities || [];
+        setCanChangeFollowUp(acts.includes('leads.changeFollowUpStatus'));
+      })
+      .catch(() => {
+        setCanChangeFollowUp(false);
+      });
+  }, []);
 
   const fetchLeads = async () => {
     setLoading(true);
@@ -224,17 +237,21 @@ export function LeadsTable() {
                       </span>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm space-x-2">
-                      <select
-                        value={lead.status}
-                        onChange={(e) => updateStatus(lead.id, e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      >
-                        {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value} className="text-gray-700">
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      {canChangeFollowUp ? (
+                        <select
+                          value={lead.status}
+                          onChange={(e) => updateStatus(lead.id, e.target.value)}
+                          className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        >
+                          {STATUS_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="text-gray-700">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs text-gray-400">No follow up access</span>
+                      )}
                     </td>
                   </tr>
                 );
