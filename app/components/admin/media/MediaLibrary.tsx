@@ -14,6 +14,7 @@ type Media = {
   width: number | null;
   height: number | null;
   createdAt?: string;
+  // usageCount?: number;
 };
 
 function saveMediaToApi(payload: {
@@ -280,9 +281,9 @@ export function MediaLibrary() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Gunakan URL ini di Article, Promo, Banner, dll.
-                </p>
+                {/* <p className="text-xs text-gray-500">
+                  Gambar ini telah digunakan di {item.usageCount} artikel.
+                </p> */}
               </div>
             </div>
           ))}
