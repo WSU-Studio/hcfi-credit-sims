@@ -420,10 +420,21 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, onSelectPr
               <ContactModal
                 open={contactOpen}
                 onClose={() => setContactOpen(false)}
-                productName={highlightedRow ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan` : selectedProduct?.ProductName}
+                productName={
+                  highlightedRow
+                    ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan`
+                    : selectedProduct?.ProductName
+                }
                 otrPrice={otrPrice ?? undefined}
                 dpPercent={dpPercent}
                 tenor={highlightedRow?.Tenor}
+                vehicleSummary={
+                  vehicle
+                    ? [vehicle.modelName, vehicle.trimName, vehicle.exteriorColor, vehicle.interiorColor]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : undefined
+                }
               />
             </div>
           )}

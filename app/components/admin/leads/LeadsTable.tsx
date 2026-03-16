@@ -9,6 +9,7 @@ type Lead = {
   phone: string;
   email: string;
   productName: string | null;
+  vehicleSummary?: string | null;
   otrPrice: number | null;
   dpPercent: number | null;
   tenor: number | null;
@@ -97,6 +98,9 @@ export function LeadsTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tanggal
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nama
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -110,9 +114,6 @@ export function LeadsTable() {
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
-              </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tanggal
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -132,6 +133,9 @@ export function LeadsTable() {
                 const StatusIcon = statusOpt.icon;
                 return (
                   <tr key={lead.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(lead.createdAt)}
+                    </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{lead.name}</div>
                     </td>
@@ -141,6 +145,11 @@ export function LeadsTable() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-sm text-gray-900">{lead.productName || '-'}</div>
+                      {lead.vehicleSummary && (
+                        <div className="mt-0.5 text-xs text-gray-500">
+                          {lead.vehicleSummary}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       {lead.otrPrice || lead.dpPercent || lead.tenor ? (
@@ -160,9 +169,6 @@ export function LeadsTable() {
                         <StatusIcon size={14} />
                         {statusOpt.label}
                       </span>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(lead.createdAt)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-sm">
                       <select

@@ -11,6 +11,7 @@ interface ContactModalProps {
   otrPrice?: number;
   dpPercent?: number;
   tenor?: number;
+  vehicleSummary?: string;
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
 }
 
@@ -21,6 +22,7 @@ export function ContactModal({
   otrPrice,
   dpPercent,
   tenor,
+  vehicleSummary,
   onSubmit,
 }: ContactModalProps) {
   const t = useTranslations('creditSimulation');
@@ -121,6 +123,7 @@ export function ContactModal({
           phone: phone.trim(),
           email: email.trim(),
           productName: productName || null,
+          vehicleSummary: vehicleSummary || null,
           otrPrice: otrPrice || null,
           dpPercent: dpPercent || null,
           tenor: tenor || null,
@@ -174,11 +177,18 @@ export function ContactModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {productName && (
+          {(productName || vehicleSummary) && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Produk:</span> {productName}
-              </p>
+              {productName && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Produk:</span> {productName}
+                </p>
+              )}
+              {vehicleSummary && (
+                <p className="mt-1 text-xs text-gray-600">
+                  <span className="font-medium">Kendaraan:</span> {vehicleSummary}
+                </p>
+              )}
             </div>
           )}
 
