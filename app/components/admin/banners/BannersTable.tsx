@@ -5,6 +5,8 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import Image from 'next/image';
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+
 type Banner = {
   id: string;
   title: string;
@@ -17,6 +19,7 @@ type Banner = {
   order: number;
   startDate: string | null;
   endDate: string | null;
+  createdAt: string;
 };
 
 export function BannersTable() {
@@ -57,6 +60,9 @@ export function BannersTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -83,6 +89,9 @@ export function BannersTable() {
             ) : (
               banners.map((banner) => (
                 <tr key={banner.id}>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(banner.createdAt)}
+                  </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100 flex items-center justify-center">
                     {imageErrors.has(banner.id) ? (
