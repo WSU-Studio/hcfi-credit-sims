@@ -20,6 +20,7 @@ type Banner = {
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 export function BannersTable() {
@@ -91,6 +92,9 @@ export function BannersTable() {
                 <tr key={banner.id}>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(banner.createdAt)}
+                    <span className="text-xs text-gray-500 block">
+                      Last updated at {formatDate(banner.updatedAt)}
+                    </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100 flex items-center justify-center">

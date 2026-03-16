@@ -6,6 +6,8 @@ import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+
 type Product = {
   id: string;
   title: string;
@@ -15,6 +17,8 @@ type Product = {
   imageUrl: string;
   order: number;
   isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export function ProductsTable() {
@@ -54,6 +58,9 @@ export function ProductsTable() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Created At
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -76,6 +83,12 @@ export function ProductsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.id}>
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(product.createdAt)}
+                  <span className="text-xs text-gray-500 block">
+                    Last updated at {formatDate(product.updatedAt)}
+                  </span>
+                </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   <div className="w-20 h-12 relative rounded overflow-hidden">
                     <Image
