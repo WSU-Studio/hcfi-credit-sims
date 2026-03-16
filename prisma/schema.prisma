@@ -292,6 +292,10 @@ model Lead {
   dpPercent   Float?
   tenor       Int?
   notes       String?  @db.Text
+  ktpUrl      String?  // URL gambar KTP yang diupload
+  motherName  String?  // Nama ibu kandung
+  homeOwnershipStatus String? // Status kepemilikan rumah/bangunan
+  consentAccepted     Boolean  @default(false) // Persetujuan pemrosesan data
   status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
