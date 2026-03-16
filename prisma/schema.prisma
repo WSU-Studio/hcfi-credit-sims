@@ -287,6 +287,7 @@ model Lead {
   phone       String
   email       String
   productName String?
+  vehicleSummary String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
   otrPrice    Float?
   discount    Float?   // Potongan harga (nominal)
   dpPercent   Float?
