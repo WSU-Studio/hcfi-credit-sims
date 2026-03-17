@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
+import { jsPDF } from 'jspdf';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
-import { IconX } from '@tabler/icons-react';
+import { IconX, IconDownload } from '@tabler/icons-react';
 
 export interface VehicleSummaryInfo {
   modelName?: string;
@@ -47,8 +48,6 @@ export function SimulationSummaryModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-
   const dpAmt = Math.round(otrPrice * (dpPercent / 100));
   const prov = product.ProvisionType === 'PRCNT' ? Math.round((otrPrice - dpAmt) * (product.ProvisionFee / 100)) : product.ProvisionFee;
   const feePaidByCustomer = product.AdminFeeAmt + product.FiduciaFeeAmt + prov;
@@ -60,6 +59,71 @@ export function SimulationSummaryModal({
       ? product.TdpAmt + product.InstallmentAmt * (product.Tenor - 1)
       : product.TdpAmt + product.InstallmentAmt * product.Tenor;
   const ntfAmount = otrPrice - dpAmt;
+
+  const handleDownloadPdf = useCallback(() => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    let y = 15;
+    doc.setFontSize(16);
+    doc.text('Ringkasan Simulasi Kredit', 14, y);
+    y += 12;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Produk', 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(product.ProductName, 14, y + 6);
+    y += 16;
+
+    if (vehicle?.modelName || vehicle?.trimName || vehicle?.exteriorColor || vehicle?.interiorColor) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Vehicle Info', 14, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      if (vehicle.modelName) doc.text(`Model: ${vehicle.modelName}`, 14, (y += 5));
+      if (vehicle.trimName) doc.text(`Trim: ${vehicle.trimName}`, 14, (y += 5));
+      if (vehicle.exteriorColor) doc.text(`Exterior: ${vehicle.exteriorColor}`, 14, (y += 5));
+      if (vehicle.interiorColor) doc.text(`Interior: ${vehicle.interiorColor}`, 14, (y += 5));
+      y += 8;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Down Payment: ${dpPercent}%`, 14, (y += 5));
+    doc.text(`Tenor: ${product.Tenor} bln`, 14, (y += 5));
+    doc.text(`Flat Rate: ${product.EffRatePrcnt}%`, 14, (y += 5));
+    doc.text(`Installment (${installLabel}): ${formatRp(product.InstallmentAmt)}`, 14, (y += 5));
+    doc.text(`Total Down Payment: ${formatRp(product.TdpAmt)}`, 14, (y += 5));
+    doc.text(`Total Payment: ${formatRp(totalPayment)}`, 14, (y += 5));
+    y += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('NTF (Net Total Financing)', 14, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    if (discount > 0) {
+      doc.text(`Harga OTR: ${formatRp(otrPrice + discount)}`, 14, (y += 5));
+      doc.text(`Diskon: (${formatRp(discount)})`, 14, (y += 5));
+    }
+    doc.text(`Total Asset Price: ${formatRp(otrPrice)}`, 14, (y += 5));
+    doc.text(`Down Payment: (${formatRp(dpAmt)})`, 14, (y += 5));
+    doc.text(`NTF Amount: ${formatRp(ntfAmount)}`, 14, (y += 5));
+
+    doc.save(`ringkasan-simulasi-kredit-${product.ProductCode ?? 'summary'}.pdf`);
+  }, [
+    product,
+    vehicle,
+    otrPrice,
+    discount,
+    dpPercent,
+    dpAmt,
+    installLabel,
+    totalPayment,
+    ntfAmount,
+  ]);
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -207,7 +271,15 @@ export function SimulationSummaryModal({
           </section>
         </div>
 
-        <div className="sticky bottom-0 border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end">
+        <div className="sticky bottom-0 border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#002c5f] text-[#002c5f] rounded-lg font-medium hover:bg-[#002c5f]/5 transition"
+          >
+            <IconDownload size={18} />
+            Download PDF
+          </button>
           <button
             type="button"
             onClick={onClose}
