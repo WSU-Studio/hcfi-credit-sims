@@ -1,9 +1,14 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
 import { IconX, IconDownload } from '@tabler/icons-react';
+
+type LetterheadData = {
+  name: string;
+  address: string[];
+};
 
 export interface VehicleSummaryInfo {
   modelName?: string;
@@ -26,6 +31,40 @@ interface SimulationSummaryModalProps {
 const formatRp = (n: number) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
+const DEFAULT_LETTERHEAD: LetterheadData = {
+  name: 'Hyundai Capital',
+  address: [
+    'PT Hyundai Capital Finance Indonesia',
+    'Sequis Tower, 23rd Floor, Unit 1 - 7, Jl. Jenderal Sudirman',
+    'Kav. 71, Senayan, Kebayoran Baru, South Jakarta, 12190',
+  ],
+};
+
+function loadLogoAsDataUrl(logoPath: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = logoPath;
+  });
+}
+
 export function SimulationSummaryModal({
   open,
   onClose,
@@ -36,6 +75,8 @@ export function SimulationSummaryModal({
   dpPercent,
   firstInstallment,
 }: SimulationSummaryModalProps) {
+  const [letterhead, setLetterhead] = useState<LetterheadData | null>(null);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     if (open) {
@@ -47,6 +88,24 @@ export function SimulationSummaryModal({
       document.body.style.overflow = '';
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (open) {
+      fetch('/api/public/footer')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.name || data?.address) {
+            setLetterhead({
+              name: data.name || DEFAULT_LETTERHEAD.name,
+              address: Array.isArray(data.address) ? data.address : DEFAULT_LETTERHEAD.address,
+            });
+          } else {
+            setLetterhead(DEFAULT_LETTERHEAD);
+          }
+        })
+        .catch(() => setLetterhead(DEFAULT_LETTERHEAD));
+    }
+  }, [open]);
 
   const dpAmt = Math.round(otrPrice * (dpPercent / 100));
   const prov = product.ProvisionType === 'PRCNT' ? Math.round((otrPrice - dpAmt) * (product.ProvisionFee / 100)) : product.ProvisionFee;
@@ -60,58 +119,99 @@ export function SimulationSummaryModal({
       : product.TdpAmt + product.InstallmentAmt * product.Tenor;
   const ntfAmount = otrPrice - dpAmt;
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const left = 14;
     let y = 15;
+
+    // Letterhead (kop surat)
+    const lh = letterhead ?? DEFAULT_LETTERHEAD;
+
+    // Logo - try to load and embed
+    const logoDataUrl = await loadLogoAsDataUrl('/HF-logo.svg');
+    if (logoDataUrl) {
+      const logoW = 57;
+      const logoH = 7;
+      doc.addImage(logoDataUrl, 'PNG', left, 8, logoW, logoH);
+      y = 8 + logoH + 6;
+    } else {
+      y = 15;
+    }
+
+    // Company name
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(lh.name, left, y);
+    y += 6;
+
+    // Address
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const addressLines = lh.address.filter((line) => line.trim() !== '');
+    addressLines.forEach((line) => {
+      doc.text(line, left, y);
+      y += 4;
+    });
+    y += 2;
+
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(left, y, 200, y);
+    y += 10;
+
+    // Title
     doc.setFontSize(16);
-    doc.text('Ringkasan Simulasi Kredit', 14, y);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ringkasan Simulasi Kredit', left, y);
     y += 12;
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('Produk', 14, y);
+    doc.text('Produk', left, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(product.ProductName, 14, y + 6);
+    doc.text(product.ProductName, left, y + 6);
     y += 16;
 
     if (vehicle?.modelName || vehicle?.trimName || vehicle?.exteriorColor || vehicle?.interiorColor) {
       doc.setFont('helvetica', 'bold');
-      doc.text('Vehicle Info', 14, y);
+      doc.text('Vehicle Info', left, y);
       y += 6;
       doc.setFont('helvetica', 'normal');
-      if (vehicle.modelName) doc.text(`Model: ${vehicle.modelName}`, 14, (y += 5));
-      if (vehicle.trimName) doc.text(`Trim: ${vehicle.trimName}`, 14, (y += 5));
-      if (vehicle.exteriorColor) doc.text(`Exterior: ${vehicle.exteriorColor}`, 14, (y += 5));
-      if (vehicle.interiorColor) doc.text(`Interior: ${vehicle.interiorColor}`, 14, (y += 5));
+      if (vehicle.modelName) doc.text(`Model: ${vehicle.modelName}`, left, (y += 5));
+      if (vehicle.trimName) doc.text(`Trim: ${vehicle.trimName}`, left, (y += 5));
+      if (vehicle.exteriorColor) doc.text(`Exterior: ${vehicle.exteriorColor}`, left, (y += 5));
+      if (vehicle.interiorColor) doc.text(`Interior: ${vehicle.interiorColor}`, left, (y += 5));
       y += 8;
     }
 
     doc.setFont('helvetica', 'bold');
-    doc.text('Summary', 14, y);
+    doc.text('Summary', left, y);
     y += 6;
     doc.setFont('helvetica', 'normal');
-    doc.text(`Down Payment: ${dpPercent}%`, 14, (y += 5));
-    doc.text(`Tenor: ${product.Tenor} bln`, 14, (y += 5));
-    doc.text(`Flat Rate: ${product.EffRatePrcnt}%`, 14, (y += 5));
-    doc.text(`Installment (${installLabel}): ${formatRp(product.InstallmentAmt)}`, 14, (y += 5));
-    doc.text(`Total Down Payment: ${formatRp(product.TdpAmt)}`, 14, (y += 5));
-    doc.text(`Total Payment: ${formatRp(totalPayment)}`, 14, (y += 5));
+    doc.text(`Down Payment: ${dpPercent}%`, left, (y += 5));
+    doc.text(`Tenor: ${product.Tenor} bln`, left, (y += 5));
+    doc.text(`Flat Rate: ${product.EffRatePrcnt}%`, left, (y += 5));
+    doc.text(`Installment (${installLabel}): ${formatRp(product.InstallmentAmt)}`, left, (y += 5));
+    doc.text(`Total Down Payment: ${formatRp(product.TdpAmt)}`, left, (y += 5));
+    doc.text(`Total Payment: ${formatRp(totalPayment)}`, left, (y += 5));
     y += 8;
 
     doc.setFont('helvetica', 'bold');
-    doc.text('NTF (Net Total Financing)', 14, y);
+    doc.text('NTF (Net Total Financing)', left, y);
     y += 6;
     doc.setFont('helvetica', 'normal');
     if (discount > 0) {
-      doc.text(`Harga OTR: ${formatRp(otrPrice + discount)}`, 14, (y += 5));
-      doc.text(`Diskon: (${formatRp(discount)})`, 14, (y += 5));
+      doc.text(`Harga OTR: ${formatRp(otrPrice + discount)}`, left, (y += 5));
+      doc.text(`Diskon: (${formatRp(discount)})`, left, (y += 5));
     }
-    doc.text(`Total Asset Price: ${formatRp(otrPrice)}`, 14, (y += 5));
-    doc.text(`Down Payment: (${formatRp(dpAmt)})`, 14, (y += 5));
-    doc.text(`NTF Amount: ${formatRp(ntfAmount)}`, 14, (y += 5));
+    doc.text(`Total Asset Price: ${formatRp(otrPrice)}`, left, (y += 5));
+    doc.text(`Down Payment: (${formatRp(dpAmt)})`, left, (y += 5));
+    doc.text(`NTF Amount: ${formatRp(ntfAmount)}`, left, (y += 5));
 
     doc.save(`ringkasan-simulasi-kredit-${product.ProductCode ?? 'summary'}.pdf`);
   }, [
+    letterhead,
     product,
     vehicle,
     otrPrice,
