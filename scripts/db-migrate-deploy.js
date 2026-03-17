@@ -12,7 +12,29 @@ const { readFileSync } = require('fs');
 const { join } = require('path');
 
 const MIGRATIONS_DIR = join(__dirname, '..', 'prisma', 'migrations');
-const PENDING_MIGRATIONS = ['20260307082009_add_sims_discount'];
+const PENDING_MIGRATIONS = [
+  '20260121092324_initial_migration',
+  '20260126165659_add_lead_model',
+  '20260129050001_add_article_subtitle_author',
+  '20260129050437_add_article_meta_category_tags_reading_featured',
+  '20260130063814_add_static_page_layout',
+  '20260130070501_add_static_page_menu_fields',
+  '20260130120000_add_promo_layout_slug',
+  '20260202043818_add_article_layout',
+  '20260202050033_add_article_banner_options',
+  '20260202060000_rename_banner_to_use_container',
+  '20260202070000_add_article_show_banner_image',
+  '20260202100000_add_promo_banner_options',
+  '20260208180539_add_show_basic_content',
+  '20260211170108_add_product_is_featured',
+  '20260212073824_add_locale_en_columns',
+  '20260225120000_add_product_content_layout',
+  '20260307082009_add_sims_discount',
+  '20260316060951_add_credit_scoring_and_consent',
+  '20260316070447_add_lead_vehicle_and_ktp_fields',
+  '20260316072257_add_slik_status',
+  '20260316103604_add_activity_permission',
+];
 
 function getConnectionConfig() {
   let url = process.env.DATABASE_URL;
