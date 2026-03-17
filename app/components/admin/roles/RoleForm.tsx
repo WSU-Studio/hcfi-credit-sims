@@ -24,6 +24,10 @@ const ACTIVITIES: Activity[] = [
     id: 'leads.changeFollowUpStatus',
     name: 'Boleh mengubah status follow up pada Leads',
   },
+  {
+    id: 'leads.downloadLeads',
+    name: 'Boleh mengunduh daftar Leads',
+  },
 ];
 
 type RoleFormProps = {

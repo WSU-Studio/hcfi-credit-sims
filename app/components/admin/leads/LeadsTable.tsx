@@ -42,6 +42,7 @@ export function LeadsTable() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
+  const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
 
   useEffect(() => {
     fetchLeads();
@@ -49,13 +50,15 @@ export function LeadsTable() {
 
   useEffect(() => {
     fetch('/api/admin/me/activities')
-      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         const acts: string[] = data.activities || [];
         setCanChangeFollowUp(acts.includes('leads.changeFollowUpStatus'));
+        setCanDownloadLeads(acts.includes('leads.downloadLeads'));
       })
       .catch(() => {
         setCanChangeFollowUp(false);
+        setCanDownloadLeads(false);
       });
   }, []);
 
@@ -153,15 +156,17 @@ export function LeadsTable() {
       <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Leads</h2>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleDownloadPdf}
-            disabled={leads.length === 0}
-            className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            <IconDownload size={18} />
-            Download PDF
-          </button>
+          {canDownloadLeads && (
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={leads.length === 0}
+              className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <IconDownload size={18} />
+              Download PDF
+            </button>
+          )}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
