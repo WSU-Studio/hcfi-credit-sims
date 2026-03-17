@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { IconCheck, IconX, IconClock, IconUserCheck } from '@tabler/icons-react';
+import { useEffect, useState, useCallback } from 'react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload } from '@tabler/icons-react';
 
 type Lead = {
   id: string;
@@ -105,6 +107,43 @@ export function LeadsTable() {
     }
   };
 
+  const handleDownloadPdf = useCallback(() => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFontSize(14);
+    doc.text('Daftar Leads', 14, 12);
+    doc.setFontSize(9);
+    doc.text(`Diunduh: ${new Date().toLocaleString('id-ID')}`, 14, 18);
+
+    const headers = ['Tanggal', 'Nama', 'Telepon', 'Email', 'Produk', 'OTR', 'DP %', 'Tenor', 'SLIK', 'Status'];
+    const rows = leads.map((lead) => {
+      const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
+      return [
+        formatDate(lead.createdAt),
+        lead.name,
+        lead.phone,
+        lead.email,
+        (lead.productName || '-') + (lead.vehicleSummary ? ` (${lead.vehicleSummary})` : ''),
+        lead.otrPrice != null ? formatCurrency(lead.otrPrice) : '-',
+        lead.dpPercent != null ? String(lead.dpPercent) : '-',
+        lead.tenor != null ? String(lead.tenor) : '-',
+        lead.slikStatus ?? 'NOT_STARTED',
+        statusOpt.label,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 22,
+      head: [headers],
+      body: rows.length ? rows : [['Tidak ada data leads']],
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [0, 44, 95] },
+      margin: { left: 14 },
+    });
+
+    doc.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }, [leads]);
+
   if (loading) {
     return <div className="text-center py-8 text-gray-500">Loading...</div>;
   }
@@ -114,6 +153,15 @@ export function LeadsTable() {
       <div className="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">Leads</h2>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={leads.length === 0}
+            className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <IconDownload size={18} />
+            Download PDF
+          </button>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
