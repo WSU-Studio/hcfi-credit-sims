@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, getLocale } from "next-intl/server";
 import { HeroSlider } from "@/app/components/home/HeroSlider";
 import { ProductSection } from "@/app/components/home/ProductSection";
@@ -11,11 +12,42 @@ import type { Locale } from "@/lib/pick-locale";
 // Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("home");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const locale = (await getLocale()) as Locale;
+  const [firstBanner] = await getBanners(locale);
+
+  const title = t("metaTitle");
+  const description = t("metaDescription");
+  const ogImage = firstBanner?.image || "/images/main-banner.jpg";
+
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: title,
+      url: siteUrl || undefined,
+      type: "website",
+      images: ogImage
+        ? [
+            {
+              url: ogImage,
+              width: 1200,
+              height: 630,
+              alt: title,
+            },
+          ]
+        : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   };
 }
 
