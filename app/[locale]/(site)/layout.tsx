@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/site-settings";
 import { pickLocaleString } from "@/lib/pick-locale";
 import type { Locale } from "@/lib/pick-locale";
+import { SeoStructuredDataOrganization } from "@/app/components/seo/SeoStructuredData";
+import { routing } from "@/i18n/routing";
 
 async function getStaticPages() {
   try {
@@ -223,9 +225,24 @@ type Props = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
   return {
     title: t("siteTitle"),
     description: t("siteDescription"),
+    metadataBase: siteUrl ? new URL(siteUrl) : undefined,
+    openGraph: {
+      title: t("siteTitle"),
+      description: t("siteDescription"),
+      siteName: t("siteTitle"),
+      url: siteUrl || undefined,
+      type: "website",
+    },
+    alternates: {
+      languages: Object.fromEntries(
+        routing.locales.map((locale) => [locale, `/${locale}`]),
+      ),
+    },
   };
 }
 
@@ -244,9 +261,21 @@ export default async function SiteLayout({ children, params }: Props) {
   const navItems = buildNavItems(pages, (key) => t(key), localeTyped);
   const fabPhone = siteSettings.whatsappFabPhone.trim() || undefined;
   const fabMessage = siteSettings.whatsappFabMessage.trim() || undefined;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      {siteUrl && (
+        <SeoStructuredDataOrganization
+          organizationName={companyInfo.name}
+          baseUrl={siteUrl}
+          addressLines={companyInfo.address}
+          contact={companyInfo.contact?.map((c) => ({
+            label: c.label,
+            text: c.text,
+          }))}
+        />
+      )}
       <AnalyticsScripts
         gtmId={siteSettings.gtmId}
         gaMeasurementId={siteSettings.gaMeasurementId}
