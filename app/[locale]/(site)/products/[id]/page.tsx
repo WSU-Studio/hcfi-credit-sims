@@ -49,7 +49,7 @@ export async function generateMetadata({
     openGraph: {
       title: `Hyundai Capital - ${product.title}`,
       description: product.subtitle ?? undefined,
-      type: 'product',
+      type: 'website',
       url,
       images: ogImage
         ? [
