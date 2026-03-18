@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
@@ -47,12 +48,41 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; pageSlug: string }>;
-}) {
+}): Promise<Metadata> {
   const { pageSlug, locale } = await params;
   const page = await getPageBySlug(pageSlug, locale as Locale);
   if (!page) return { title: 'Hyundai Capital' };
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const url = siteUrl ? `${siteUrl}/${locale}/${pageSlug}` : undefined;
+  const rawContent = (page as { content?: string | null }).content ?? '';
+  const description =
+    rawContent.trim().length > 0
+      ? rawContent.replace(/\s+/g, ' ').slice(0, 160).trim()
+      : undefined;
+
   return {
     title: `Hyundai Capital - ${page.title}`,
+    description,
+    openGraph: {
+      title: `Hyundai Capital - ${page.title}`,
+      description,
+      type: 'website',
+      url,
+      images: [
+        {
+          url: '/images/main-banner.jpg',
+          width: 1200,
+          height: 630,
+          alt: `Hyundai Capital - ${page.title}`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Hyundai Capital - ${page.title}`,
+      description,
+      images: ['/images/main-banner.jpg'],
+    },
   };
 }
 
