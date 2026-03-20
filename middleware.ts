@@ -35,6 +35,18 @@ function withCors(response: NextResponse, request: NextRequest): NextResponse {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ELB/ALB health check often hits GET / and expects 200.
+  // Root redirects to locale (307), which ELB treats as unhealthy.
+  // Return 200 for health checker to avoid 504s.
+  const ua = request.headers.get("user-agent") ?? "";
+  if (
+    pathname === "/" &&
+    request.method === "GET" &&
+    ua.includes("ELB-HealthChecker")
+  ) {
+    return NextResponse.json({ status: "ok" }, { status: 200 });
+  }
+
   // CORS for API routes (only when ALLOWED_ORIGINS is set)
   if (pathname.startsWith("/api")) {
     if (request.method === "OPTIONS") {
