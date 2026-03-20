@@ -30,6 +30,7 @@ export function ContactModal({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [ktpUrl, setKtpUrl] = useState<string | null>(null);
+  const [ktpFileName, setKtpFileName] = useState<string | null>(null);
   const [ktpUploading, setKtpUploading] = useState(false);
   const [ktpError, setKtpError] = useState<string | null>(null);
   const [motherName, setMotherName] = useState('');
@@ -57,6 +58,7 @@ export function ContactModal({
       setPhone('');
       setEmail('');
        setKtpUrl(null);
+       setKtpFileName(null);
        setKtpUploading(false);
        setKtpError(null);
        setMotherName('');
@@ -84,6 +86,7 @@ export function ContactModal({
         throw new Error(data.error || 'Upload gagal');
       }
       setKtpUrl(data.url);
+      setKtpFileName(file.name);
     } catch (err) {
       setKtpError(err instanceof Error ? err.message : 'Upload gagal');
     } finally {
@@ -255,14 +258,26 @@ export function ContactModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   {t('ktpUploadLabel')}
                 </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleKtpChange}
-                    disabled={ktpUploading || loading || success}
-                    className="block w-full text-sm text-gray-700 file:mr-3 file:h-11 file:px-3 file:rounded-lg file:border-0 file:bg-[#002c5f] file:text-white file:text-sm hover:file:bg-[#002c5f]/90 disabled:opacity-50 cursor-pointer"
-                  />
+                <div className="flex flex-wrap items-center gap-3">
+                  <label
+                    className={`inline-flex items-center h-11 px-4 rounded-lg bg-[#002c5f] text-white text-sm font-medium cursor-pointer transition-colors ${
+                      ktpUploading || loading || success
+                        ? 'opacity-50 cursor-not-allowed pointer-events-none'
+                        : 'hover:bg-[#002c5f]/90'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleKtpChange}
+                      disabled={ktpUploading || loading || success}
+                      className="sr-only"
+                    />
+                    {t('browse')}
+                  </label>
+                  <span className={`text-sm ${ktpUrl ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+                    {ktpUploading ? t('ktpUploading') : ktpUrl && ktpFileName ? ktpFileName : t('noFileSelected')}
+                  </span>
                 </div>
                 {ktpUploading && (
                   <p className="mt-1 text-xs text-gray-500">{t('ktpUploading')}</p>

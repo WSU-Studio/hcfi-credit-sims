@@ -126,6 +126,8 @@
     "creditScoringSectionTitle": "Additional data for credit scoring",
     "creditScoringSectionHint": "Optional, but helps our sales team run pre-screening / credit scoring faster.",
     "ktpUploadLabel": "Upload ID card (KTP) photo",
+    "browse": "Browse...",
+    "noFileSelected": "No file selected.",
     "ktpUploading": "Uploading ID card photo...",
     "ktpUploadSuccess": "ID card photo uploaded successfully.",
     "ktpUploadHint": "JPG/PNG/WEBP format, clear and readable photo.",

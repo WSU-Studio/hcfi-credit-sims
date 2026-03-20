@@ -126,6 +126,8 @@
     "creditScoringSectionTitle": "Data tambahan untuk proses credit scoring",
     "creditScoringSectionHint": "Opsional, tetapi akan membantu tim sales melakukan pre-screening / credit scoring lebih cepat.",
     "ktpUploadLabel": "Upload foto KTP",
+    "browse": "Pilih file...",
+    "noFileSelected": "Belum ada file dipilih.",
     "ktpUploading": "Sedang mengunggah foto KTP...",
     "ktpUploadSuccess": "Foto KTP berhasil diunggah.",
     "ktpUploadHint": "Format JPG/PNG/WEBP, foto jelas dan tidak blur.",
