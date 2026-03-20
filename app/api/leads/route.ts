@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       dpPercent,
       tenor,
       ktpUrl,
+      citizenType,
       motherName,
       homeOwnershipStatus,
       consentAccepted,
@@ -43,6 +44,8 @@ export async function POST(request: NextRequest) {
         dpPercent: dpPercent ? Number(dpPercent) : null,
         tenor: tenor ? Number(tenor) : null,
         ktpUrl: ktpUrl ? String(ktpUrl).trim() : null,
+        citizenType:
+          citizenType === 'LOCAL' || citizenType === 'FOREIGNER' ? citizenType : null,
         motherName: motherName ? String(motherName).trim() : null,
         homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
         consentAccepted: Boolean(consentAccepted),

@@ -133,6 +133,7 @@ export function ContactModal({
           dpPercent: dpPercent || null,
           tenor: tenor || null,
           ktpUrl,
+          citizenType,
           motherName: motherName.trim() || null,
           homeOwnershipStatus: homeOwnership || null,
           consentAccepted: consent,
@@ -255,8 +256,8 @@ export function ContactModal({
               {t('creditScoringSectionHint')}
             </p>
 
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-4 mt-2">
+              <p className="text-sm font-medium text-gray-700 mb-1">
                 {t('citizenTypeLabel')}
               </p>
               <div className="flex gap-6">
