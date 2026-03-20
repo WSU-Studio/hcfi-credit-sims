@@ -33,6 +33,7 @@ export function ContactModal({
   const [ktpFileName, setKtpFileName] = useState<string | null>(null);
   const [ktpUploading, setKtpUploading] = useState(false);
   const [ktpError, setKtpError] = useState<string | null>(null);
+  const [citizenType, setCitizenType] = useState<'LOCAL' | 'FOREIGNER'>('LOCAL');
   const [motherName, setMotherName] = useState('');
   const [homeOwnership, setHomeOwnership] = useState<string>('');
   const [consent, setConsent] = useState(false);
@@ -61,6 +62,7 @@ export function ContactModal({
        setKtpFileName(null);
        setKtpUploading(false);
        setKtpError(null);
+       setCitizenType('LOCAL');
        setMotherName('');
        setHomeOwnership('');
        setConsent(false);
@@ -253,10 +255,42 @@ export function ContactModal({
               {t('creditScoringSectionHint')}
             </p>
 
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                {t('citizenTypeLabel')}
+              </p>
+              <div className="flex gap-6">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="citizenType"
+                    value="LOCAL"
+                    checked={citizenType === 'LOCAL'}
+                    onChange={() => setCitizenType('LOCAL')}
+                    disabled={loading || success}
+                    className="w-4 h-4 text-[#002c5f] border-gray-300 focus:ring-[#002c5f] disabled:opacity-50"
+                  />
+                  <span className="text-sm text-gray-700">{t('citizenTypeLocal')}</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="citizenType"
+                    value="FOREIGNER"
+                    checked={citizenType === 'FOREIGNER'}
+                    onChange={() => setCitizenType('FOREIGNER')}
+                    disabled={loading || success}
+                    className="w-4 h-4 text-[#002c5f] border-gray-300 focus:ring-[#002c5f] disabled:opacity-50"
+                  />
+                  <span className="text-sm text-gray-700">{t('citizenTypeForeigner')}</span>
+                </label>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {t('ktpUploadLabel')}
+                  {citizenType === 'FOREIGNER' ? t('ktpUploadLabelForeigner') : t('ktpUploadLabel')}
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <label
