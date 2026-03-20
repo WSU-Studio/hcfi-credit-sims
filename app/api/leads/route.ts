@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       motherName,
       homeOwnershipStatus,
       consentAccepted,
+      latitude,
+      longitude,
     } = body;
 
     if (!name || !phone || !email) {
@@ -49,6 +51,15 @@ export async function POST(request: NextRequest) {
         motherName: motherName ? String(motherName).trim() : null,
         homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
         consentAccepted: Boolean(consentAccepted),
+        ipAddress: ip && ip !== 'unknown' ? ip : null,
+        latitude:
+          latitude != null && !Number.isNaN(Number(latitude))
+            ? Number(latitude)
+            : null,
+        longitude:
+          longitude != null && !Number.isNaN(Number(longitude))
+            ? Number(longitude)
+            : null,
         status: 'NEW',
     };
 
