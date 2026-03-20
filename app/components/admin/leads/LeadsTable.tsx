@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId } from '@tabler/icons-react';
+import Image from 'next/image';
 
 type Lead = {
   id: string;
@@ -370,7 +371,9 @@ export function LeadsTable() {
             >
               <IconX size={24} />
             </button>
-            <img
+            <Image
+              width={800}
+              height={600}
               src={ktpPreviewUrl}
               alt="Foto KTP"
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-xl bg-white"
