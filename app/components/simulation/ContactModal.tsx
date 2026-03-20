@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
 
+export type UserLocation = { latitude: number; longitude: number } | null;
+
 interface ContactModalProps {
   open: boolean;
   onClose: () => void;
@@ -12,6 +14,7 @@ interface ContactModalProps {
   dpPercent?: number;
   tenor?: number;
   vehicleSummary?: string;
+  userLocation?: UserLocation;
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
 }
 
@@ -23,6 +26,7 @@ export function ContactModal({
   dpPercent,
   tenor,
   vehicleSummary,
+  userLocation,
   onSubmit,
 }: ContactModalProps) {
   const t = useTranslations('creditSimulation');
@@ -137,6 +141,8 @@ export function ContactModal({
           motherName: motherName.trim() || null,
           homeOwnershipStatus: homeOwnership || null,
           consentAccepted: consent,
+          latitude: userLocation?.latitude ?? null,
+          longitude: userLocation?.longitude ?? null,
         }),
       });
 
