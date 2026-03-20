@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Lead = {
   id: string;
@@ -293,21 +294,25 @@ export function LeadsTable() {
                       )}
                     </td>
                     <td className="px-3 py-2 min-w-[100px]">
-                      {lead.latitude != null && lead.longitude != null ? (
-                        <a
+                      {lead.latitude != null && lead.longitude != null && (
+                        <Link
                           href={`https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-[#002c5f] hover:underline"
+                          className="inline-flex items-center gap-0.5 text-xs text-blue-500 hover:underline"
                         >
-                          <IconMapPin size={14} />
-                          {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
-                        </a>
-                      ) : lead.ipAddress ? (
-                        <span className="text-xs text-gray-600" title="Koordinat tidak tersedia. IP tercatat.">
+                          <IconMapPin size={12} stroke={2} className="text-blue-500" />
+                          <span className="text-xs text-gray-500">
+                            {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
+                          </span>
+                        </Link>
+                      )}
+                      {lead.ipAddress && (
+                        <span className="text-xs text-gray-600" title="IP tercatat">
                           IP: {lead.ipAddress}
                         </span>
-                      ) : (
+                      )}
+                      {lead.latitude == null && lead.longitude == null && lead.ipAddress == null && (
                         <span className="text-xs text-gray-500 italic">Tidak ada data</span>
                       )}
                     </td>
