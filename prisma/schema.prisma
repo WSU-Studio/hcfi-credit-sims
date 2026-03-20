@@ -301,6 +301,9 @@ model Lead {
   motherName  String?  // Nama ibu kandung
   homeOwnershipStatus String? // Status kepemilikan rumah/bangunan
   consentAccepted     Boolean  @default(false) // Persetujuan pemrosesan data
+  ipAddress           String?  // IP user saat submit (dari request)
+  latitude            Float?   // Lokasi: latitude (dengan consent user)
+  longitude           Float?   // Lokasi: longitude (dengan consent user)
   slikStatus          String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, QUALIFIED, NOT_QUALIFIED, ERROR
   slikResultCode      String?
   slikResultDescr     String?
