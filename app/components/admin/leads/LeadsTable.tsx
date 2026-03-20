@@ -3,13 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload } from '@tabler/icons-react';
+import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId } from '@tabler/icons-react';
 
 type Lead = {
   id: string;
   name: string;
   phone: string;
   email: string;
+  ktpUrl?: string | null;
   productName: string | null;
   vehicleSummary?: string | null;
   otrPrice: number | null;
@@ -43,10 +44,23 @@ export function LeadsTable() {
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
+  const [ktpPreviewUrl, setKtpPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLeads();
   }, [statusFilter]);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setKtpPreviewUrl(null);
+    if (ktpPreviewUrl) {
+      document.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = '';
+    };
+  }, [ktpPreviewUrl]);
 
   useEffect(() => {
     fetch('/api/admin/me/activities')
@@ -228,9 +242,24 @@ export function LeadsTable() {
                       {formatDate(lead.createdAt)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                      <div className="text-sm text-gray-900">{lead.phone}</div>
-                      <div className="text-xs text-gray-500">{lead.email}</div>
+                      <div className="flex-col items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {lead.ktpUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => setKtpPreviewUrl(lead.ktpUrl!)}
+                              className="flex-shrink-0 rounded text-blue-500 hover:text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
+                              title="Lihat foto KTP"
+                              aria-label="Lihat foto KTP"
+                            >
+                              <IconId size={18} stroke={2} />
+                            </button>
+                          ) : null}
+                          <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                        </div>
+                        <div className="text-sm text-gray-900">{lead.phone}</div>
+                        <div className="text-xs text-gray-500">{lead.email}</div>
+                      </div>
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-sm text-gray-900">{lead.productName || '-'}</div>
@@ -319,6 +348,37 @@ export function LeadsTable() {
           </tbody>
         </table>
       </div>
+
+      {/* KTP Preview Modal */}
+      {ktpPreviewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+          onClick={() => setKtpPreviewUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Preview foto KTP"
+        >
+          <div
+            className="relative max-w-2xl max-h-[90vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setKtpPreviewUrl(null)}
+              className="absolute -top-10 right-0 p-2 rounded-lg text-white hover:bg-white/20 transition-colors"
+              aria-label="Tutup"
+            >
+              <IconX size={24} />
+            </button>
+            <img
+              src={ktpPreviewUrl}
+              alt="Foto KTP"
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-xl bg-white"
+            />
+            <p className="mt-2 text-center text-sm text-white/90">Foto KTP - Klik di luar untuk menutup</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
