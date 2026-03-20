@@ -293,7 +293,7 @@ export function LeadsTable() {
                         <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 min-w-[100px]">
+                    <td className="px-3 py-2 min-w-20">
                       {lead.latitude != null && lead.longitude != null && (
                         <Link
                           href={`https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`}
@@ -302,13 +302,13 @@ export function LeadsTable() {
                           className="inline-flex items-center gap-0.5 text-xs text-blue-500 hover:underline"
                         >
                           <IconMapPin size={12} stroke={2} className="text-blue-500" />
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-500 block">
                             {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
                           </span>
                         </Link>
                       )}
                       {lead.ipAddress && (
-                        <span className="text-xs text-gray-600" title="IP tercatat">
+                        <span className="text-xs text-gray-600 block" title="IP tercatat">
                           IP: {lead.ipAddress}
                         </span>
                       )}
