@@ -51,10 +51,12 @@ export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
   const cfConnectingIp = request.headers.get('cf-connecting-ip');
+  const nextIp = (request as { ip?: string }).ip;
   return (
     forwarded?.split(',')[0]?.trim() ||
     realIp ||
     cfConnectingIp ||
+    nextIp ||
     'unknown'
   );
 }

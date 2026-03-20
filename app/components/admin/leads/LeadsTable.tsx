@@ -292,7 +292,7 @@ export function LeadsTable() {
                         <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2 min-w-[100px]">
                       {lead.latitude != null && lead.longitude != null ? (
                         <a
                           href={`https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`}
@@ -304,11 +304,11 @@ export function LeadsTable() {
                           {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
                         </a>
                       ) : lead.ipAddress ? (
-                        <span className="text-xs text-gray-500" title="Lokasi dari browser gagal. IP tercatat (localhost tidak bisa geolokasi).">
+                        <span className="text-xs text-gray-600" title="Koordinat tidak tersedia. IP tercatat.">
                           IP: {lead.ipAddress}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">-</span>
+                        <span className="text-xs text-gray-500 italic">Tidak ada data</span>
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs flex flex-col">

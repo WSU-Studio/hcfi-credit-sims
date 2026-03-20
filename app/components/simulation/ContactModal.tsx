@@ -45,27 +45,33 @@ export function ContactModal({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalLocation, setModalLocation] = useState<UserLocation>(null);
+  const [clientPublicIp, setClientPublicIp] = useState<string | null>(null);
 
-  // Request geolocation when modal opens (setelah user click Contact = ada user gesture)
+  // Request geolocation + public IP when modal opens (setelah user click Contact = ada user gesture)
   useEffect(() => {
-    if (!open || typeof window === 'undefined' || !navigator.geolocation) return;
-    if (userLocation) {
-      setModalLocation(userLocation);
-      return;
+    if (!open || typeof window === 'undefined') return;
+    setClientPublicIp(null);
+    fetch('https://api.ipify.org?format=json')
+      .then((r) => r.json())
+      .then((data) => setClientPublicIp(data?.ip || null))
+      .catch(() => setClientPublicIp(null));
+    if (navigator.geolocation) {
+      if (userLocation) {
+        setModalLocation(userLocation);
+        return;
+      }
+      setModalLocation(null);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setModalLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        () => setModalLocation(null),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+      );
     }
-    setModalLocation(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setModalLocation({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-      },
-      () => {
-        setModalLocation(null);
-      },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
-    );
   }, [open, userLocation]);
 
   useEffect(() => {
@@ -96,6 +102,7 @@ export function ContactModal({
       setSuccess(false);
       setError(null);
       setModalLocation(null);
+      setClientPublicIp(null);
     }
   }, [open]);
 
@@ -167,6 +174,7 @@ export function ContactModal({
           consentAccepted: consent,
           latitude: (modalLocation ?? userLocation)?.latitude ?? null,
           longitude: (modalLocation ?? userLocation)?.longitude ?? null,
+          clientPublicIp: clientPublicIp || undefined,
         }),
       });
 

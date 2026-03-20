@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
 
-const isPrivateIp = (ip: string) =>
+const isPrivateOrLocalIp = (ip: string) =>
   !ip ||
   ip === 'unknown' ||
   ip === '127.0.0.1' ||
   ip === '::1' ||
+  ip === '::ffff:127.0.0.1' ||
   ip.startsWith('192.168.') ||
-  ip.startsWith('10.');
+  ip.startsWith('10.') ||
+  ip.startsWith('172.');
 
 async function getLocationFromIp(ip: string): Promise<{ lat: number; lon: number } | null> {
-  if (isPrivateIp(ip)) return null;
+  if (isPrivateOrLocalIp(ip)) return null;
   try {
     const res = await fetch(
       `https://ipapi.co/${ip}/json/?fields=latitude,longitude`,
@@ -29,8 +31,8 @@ async function getLocationFromIp(ip: string): Promise<{ lat: number; lon: number
 }
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request);
-  const { success } = leadsLimiter.limit(ip);
+  const serverIp = getClientIp(request);
+  const { success } = leadsLimiter.limit(serverIp);
   if (!success) {
     return NextResponse.json(
       { error: 'Too many submissions. Please try again later.' },
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
       consentAccepted,
       latitude,
       longitude,
+      clientPublicIp,
     } = body;
 
     if (!name || !phone || !email) {
@@ -77,9 +80,16 @@ export async function POST(request: NextRequest) {
         motherName: motherName ? String(motherName).trim() : null,
         homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
         consentAccepted: Boolean(consentAccepted),
-        ipAddress: ip && ip !== 'unknown' ? ip : null,
         status: 'NEW',
     };
+
+    const clientIp = typeof clientPublicIp === 'string' && clientPublicIp.trim()
+      ? clientPublicIp.trim()
+      : null;
+    const ipAddress =
+      serverIp && !isPrivateOrLocalIp(serverIp)
+        ? serverIp
+        : clientIp || null;
 
     let lat =
       latitude != null && !Number.isNaN(Number(latitude)) ? Number(latitude) : null;
@@ -87,7 +97,8 @@ export async function POST(request: NextRequest) {
       longitude != null && !Number.isNaN(Number(longitude)) ? Number(longitude) : null;
 
     if (lat == null || lon == null) {
-      const ipGeo = await getLocationFromIp(ip);
+      const ipForGeo = ipAddress || serverIp;
+      const ipGeo = ipForGeo ? await getLocationFromIp(ipForGeo) : null;
       if (ipGeo) {
         lat = lat ?? ipGeo.lat;
         lon = lon ?? ipGeo.lon;
@@ -99,6 +110,7 @@ export async function POST(request: NextRequest) {
       // until the client is regenerated with the latest schema.
       data: {
         ...leadPayload,
+        ipAddress,
         latitude: lat,
         longitude: lon,
       } as unknown as Parameters<typeof prisma.lead.create>[0]['data'],
