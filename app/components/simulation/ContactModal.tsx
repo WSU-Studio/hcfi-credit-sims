@@ -14,7 +14,7 @@ interface ContactModalProps {
   dpPercent?: number;
   tenor?: number;
   vehicleSummary?: string;
-  userLocation?: UserLocation;
+  userLocation?: UserLocation; // Fallback jika sudah di-capture di parent
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
 }
 
@@ -44,6 +44,29 @@ export function ContactModal({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalLocation, setModalLocation] = useState<UserLocation>(null);
+
+  // Request geolocation when modal opens (setelah user click Contact = ada user gesture)
+  useEffect(() => {
+    if (!open || typeof window === 'undefined' || !navigator.geolocation) return;
+    if (userLocation) {
+      setModalLocation(userLocation);
+      return;
+    }
+    setModalLocation(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setModalLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      () => {
+        setModalLocation(null);
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+    );
+  }, [open, userLocation]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -72,6 +95,7 @@ export function ContactModal({
        setConsent(false);
       setSuccess(false);
       setError(null);
+      setModalLocation(null);
     }
   }, [open]);
 
@@ -141,8 +165,8 @@ export function ContactModal({
           motherName: motherName.trim() || null,
           homeOwnershipStatus: homeOwnership || null,
           consentAccepted: consent,
-          latitude: userLocation?.latitude ?? null,
-          longitude: userLocation?.longitude ?? null,
+          latitude: (modalLocation ?? userLocation)?.latitude ?? null,
+          longitude: (modalLocation ?? userLocation)?.longitude ?? null,
         }),
       });
 
