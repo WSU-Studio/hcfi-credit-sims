@@ -17,6 +17,7 @@ type Lead = {
   otrPrice: number | null;
   dpPercent: number | null;
   tenor: number | null;
+  ipAddress?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   slikStatus?: string | null;
@@ -302,6 +303,10 @@ export function LeadsTable() {
                           <IconMapPin size={14} />
                           {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
                         </a>
+                      ) : lead.ipAddress ? (
+                        <span className="text-xs text-gray-500" title="Lokasi dari browser gagal. IP tercatat (localhost tidak bisa geolokasi).">
+                          IP: {lead.ipAddress}
+                        </span>
                       ) : (
                         <span className="text-xs text-gray-400">-</span>
                       )}
