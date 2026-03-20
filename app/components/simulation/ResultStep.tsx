@@ -8,7 +8,7 @@ import {
   SimulationSummaryModal,
   type VehicleSummaryInfo,
 } from '@/app/components/simulation/SimulationSummaryModal';
-import { ContactModal } from '@/app/components/simulation/ContactModal';
+import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -18,10 +18,11 @@ interface ResultStepProps {
   otrPrice?: number;
   discount?: number;
   vehicle?: VehicleSummaryInfo;
+  userLocation?: UserLocation;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, onSelectProduct }: ResultStepProps) {
+export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocation, onSelectProduct }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
@@ -420,6 +421,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, onSelectPr
               <ContactModal
                 open={contactOpen}
                 onClose={() => setContactOpen(false)}
+                userLocation={userLocation}
                 productName={
                   highlightedRow
                     ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan`

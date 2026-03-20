@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import type { UserLocation } from '@/app/components/simulation/ContactModal';
 import { Container } from '@/app/components/ui/Container';
 import { DealerStep } from '@/app/components/simulation/DealerStep';
 import { ModelStep } from '@/app/components/simulation/ModelStep';
@@ -33,6 +34,24 @@ export default function SimulasiKreditPage() {
   const [discount, setDiscount] = useState<number>(0);
   const [leadNo, setLeadNo] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation>(null);
+
+  // Request geolocation on page access (browser prompts for consent)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+      },
+      () => {
+        // User denied or error - we don't store location
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  }, []);
 
   const handleDealerSelect = (dealer: Vendor) => {
     setSelectedDealer(dealer);
@@ -216,6 +235,7 @@ export default function SimulasiKreditPage() {
                     leadNo={leadNo || undefined}
                     otrPrice={otrPrice ?? undefined}
                     discount={discount}
+                    userLocation={userLocation}
                     vehicle={
                       specs.trimName || specs.exteriorColorName || specs.interiorColorName
                         ? {
