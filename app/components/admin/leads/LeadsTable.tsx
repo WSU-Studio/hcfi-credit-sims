@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId } from '@tabler/icons-react';
+import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
 import Image from 'next/image';
 
 type Lead = {
@@ -17,6 +17,8 @@ type Lead = {
   otrPrice: number | null;
   dpPercent: number | null;
   tenor: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
   slikStatus?: string | null;
   slikResultCode?: string | null;
   status: string;
@@ -132,9 +134,13 @@ export function LeadsTable() {
     doc.setFontSize(9);
     doc.text(`Diunduh: ${new Date().toLocaleString('id-ID')}`, 14, 18);
 
-    const headers = ['Tanggal', 'Nama', 'Telepon', 'Email', 'Produk', 'OTR', 'DP %', 'Tenor', 'SLIK', 'Status'];
+    const headers = ['Tanggal', 'Nama', 'Telepon', 'Email', 'Produk', 'OTR', 'DP %', 'Tenor', 'Lokasi', 'SLIK', 'Status'];
     const rows = leads.map((lead) => {
       const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
+      const location =
+        lead.latitude != null && lead.longitude != null
+          ? `${lead.latitude.toFixed(4)}, ${lead.longitude.toFixed(4)}`
+          : '-';
       return [
         formatDate(lead.createdAt),
         lead.name,
@@ -144,6 +150,7 @@ export function LeadsTable() {
         lead.otrPrice != null ? formatCurrency(lead.otrPrice) : '-',
         lead.dpPercent != null ? String(lead.dpPercent) : '-',
         lead.tenor != null ? String(lead.tenor) : '-',
+        location,
         lead.slikStatus ?? 'NOT_STARTED',
         statusOpt.label,
       ];
@@ -216,6 +223,9 @@ export function LeadsTable() {
                 Simulasi
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Lokasi
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 SLIK
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -229,7 +239,7 @@ export function LeadsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-3 py-4 text-center text-gray-500">
                   Tidak ada data leads
                 </td>
               </tr>
@@ -279,6 +289,21 @@ export function LeadsTable() {
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {lead.latitude != null && lead.longitude != null ? (
+                        <a
+                          href={`https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-[#002c5f] hover:underline"
+                        >
+                          <IconMapPin size={14} />
+                          {lead.latitude.toFixed(4)}, {lead.longitude.toFixed(4)}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs flex flex-col">
