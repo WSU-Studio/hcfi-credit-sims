@@ -411,6 +411,7 @@ export function LeadsTable() {
               height={600}
               src={ktpPreviewUrl}
               alt="Foto KTP"
+              unoptimized
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-xl bg-white"
             />
             <p className="mt-2 text-center text-sm text-white/90">Foto KTP - Klik di luar untuk menutup</p>

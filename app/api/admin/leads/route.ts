@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { presignGetUrlIfOurBucket } from '@/lib/s3-presign';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const where = status ? { status: status } : {};
 
-    const [leads, total] = await Promise.all([
+    const [rawLeads, total] = await Promise.all([
       prisma.lead.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -20,6 +21,13 @@ export async function GET(request: NextRequest) {
       }),
       prisma.lead.count({ where }),
     ]);
+
+    const leads = await Promise.all(
+      rawLeads.map(async (lead) => ({
+        ...lead,
+        ktpUrl: lead.ktpUrl ? await presignGetUrlIfOurBucket(lead.ktpUrl) : null,
+      }))
+    );
 
     return NextResponse.json({
       leads,
