@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
-import Image from 'next/image';
 import Link from 'next/link';
 
 type Lead = {
@@ -49,15 +48,15 @@ export function LeadsTable() {
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
-  const [ktpPreviewUrl, setKtpPreviewUrl] = useState<string | null>(null);
+  const [ktpPreviewLeadId, setKtpPreviewLeadId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLeads();
   }, [statusFilter]);
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setKtpPreviewUrl(null);
-    if (ktpPreviewUrl) {
+    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setKtpPreviewLeadId(null);
+    if (ktpPreviewLeadId) {
       document.addEventListener('keydown', handleEsc);
       document.body.style.overflow = 'hidden';
     }
@@ -65,7 +64,7 @@ export function LeadsTable() {
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [ktpPreviewUrl]);
+  }, [ktpPreviewLeadId]);
 
   useEffect(() => {
     fetch('/api/admin/me/activities')
@@ -260,7 +259,7 @@ export function LeadsTable() {
                           {lead.ktpUrl ? (
                             <button
                               type="button"
-                              onClick={() => setKtpPreviewUrl(lead.ktpUrl!)}
+                              onClick={() => setKtpPreviewLeadId(lead.id)}
                               className="flex-shrink-0 rounded text-blue-500 hover:text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
                               title="Lihat foto KTP"
                               aria-label="Lihat foto KTP"
@@ -386,10 +385,10 @@ export function LeadsTable() {
       </div>
 
       {/* KTP Preview Modal */}
-      {ktpPreviewUrl && (
+      {ktpPreviewLeadId && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-          onClick={() => setKtpPreviewUrl(null)}
+          onClick={() => setKtpPreviewLeadId(null)}
           role="dialog"
           aria-modal="true"
           aria-label="Preview foto KTP"
@@ -400,17 +399,18 @@ export function LeadsTable() {
           >
             <button
               type="button"
-              onClick={() => setKtpPreviewUrl(null)}
+              onClick={() => setKtpPreviewLeadId(null)}
               className="absolute -top-10 right-0 p-2 rounded-lg text-white hover:bg-white/20 transition-colors"
               aria-label="Tutup"
             >
               <IconX size={24} />
             </button>
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element -- same-origin API proxy; avoids /_next/image + private S3 */}
+            <img
+              src={`/api/admin/lead-ktp?id=${encodeURIComponent(ktpPreviewLeadId)}`}
+              alt="Foto KTP"
               width={800}
               height={600}
-              src={ktpPreviewUrl}
-              alt="Foto KTP"
               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-xl bg-white"
             />
             <p className="mt-2 text-center text-sm text-white/90">Foto KTP - Klik di luar untuk menutup</p>
