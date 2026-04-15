@@ -9,17 +9,19 @@ import { Link } from "@/i18n/navigation";
 
 type ProductSectionProps = {
   products: Product[];
+  titleOverride?: string;
 };
 
-export function ProductSection({ products }: ProductSectionProps) {
+export function ProductSection({ products, titleOverride }: ProductSectionProps) {
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
+  const sectionTitle = titleOverride?.trim() || t("productSectionTitle");
 
   return (
     <section id="products" className="bg-[var(--background)] pt-12 md:pt-16">
       <Container className="space-y-6 pb-12 md:pb-20 border-b border-[var(--border)]">
         <div className="space-y-2 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">{t("productSectionTitle")}</h2>
+          <h2 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">{sectionTitle}</h2>
 
           <Link href="/products" className="inline-flex items-center justify-center py-2.5 transition-colors duration-300 text-slate-700">
             <span className="text-sm text-slate-700 hover:text-slate-900 font-semibold flex items-center gap-2">

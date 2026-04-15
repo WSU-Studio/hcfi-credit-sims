@@ -8,6 +8,7 @@ import type { Benefit, Product, Slide, Article } from "@/app/types";
 import { prisma } from "@/lib/prisma";
 import { pickLocaleString } from "@/lib/pick-locale";
 import type { Locale } from "@/lib/pick-locale";
+import { getSiteSettings } from "@/lib/site-settings";
 
 // Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
 export const dynamic = "force-dynamic";
@@ -188,22 +189,35 @@ async function getArticles(locale: Locale) {
 
 export default async function Home() {
   const locale = (await getLocale()) as Locale;
-  const [slides, benefits, products, articles] = await Promise.all([
+  const [slides, benefits, products, articles, siteSettings] = await Promise.all([
     getBanners(locale),
     getBenefits(locale),
     getProducts(locale),
     getArticles(locale),
+    getSiteSettings(),
   ]);
 
   return (
     <>
       <HeroSlider slides={slides} />
       
-      <BenefitSection benefits={benefits} />
+      <BenefitSection
+        benefits={benefits}
+        headingLine1={siteSettings.homeBenefitHeading1}
+        headingLine2={siteSettings.homeBenefitHeading2}
+        headingLine3={siteSettings.homeBenefitHeading3}
+        headingBrand={siteSettings.homeBenefitBrand}
+      />
 
-      <ProductSection products={products} />
+      <ProductSection
+        products={products}
+        titleOverride={siteSettings.homeProductSectionTitle}
+      />
 
-      <ArticleSection articles={articles} />
+      <ArticleSection
+        articles={articles}
+        titleOverride={siteSettings.homeArticlesTitle}
+      />
     </>
   );
 }

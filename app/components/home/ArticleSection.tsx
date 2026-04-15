@@ -9,20 +9,21 @@ import { IconStack2Filled } from "@tabler/icons-react";
 
 type ArticleSectionProps = {
   articles: Article[];
+  titleOverride?: string;
 };
 
-export function ArticleSection({ articles }: ArticleSectionProps) {
-  if (!articles.length) return null;
-
+export function ArticleSection({ articles, titleOverride }: ArticleSectionProps) {
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
+  const sectionTitle = titleOverride?.trim() || t("articlesTitle");
+  if (!articles.length) return null;
 
   return (
     <section id="artikel" className="bg-[var(--background)] pt-12 md:pt-16 pb-4 md:pb-6">
       <Container className="space-y-6">
         <div className="space-y-2 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
-            {t("articlesTitle")}
+            {sectionTitle}
           </h2>
 
           <Link href="/articles" className="inline-flex items-center justify-center py-2.5 transition-colors duration-300 text-slate-700">
