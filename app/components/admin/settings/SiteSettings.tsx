@@ -8,6 +8,7 @@ type SiteSettingsData = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  whatsappFabVisible: string;
   whatsappLeadPhone: string;
   mockApiEnabled: string;
   mockApiContent: string;
@@ -18,6 +19,7 @@ const defaultData: SiteSettingsData = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
   mockApiEnabled: 'false',
   mockApiContent: '',
@@ -45,6 +47,7 @@ export function SiteSettings() {
             gaMeasurementId: ensureString(d.gaMeasurementId ?? ''),
             whatsappFabPhone: ensureString(d.whatsappFabPhone ?? ''),
             whatsappFabMessage: ensureString(d.whatsappFabMessage ?? ''),
+            whatsappFabVisible: ensureString(d.whatsappFabVisible ?? 'true'),
             whatsappLeadPhone: ensureString(d.whatsappLeadPhone ?? ''),
             mockApiEnabled: ensureString(d.mockApiEnabled ?? 'false'),
             mockApiContent: ensureString(d.mockApiContent ?? ''),
@@ -70,6 +73,7 @@ export function SiteSettings() {
           gaMeasurementId: data.gaMeasurementId.trim(),
           whatsappFabPhone: data.whatsappFabPhone.trim(),
           whatsappFabMessage: data.whatsappFabMessage.trim(),
+          whatsappFabVisible: data.whatsappFabVisible.trim(),
           whatsappLeadPhone: data.whatsappLeadPhone.trim(),
           mockApiEnabled: data.mockApiEnabled.trim(),
           mockApiContent: data.mockApiContent.trim(),
@@ -154,6 +158,17 @@ export function SiteSettings() {
         <p className="text-sm text-gray-600">
           Nomor yang dipakai pada tombol mengambang WhatsApp di pojok kanan bawah situs. Format: 62xxx atau 08xxx.
         </p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={data.whatsappFabVisible.toLowerCase() !== 'false'}
+            onChange={(e) =>
+              setData({ ...data, whatsappFabVisible: e.target.checked ? 'true' : 'false' })
+            }
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium text-gray-700">Tampilkan tombol FAB di halaman visitor</span>
+        </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

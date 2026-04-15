@@ -261,6 +261,7 @@ export default async function SiteLayout({ children, params }: Props) {
   const navItems = buildNavItems(pages, (key) => t(key), localeTyped);
   const fabPhone = siteSettings.whatsappFabPhone.trim() || undefined;
   const fabMessage = siteSettings.whatsappFabMessage.trim() || undefined;
+  const showWhatsappFab = siteSettings.whatsappFabVisible.toLowerCase() !== "false";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
   return (
@@ -285,7 +286,7 @@ export default async function SiteLayout({ children, params }: Props) {
         {children}
       </main>
 
-      <WhatsappFAB phone={fabPhone} message={fabMessage} />
+      {showWhatsappFab && <WhatsappFAB phone={fabPhone} message={fabMessage} />}
 
       <div id="footer">
         <Footer company={companyInfo} />

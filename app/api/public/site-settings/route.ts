@@ -17,6 +17,7 @@ export async function GET() {
         gaMeasurementId: '',
         whatsappFabPhone: '',
         whatsappFabMessage: '',
+        whatsappFabVisible: 'true',
         whatsappLeadPhone: '',
       },
       { status: 200 }

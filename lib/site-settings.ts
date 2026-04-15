@@ -5,6 +5,8 @@ export type SiteSettingsPublic = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  /** 'true' = tampilkan FAB di halaman visitor, selain itu sembunyikan. */
+  whatsappFabVisible: string;
   /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
   whatsappLeadPhone: string;
 };
@@ -23,6 +25,7 @@ const DEFAULT: SiteSettingsPublic = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
 };
 
@@ -79,6 +82,7 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
             'gaMeasurementId',
             'whatsappFabPhone',
             'whatsappFabMessage',
+            'whatsappFabVisible',
             'whatsappLeadPhone',
           ],
         },

@@ -8,6 +8,7 @@ const KEYS = [
   'gaMeasurementId',
   'whatsappFabPhone',
   'whatsappFabMessage',
+  'whatsappFabVisible',
   'whatsappLeadPhone',
   'mockApiEnabled',
   'mockApiContent',
