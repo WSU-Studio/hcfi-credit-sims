@@ -23,8 +23,9 @@ async function main() {
     { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', order: 8 },
     { code: 'LEADS', name: 'Leads', path: '/admin/leads', order: 9 },
     { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 10 },
-    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 11 },
-    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 12 },
+    { code: 'BENEFITS', name: 'Benefit Settings', path: '/admin/benefits', order: 11 },
+    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 12 },
+    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 13 },
   ];
 
   for (const menu of menus) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import type { ComponentType } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   IconLayoutDashboard,
@@ -15,25 +16,35 @@ import {
   IconFolder,
   IconLogout,
   IconPhone,
+  IconClipboardHeart,
 } from '@tabler/icons-react';
 import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { useUserPermissions } from '@/app/hooks/usePermission';
+import { ADMIN_MENUS } from '@/lib/admin-menus';
 
-const menuItems = [
-  { code: 'DASHBOARD', name: 'Dashboard', path: '/admin/dashboard', icon: IconLayoutDashboard },
-  { code: 'USERS', name: 'User Management', path: '/admin/users', icon: IconUsers },
-  { code: 'ROLES', name: 'Role & Permission', path: '/admin/roles', icon: IconShield },
-  { code: 'BANNERS', name: 'Banner Management', path: '/admin/banners', icon: IconPhoto },
-  { code: 'PRODUCTS', name: 'Product Section', path: '/admin/products', icon: IconShoppingBag },
-  { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', icon: IconTag },
-  { code: 'ARTICLES', name: 'Article Management', path: '/admin/articles', icon: IconNews },
-  { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', icon: IconFileText },
-  { code: 'LEADS', name: 'Leads', path: '/admin/leads', icon: IconPhone },
-  { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', icon: IconSettings },
-  { code: 'MEDIA', name: 'Media Library', path: '/admin/media', icon: IconFolder },
-  { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', icon: IconSettings },
-];
+const menuIcons: Record<string, ComponentType<{ size?: number }>> = {
+  DASHBOARD: IconLayoutDashboard,
+  USERS: IconUsers,
+  ROLES: IconShield,
+  BANNERS: IconPhoto,
+  BENEFITS: IconClipboardHeart,
+  PRODUCTS: IconShoppingBag,
+  PROMOS: IconTag,
+  ARTICLES: IconNews,
+  PAGES: IconFileText,
+  LEADS: IconPhone,
+  FOOTER: IconSettings,
+  MEDIA: IconFolder,
+  SETTINGS: IconSettings,
+};
+
+const menuItems = ADMIN_MENUS.map((menu) => ({
+  code: menu.code,
+  name: menu.name,
+  path: menu.path,
+  icon: menuIcons[menu.code] ?? IconSettings,
+}));
 
 export function AdminSidebar() {
   const pathname = usePathname();
