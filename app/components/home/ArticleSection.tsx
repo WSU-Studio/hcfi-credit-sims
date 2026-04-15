@@ -1,7 +1,7 @@
 'use client';
 
 import type { Article } from "@/app/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/app/components/ui/Container";
 import { ArticleCard } from "@/app/components/ui/ArticleCard";
 import { Link } from "@/i18n/navigation";
@@ -9,13 +9,16 @@ import { IconStack2Filled } from "@tabler/icons-react";
 
 type ArticleSectionProps = {
   articles: Article[];
-  titleOverride?: string;
+  titleOverrideId?: string;
+  titleOverrideEn?: string;
 };
 
-export function ArticleSection({ articles, titleOverride }: ArticleSectionProps) {
+export function ArticleSection({ articles, titleOverrideId, titleOverrideEn }: ArticleSectionProps) {
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
-  const sectionTitle = titleOverride?.trim() || t("articlesTitle");
+  const locale = useLocale();
+  const sectionTitle =
+    (locale === "en" ? titleOverrideEn : titleOverrideId)?.trim() || t("articlesTitle");
   if (!articles.length) return null;
 
   return (

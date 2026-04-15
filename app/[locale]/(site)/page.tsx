@@ -86,14 +86,17 @@ async function getBanners(locale: Locale) {
     })) as Slide[];
   } catch (error) {
     console.error('Error fetching banners:', error);
+    const isEn = locale === "en";
     return [
       {
-        title: "Dapatkan Benefit Kredit Mobil Baru Anda di",
+        title: isEn ? "Get New Car Credit Benefits at" : "Dapatkan Benefit Kredit Mobil Baru Anda di",
         highlight: "Hyundai Finance",
         description:
-          "Rasakan kemudahan proses kredit dengan layanan profesional dan penawaran yang terjaga keasliannya.",
+          isEn
+            ? "Experience an easier credit process with professional service and trusted offers."
+            : "Rasakan kemudahan proses kredit dengan layanan profesional dan penawaran yang terjaga keasliannya.",
         image: "/images/main-banner.jpg",
-        ctaLabel: "Simulasi Kredit",
+        ctaLabel: isEn ? "Credit Simulation" : "Simulasi Kredit",
         ctaUrl: "/credit-simulation",
       },
     ];
@@ -196,13 +199,6 @@ export default async function Home() {
     getArticles(locale),
     getSiteSettings(),
   ]);
-  const isEn = locale === "en";
-  const benefitHeading1 = (isEn ? siteSettings.homeBenefitHeading1En : siteSettings.homeBenefitHeading1).trim();
-  const benefitHeading2 = (isEn ? siteSettings.homeBenefitHeading2En : siteSettings.homeBenefitHeading2).trim();
-  const benefitHeading3 = (isEn ? siteSettings.homeBenefitHeading3En : siteSettings.homeBenefitHeading3).trim();
-  const benefitBrand = (isEn ? siteSettings.homeBenefitBrandEn : siteSettings.homeBenefitBrand).trim();
-  const productSectionTitle = (isEn ? siteSettings.homeProductSectionTitleEn : siteSettings.homeProductSectionTitle).trim();
-  const articleSectionTitle = (isEn ? siteSettings.homeArticlesTitleEn : siteSettings.homeArticlesTitle).trim();
 
   return (
     <>
@@ -210,20 +206,26 @@ export default async function Home() {
       
       <BenefitSection
         benefits={benefits}
-        headingLine1={benefitHeading1}
-        headingLine2={benefitHeading2}
-        headingLine3={benefitHeading3}
-        headingBrand={benefitBrand}
+        headingLine1Id={siteSettings.homeBenefitHeading1}
+        headingLine1En={siteSettings.homeBenefitHeading1En}
+        headingLine2Id={siteSettings.homeBenefitHeading2}
+        headingLine2En={siteSettings.homeBenefitHeading2En}
+        headingLine3Id={siteSettings.homeBenefitHeading3}
+        headingLine3En={siteSettings.homeBenefitHeading3En}
+        headingBrandId={siteSettings.homeBenefitBrand}
+        headingBrandEn={siteSettings.homeBenefitBrandEn}
       />
 
       <ProductSection
         products={products}
-        titleOverride={productSectionTitle}
+        titleOverrideId={siteSettings.homeProductSectionTitle}
+        titleOverrideEn={siteSettings.homeProductSectionTitleEn}
       />
 
       <ArticleSection
         articles={articles}
-        titleOverride={articleSectionTitle}
+        titleOverrideId={siteSettings.homeArticlesTitle}
+        titleOverrideEn={siteSettings.homeArticlesTitleEn}
       />
     </>
   );

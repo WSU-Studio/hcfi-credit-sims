@@ -1,34 +1,44 @@
 'use client';
 
 import type { Benefit } from "@/app/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/app/components/ui/Container";
 import { BenefitCard } from "@/app/components/ui/BenefitCard";
 
 type BenefitSectionProps = {
   benefits: Benefit[];
-  headingLine1?: string;
-  headingLine2?: string;
-  headingLine3?: string;
-  headingBrand?: string;
+  headingLine1Id?: string;
+  headingLine1En?: string;
+  headingLine2Id?: string;
+  headingLine2En?: string;
+  headingLine3Id?: string;
+  headingLine3En?: string;
+  headingBrandId?: string;
+  headingBrandEn?: string;
 };
 
 export function BenefitSection({
   benefits,
-  headingLine1,
-  headingLine2,
-  headingLine3,
-  headingBrand,
+  headingLine1Id,
+  headingLine1En,
+  headingLine2Id,
+  headingLine2En,
+  headingLine3Id,
+  headingLine3En,
+  headingBrandId,
+  headingBrandEn,
 }: BenefitSectionProps) {
   const t = useTranslations("home");
+  const locale = useLocale();
+  const isEn = locale === "en";
   const displayBenefits = benefits && benefits.length > 0 ? benefits : [
     { title: "Jaminan Keaslian", description: "Semua penawaran dari kami terjaga keasliannya." },
     { title: "Layanan Profesional", description: "Perjalanan memilih sampai pembelian Anda ditemani tenaga kami yang profesional." },
   ];
-  const line1 = headingLine1?.trim() || t("benefitHeading1");
-  const line2 = headingLine2?.trim() || t("benefitHeading2");
-  const line3 = headingLine3?.trim() || t("benefitHeading3");
-  const brand = headingBrand?.trim() || t("benefitBrand");
+  const line1 = (isEn ? headingLine1En : headingLine1Id)?.trim() || t("benefitHeading1");
+  const line2 = (isEn ? headingLine2En : headingLine2Id)?.trim() || t("benefitHeading2");
+  const line3 = (isEn ? headingLine3En : headingLine3Id)?.trim() || t("benefitHeading3");
+  const brand = (isEn ? headingBrandEn : headingBrandId)?.trim() || t("benefitBrand");
 
   return (
     <section id="benefits" className="bg-slate-100 py-6 md:py-8">

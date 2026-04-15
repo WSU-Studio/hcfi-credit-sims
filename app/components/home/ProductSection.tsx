@@ -1,7 +1,7 @@
 'use client';
 
 import type { Product } from "@/app/types";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Container } from "@/app/components/ui/Container";
 import { ProductCard } from "@/app/components/ui/ProductCard";
 import { IconStack2Filled } from "@tabler/icons-react";
@@ -9,13 +9,16 @@ import { Link } from "@/i18n/navigation";
 
 type ProductSectionProps = {
   products: Product[];
-  titleOverride?: string;
+  titleOverrideId?: string;
+  titleOverrideEn?: string;
 };
 
-export function ProductSection({ products, titleOverride }: ProductSectionProps) {
+export function ProductSection({ products, titleOverrideId, titleOverrideEn }: ProductSectionProps) {
   const t = useTranslations("home");
   const tCommon = useTranslations("common");
-  const sectionTitle = titleOverride?.trim() || t("productSectionTitle");
+  const locale = useLocale();
+  const sectionTitle =
+    (locale === "en" ? titleOverrideEn : titleOverrideId)?.trim() || t("productSectionTitle");
 
   return (
     <section id="products" className="bg-[var(--background)] pt-12 md:pt-16">
