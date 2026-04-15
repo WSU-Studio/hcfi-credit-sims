@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { syncAdminMenus } from '@/lib/sync-admin-menus';
 
 export async function GET() {
   try {
@@ -12,6 +13,7 @@ export async function GET() {
     }
 
     await requirePermission('ROLES', 'view');
+    await syncAdminMenus();
 
     const permissions = await prisma.permission.findMany({
       include: {

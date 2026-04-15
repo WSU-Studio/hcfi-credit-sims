@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth-server';
 import { getUserPermissions } from '@/lib/permissions';
+import { syncAdminMenus } from '@/lib/sync-admin-menus';
 
 export async function GET() {
   try {
@@ -9,6 +10,7 @@ export async function GET() {
       return NextResponse.json({ permissions: null }, { status: 401 });
     }
 
+    await syncAdminMenus();
     const permissions = await getUserPermissions(session.user.id);
     return NextResponse.json({ permissions: permissions ?? {} });
   } catch (error: unknown) {
