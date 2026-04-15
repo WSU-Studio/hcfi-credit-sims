@@ -6,16 +6,20 @@ type WhatsappFABProps = {
   phone?: string;
   /** Pesan awal dari Site Settings (prefill chat). */
   message?: string;
+  /** Teks CTA bubble di atas FAB. Kosong = pakai fallback. */
+  ctaText?: string;
 };
 
 /** Fallback bila nomor tidak diatur di Admin → Site Settings. */
 const DEFAULT_PHONE = "628111500708";
+const DEFAULT_CTA = "Mau beli? Hubungi kami di sini.";
 
-export function WhatsappFAB({ phone = DEFAULT_PHONE, message }: WhatsappFABProps) {
+export function WhatsappFAB({ phone = DEFAULT_PHONE, message, ctaText }: WhatsappFABProps) {
   const params = new URLSearchParams();
   if (message?.trim()) params.set("text", message.trim());
   const query = params.toString();
   const href = `https://wa.me/${phone.replace(/\D/g, "")}${query ? `?${query}` : ""}`;
+  const bubbleText = ctaText?.trim() || DEFAULT_CTA;
 
   return (
     <div className="fixed right-4 bottom-6 z-10 flex flex-col items-end md:right-6 md:bottom-8">
@@ -25,7 +29,7 @@ export function WhatsappFAB({ phone = DEFAULT_PHONE, message }: WhatsappFABProps
           shadow-md ring-1 ring-gray-200 backdrop-blur
         "
       >
-        Mau beli? Hubungi kami di sini.
+        {bubbleText}
       </div>
       <Link
         href={href}

@@ -5,6 +5,8 @@ export type SiteSettingsPublic = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  /** Teks CTA bubble di atas tombol FAB WhatsApp. */
+  whatsappFabCtaText: string;
   /** 'true' = tampilkan FAB di halaman visitor, selain itu sembunyikan. */
   whatsappFabVisible: string;
   /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
@@ -25,6 +27,7 @@ const DEFAULT: SiteSettingsPublic = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappFabCtaText: '',
   whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
 };
@@ -82,6 +85,7 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
             'gaMeasurementId',
             'whatsappFabPhone',
             'whatsappFabMessage',
+            'whatsappFabCtaText',
             'whatsappFabVisible',
             'whatsappLeadPhone',
           ],

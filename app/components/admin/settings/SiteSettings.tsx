@@ -8,6 +8,7 @@ type SiteSettingsData = {
   gaMeasurementId: string;
   whatsappFabPhone: string;
   whatsappFabMessage: string;
+  whatsappFabCtaText: string;
   whatsappFabVisible: string;
   whatsappLeadPhone: string;
   mockApiEnabled: string;
@@ -19,6 +20,7 @@ const defaultData: SiteSettingsData = {
   gaMeasurementId: '',
   whatsappFabPhone: '',
   whatsappFabMessage: '',
+  whatsappFabCtaText: '',
   whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
   mockApiEnabled: 'false',
@@ -47,6 +49,7 @@ export function SiteSettings() {
             gaMeasurementId: ensureString(d.gaMeasurementId ?? ''),
             whatsappFabPhone: ensureString(d.whatsappFabPhone ?? ''),
             whatsappFabMessage: ensureString(d.whatsappFabMessage ?? ''),
+            whatsappFabCtaText: ensureString(d.whatsappFabCtaText ?? ''),
             whatsappFabVisible: ensureString(d.whatsappFabVisible ?? 'true'),
             whatsappLeadPhone: ensureString(d.whatsappLeadPhone ?? ''),
             mockApiEnabled: ensureString(d.mockApiEnabled ?? 'false'),
@@ -73,6 +76,7 @@ export function SiteSettings() {
           gaMeasurementId: data.gaMeasurementId.trim(),
           whatsappFabPhone: data.whatsappFabPhone.trim(),
           whatsappFabMessage: data.whatsappFabMessage.trim(),
+          whatsappFabCtaText: data.whatsappFabCtaText.trim(),
           whatsappFabVisible: data.whatsappFabVisible.trim(),
           whatsappLeadPhone: data.whatsappLeadPhone.trim(),
           mockApiEnabled: data.mockApiEnabled.trim(),
@@ -193,6 +197,18 @@ export function SiteSettings() {
               onChange={(e) => setData({ ...data, whatsappFabMessage: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Halo, saya ingin bertanya..."
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Teks CTA bubble di atas FAB (opsional)
+            </label>
+            <input
+              type="text"
+              value={data.whatsappFabCtaText}
+              onChange={(e) => setData({ ...data, whatsappFabCtaText: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Mau beli? Hubungi kami di sini."
             />
           </div>
         </div>
