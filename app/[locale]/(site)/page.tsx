@@ -196,6 +196,13 @@ export default async function Home() {
     getArticles(locale),
     getSiteSettings(),
   ]);
+  const isEn = locale === "en";
+  const benefitHeading1 = (isEn ? siteSettings.homeBenefitHeading1En : siteSettings.homeBenefitHeading1).trim();
+  const benefitHeading2 = (isEn ? siteSettings.homeBenefitHeading2En : siteSettings.homeBenefitHeading2).trim();
+  const benefitHeading3 = (isEn ? siteSettings.homeBenefitHeading3En : siteSettings.homeBenefitHeading3).trim();
+  const benefitBrand = (isEn ? siteSettings.homeBenefitBrandEn : siteSettings.homeBenefitBrand).trim();
+  const productSectionTitle = (isEn ? siteSettings.homeProductSectionTitleEn : siteSettings.homeProductSectionTitle).trim();
+  const articleSectionTitle = (isEn ? siteSettings.homeArticlesTitleEn : siteSettings.homeArticlesTitle).trim();
 
   return (
     <>
@@ -203,20 +210,20 @@ export default async function Home() {
       
       <BenefitSection
         benefits={benefits}
-        headingLine1={siteSettings.homeBenefitHeading1}
-        headingLine2={siteSettings.homeBenefitHeading2}
-        headingLine3={siteSettings.homeBenefitHeading3}
-        headingBrand={siteSettings.homeBenefitBrand}
+        headingLine1={benefitHeading1}
+        headingLine2={benefitHeading2}
+        headingLine3={benefitHeading3}
+        headingBrand={benefitBrand}
       />
 
       <ProductSection
         products={products}
-        titleOverride={siteSettings.homeProductSectionTitle}
+        titleOverride={productSectionTitle}
       />
 
       <ArticleSection
         articles={articles}
-        titleOverride={siteSettings.homeArticlesTitle}
+        titleOverride={articleSectionTitle}
       />
     </>
   );
