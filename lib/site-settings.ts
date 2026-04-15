@@ -12,11 +12,17 @@ export type SiteSettingsPublic = {
   /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
   whatsappLeadPhone: string;
   homeBenefitHeading1: string;
+  homeBenefitHeading1En: string;
   homeBenefitHeading2: string;
+  homeBenefitHeading2En: string;
   homeBenefitHeading3: string;
+  homeBenefitHeading3En: string;
   homeBenefitBrand: string;
+  homeBenefitBrandEn: string;
   homeProductSectionTitle: string;
+  homeProductSectionTitleEn: string;
   homeArticlesTitle: string;
+  homeArticlesTitleEn: string;
 };
 
 export type MockApiSettings = {
@@ -37,11 +43,17 @@ const DEFAULT: SiteSettingsPublic = {
   whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
   homeBenefitHeading1: '',
+  homeBenefitHeading1En: '',
   homeBenefitHeading2: '',
+  homeBenefitHeading2En: '',
   homeBenefitHeading3: '',
+  homeBenefitHeading3En: '',
   homeBenefitBrand: '',
+  homeBenefitBrandEn: '',
   homeProductSectionTitle: '',
+  homeProductSectionTitleEn: '',
   homeArticlesTitle: '',
+  homeArticlesTitleEn: '',
 };
 
 /**
@@ -101,11 +113,17 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
             'whatsappFabVisible',
             'whatsappLeadPhone',
             'homeBenefitHeading1',
+            'homeBenefitHeading1En',
             'homeBenefitHeading2',
+            'homeBenefitHeading2En',
             'homeBenefitHeading3',
+            'homeBenefitHeading3En',
             'homeBenefitBrand',
+            'homeBenefitBrandEn',
             'homeProductSectionTitle',
+            'homeProductSectionTitleEn',
             'homeArticlesTitle',
+            'homeArticlesTitleEn',
           ],
         },
       },

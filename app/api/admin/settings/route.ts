@@ -14,11 +14,17 @@ const KEYS = [
   'mockApiEnabled',
   'mockApiContent',
   'homeBenefitHeading1',
+  'homeBenefitHeading1En',
   'homeBenefitHeading2',
+  'homeBenefitHeading2En',
   'homeBenefitHeading3',
+  'homeBenefitHeading3En',
   'homeBenefitBrand',
+  'homeBenefitBrandEn',
   'homeProductSectionTitle',
+  'homeProductSectionTitleEn',
   'homeArticlesTitle',
+  'homeArticlesTitleEn',
 ] as const;
 
 function toPayload(settings: { key: string; value: string }[]) {

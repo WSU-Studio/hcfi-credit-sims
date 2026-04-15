@@ -21,11 +21,17 @@ export async function GET() {
         whatsappFabVisible: 'true',
         whatsappLeadPhone: '',
         homeBenefitHeading1: '',
+        homeBenefitHeading1En: '',
         homeBenefitHeading2: '',
+        homeBenefitHeading2En: '',
         homeBenefitHeading3: '',
+        homeBenefitHeading3En: '',
         homeBenefitBrand: '',
+        homeBenefitBrandEn: '',
         homeProductSectionTitle: '',
+        homeProductSectionTitleEn: '',
         homeArticlesTitle: '',
+        homeArticlesTitleEn: '',
       },
       { status: 200 }
     );
