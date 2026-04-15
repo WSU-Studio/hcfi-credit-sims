@@ -18,6 +18,7 @@ export async function GET() {
         whatsappFabPhone: '',
         whatsappFabMessage: '',
         whatsappFabCtaText: '',
+        whatsappFabCtaTextEn: '',
         whatsappFabVisible: 'true',
         whatsappLeadPhone: '',
         homeBenefitHeading1: '',

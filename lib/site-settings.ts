@@ -7,6 +7,8 @@ export type SiteSettingsPublic = {
   whatsappFabMessage: string;
   /** Teks CTA bubble di atas tombol FAB WhatsApp. */
   whatsappFabCtaText: string;
+  /** CTA bubble FAB untuk locale EN. */
+  whatsappFabCtaTextEn: string;
   /** 'true' = tampilkan FAB di halaman visitor, selain itu sembunyikan. */
   whatsappFabVisible: string;
   /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
@@ -40,6 +42,7 @@ const DEFAULT: SiteSettingsPublic = {
   whatsappFabPhone: '',
   whatsappFabMessage: '',
   whatsappFabCtaText: '',
+  whatsappFabCtaTextEn: '',
   whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
   homeBenefitHeading1: '',
@@ -110,6 +113,7 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
             'whatsappFabPhone',
             'whatsappFabMessage',
             'whatsappFabCtaText',
+            'whatsappFabCtaTextEn',
             'whatsappFabVisible',
             'whatsappLeadPhone',
             'homeBenefitHeading1',

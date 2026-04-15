@@ -9,6 +9,7 @@ const KEYS = [
   'whatsappFabPhone',
   'whatsappFabMessage',
   'whatsappFabCtaText',
+  'whatsappFabCtaTextEn',
   'whatsappFabVisible',
   'whatsappLeadPhone',
   'mockApiEnabled',
