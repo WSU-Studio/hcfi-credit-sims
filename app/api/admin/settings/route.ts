@@ -13,6 +13,12 @@ const KEYS = [
   'whatsappLeadPhone',
   'mockApiEnabled',
   'mockApiContent',
+  'homeBenefitHeading1',
+  'homeBenefitHeading2',
+  'homeBenefitHeading3',
+  'homeBenefitBrand',
+  'homeProductSectionTitle',
+  'homeArticlesTitle',
 ] as const;
 
 function toPayload(settings: { key: string; value: string }[]) {

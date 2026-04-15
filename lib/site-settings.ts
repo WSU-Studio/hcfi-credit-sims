@@ -11,6 +11,12 @@ export type SiteSettingsPublic = {
   whatsappFabVisible: string;
   /** Nomor WhatsApp untuk tombol di hasil simulasi (leads CS/SDR). */
   whatsappLeadPhone: string;
+  homeBenefitHeading1: string;
+  homeBenefitHeading2: string;
+  homeBenefitHeading3: string;
+  homeBenefitBrand: string;
+  homeProductSectionTitle: string;
+  homeArticlesTitle: string;
 };
 
 export type MockApiSettings = {
@@ -30,6 +36,12 @@ const DEFAULT: SiteSettingsPublic = {
   whatsappFabCtaText: '',
   whatsappFabVisible: 'true',
   whatsappLeadPhone: '',
+  homeBenefitHeading1: '',
+  homeBenefitHeading2: '',
+  homeBenefitHeading3: '',
+  homeBenefitBrand: '',
+  homeProductSectionTitle: '',
+  homeArticlesTitle: '',
 };
 
 /**
@@ -88,6 +100,12 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
             'whatsappFabCtaText',
             'whatsappFabVisible',
             'whatsappLeadPhone',
+            'homeBenefitHeading1',
+            'homeBenefitHeading2',
+            'homeBenefitHeading3',
+            'homeBenefitBrand',
+            'homeProductSectionTitle',
+            'homeArticlesTitle',
           ],
         },
       },

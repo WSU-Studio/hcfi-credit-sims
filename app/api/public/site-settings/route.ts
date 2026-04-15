@@ -20,6 +20,12 @@ export async function GET() {
         whatsappFabCtaText: '',
         whatsappFabVisible: 'true',
         whatsappLeadPhone: '',
+        homeBenefitHeading1: '',
+        homeBenefitHeading2: '',
+        homeBenefitHeading3: '',
+        homeBenefitBrand: '',
+        homeProductSectionTitle: '',
+        homeArticlesTitle: '',
       },
       { status: 200 }
     );
