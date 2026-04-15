@@ -286,77 +286,81 @@ export function SiteSettings() {
           Kosongkan field jika ingin tetap menggunakan teks bawaan dari translation.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Benefit Heading Baris 1
-            </label>
-            <input
-              type="text"
-              value={data.homeBenefitHeading1}
-              onChange={(e) => setData({ ...data, homeBenefitHeading1: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Dapatkan benefit kredit mobil baru Anda di"
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Benefit Heading Baris 1
+              </label>
+              <input
+                type="text"
+                value={data.homeBenefitHeading1}
+                onChange={(e) => setData({ ...data, homeBenefitHeading1: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Dapatkan benefit kredit mobil baru Anda di"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Benefit Heading Baris 2
+              </label>
+              <input
+                type="text"
+                value={data.homeBenefitHeading2}
+                onChange={(e) => setData({ ...data, homeBenefitHeading2: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Dengan memilih"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Benefit Heading Baris 3
+              </label>
+              <input
+                type="text"
+                value={data.homeBenefitHeading3}
+                onChange={(e) => setData({ ...data, homeBenefitHeading3: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Pembiayaan dari"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Benefit Brand (highlight)
+              </label>
+              <input
+                type="text"
+                value={data.homeBenefitBrand}
+                onChange={(e) => setData({ ...data, homeBenefitBrand: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Hyundai Finance"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Benefit Heading Baris 2
-            </label>
-            <input
-              type="text"
-              value={data.homeBenefitHeading2}
-              onChange={(e) => setData({ ...data, homeBenefitHeading2: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Dengan memilih"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Benefit Heading Baris 3
-            </label>
-            <input
-              type="text"
-              value={data.homeBenefitHeading3}
-              onChange={(e) => setData({ ...data, homeBenefitHeading3: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Pembiayaan dari"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Benefit Brand (highlight)
-            </label>
-            <input
-              type="text"
-              value={data.homeBenefitBrand}
-              onChange={(e) => setData({ ...data, homeBenefitBrand: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Hyundai Finance"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Judul Section Product
-            </label>
-            <input
-              type="text"
-              value={data.homeProductSectionTitle}
-              onChange={(e) => setData({ ...data, homeProductSectionTitle: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Product Unggulan"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Judul Section Article
-            </label>
-            <input
-              type="text"
-              value={data.homeArticlesTitle}
-              onChange={(e) => setData({ ...data, homeArticlesTitle: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Artikel Terbaru"
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Judul Section Product
+              </label>
+              <input
+                type="text"
+                value={data.homeProductSectionTitle}
+                onChange={(e) => setData({ ...data, homeProductSectionTitle: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Product Unggulan"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Judul Section Article
+              </label>
+              <input
+                type="text"
+                value={data.homeArticlesTitle}
+                onChange={(e) => setData({ ...data, homeArticlesTitle: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Artikel Terbaru"
+              />
+            </div>
           </div>
         </div>
       </section>
