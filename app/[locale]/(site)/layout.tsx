@@ -261,7 +261,8 @@ export default async function SiteLayout({ children, params }: Props) {
   const navItems = buildNavItems(pages, (key) => t(key), localeTyped);
   const fabPhone = siteSettings.whatsappFabPhone.trim() || undefined;
   const fabMessage = siteSettings.whatsappFabMessage.trim() || undefined;
-  const fabCtaText = siteSettings.whatsappFabCtaText.trim() || undefined;
+  const fabCtaTextId = siteSettings.whatsappFabCtaText.trim() || undefined;
+  const fabCtaTextEn = siteSettings.whatsappFabCtaTextEn.trim() || undefined;
   const showWhatsappFab = siteSettings.whatsappFabVisible.toLowerCase() !== "false";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
@@ -287,7 +288,14 @@ export default async function SiteLayout({ children, params }: Props) {
         {children}
       </main>
 
-      {showWhatsappFab && <WhatsappFAB phone={fabPhone} message={fabMessage} ctaText={fabCtaText} />}
+      {showWhatsappFab && (
+        <WhatsappFAB
+          phone={fabPhone}
+          message={fabMessage}
+          ctaTextId={fabCtaTextId}
+          ctaTextEn={fabCtaTextEn}
+        />
+      )}
 
       <div id="footer">
         <Footer company={companyInfo} />
