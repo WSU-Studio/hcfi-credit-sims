@@ -17,6 +17,7 @@ import {
   IconLogout,
   IconPhone,
   IconClipboardHeart,
+  IconCar,
 } from '@tabler/icons-react';
 import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
 import { AdminLink } from '@/app/components/admin/AdminLink';
@@ -35,6 +36,7 @@ const menuIcons: Record<string, ComponentType<{ size?: number }>> = {
   PAGES: IconFileText,
   LEADS: IconPhone,
   FOOTER: IconSettings,
+  VEHICLE_MODELS: IconCar,
   MEDIA: IconFolder,
   SETTINGS: IconSettings,
 };
