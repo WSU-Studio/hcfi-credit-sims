@@ -40,6 +40,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
         body: JSON.stringify({
           DealerCode: dealerCode,
           GetLatestAsset: true,
+          GlobalCatalog: true,
         }),
       });
 

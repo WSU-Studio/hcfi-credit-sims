@@ -1,7 +1,8 @@
 'use client';
 
 import type { Vendor, AssetMaster } from '@/app/types/credit-simulation';
-import { IconMapPin, IconPhoto } from '@tabler/icons-react';
+import { IconMapPin } from '@tabler/icons-react';
+import { VehicleImage } from '@/app/components/simulation/VehicleImage';
 
 interface SimulationSidebarProps {
   dealer: Vendor;
@@ -28,13 +29,11 @@ export function SimulationSidebar({ dealer, asset, specs, onChangeModel }: Simul
         </div>
       )}
 
-      {/* Vehicle image placeholder */}
-      <div className="aspect-[4/3] rounded-lg bg-gray-200 flex items-center justify-center mb-2">
-        <div className="flex flex-col items-center gap-2 text-gray-400">
-          <IconPhoto size={40} stroke={1.5} />
-          <span className="text-xs">Gambar kendaraan</span>
-        </div>
-      </div>
+      <VehicleImage
+        assetCode={asset.AssetCode}
+        fullAssetCode={asset.FullAssetCode}
+        assetName={asset.AssetName}
+      />
 
       {/* Change Model */}
       <button
