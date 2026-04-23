@@ -43,14 +43,14 @@ export function VehicleImage({ assetCode, fullAssetCode, assetName, className = 
   }, [queryString]);
 
   return (
-    <div className={`aspect-[4/3] rounded-lg bg-gray-200 flex items-center justify-center mb-2 overflow-hidden ${className}`}>
+    <div className={`aspect-[4/3] rounded-lg border border-gray-300 bg-white flex items-center justify-center mb-2 overflow-hidden ${className}`}>
       {imageUrl ? (
         <div className="relative h-full w-full">
           <Image
             src={imageUrl}
             alt={assetName ? `Gambar ${assetName}` : 'Gambar kendaraan'}
             fill
-            className="object-contain bg-gray-100"
+            className="object-contain"
             sizes="(max-width: 1024px) 100vw, 320px"
           />
         </div>
