@@ -1,35 +1,56 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Vendor } from '@/app/types/credit-simulation';
 
 interface DealerStepProps {
-  onSelect: (dealer: Vendor) => void;
+  onContinue: (dealer: Vendor) => void;
   selectedDealer?: Vendor | null;
 }
 
-export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
+function sortDealers(dealers: Vendor[]) {
+  return [...dealers].sort((a, b) => a.VendorName.localeCompare(b.VendorName));
+}
+
+export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
+  const t = useTranslations('creditSimulation');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string>(selectedDealer?.City ?? '');
+  const [localDealer, setLocalDealer] = useState<Vendor | null>(selectedDealer ?? null);
 
   useEffect(() => {
     fetchVendors();
   }, []);
 
   useEffect(() => {
-    if (selectedDealer?.City) {
+    if (selectedDealer) {
       setSelectedCity(selectedDealer.City);
+      setLocalDealer(selectedDealer);
     }
-  }, [selectedDealer?.City]);
+  }, [selectedDealer]);
+
+  const cities = useMemo(
+    () => Array.from(new Set(vendors.map((v) => v.City).filter(Boolean))).sort(),
+    [vendors]
+  );
+
+  const dealersInCity = useMemo(
+    () => (selectedCity ? sortDealers(vendors.filter((v) => v.City === selectedCity)) : []),
+    [vendors, selectedCity]
+  );
 
   const handleCityClick = (city: string) => {
+    if (city === selectedCity) return;
     setSelectedCity(city);
-    const filtered = vendors.filter(v => v.City === city);
-    if (filtered.length > 0) {
-      onSelect(filtered[0]);
-    }
+    const inCity = sortDealers(vendors.filter((v) => v.City === city));
+    setLocalDealer(inCity[0] ?? null);
+  };
+
+  const handleDealerClick = (dealer: Vendor) => {
+    setLocalDealer(dealer);
   };
 
   const fetchVendors = async () => {
@@ -61,13 +82,11 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
     }
   };
 
-  const cities = Array.from(new Set(vendors.map(v => v.City))).sort();
-
   return (
     <div className="space-y-6 text-gray-900">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Pilih Dealer</h2>
-        <p className="text-[var(--muted)]">Pilih kota dan dealer untuk melanjutkan simulasi</p>
+        <h2 className="text-2xl font-semibold mb-2">{t('dealerStepTitle')}</h2>
+        <p className="text-[var(--muted)]">{t('dealerStepDescription')}</p>
       </div>
 
       {error && (
@@ -76,11 +95,10 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
         </div>
       )}
 
-      <div className="space-y-4">
-        {/* Pilihan kota dengan button - lebih mudah terlihat */}
+      <div className="space-y-8">
         <div>
           <label className="block text-sm font-medium mb-3">
-            Pilih Kota <span className="text-red-500">*</span>
+            {t('selectCity')} <span className="text-red-500">*</span>
           </label>
           {loading ? (
             <div className="flex flex-wrap gap-3 py-4">
@@ -88,11 +106,11 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
               <div className="h-10 w-28 rounded-lg bg-gray-200 animate-pulse" />
               <div className="h-10 w-20 rounded-lg bg-gray-200 animate-pulse" />
               <p className="w-full mt-2 text-sm text-[var(--muted)]">
-                Mengambil daftar dealer...
+                {t('loadingDealers')}
               </p>
             </div>
           ) : cities.length === 0 ? (
-            <p className="py-4 text-[var(--muted)]">Tidak ada kota tersedia</p>
+            <p className="py-4 text-[var(--muted)]">{t('noCities')}</p>
           ) : (
             <div className="flex flex-wrap gap-3">
               {cities.map((city) => (
@@ -111,12 +129,62 @@ export function DealerStep({ onSelect, selectedDealer }: DealerStepProps) {
               ))}
             </div>
           )}
-          {/* {!loading && selectedCity && (
-            <p className="mt-3 text-sm text-[var(--muted)]">
-              Dealer pertama di {selectedCity} akan dipilih secara otomatis
-            </p>
-          )} */}
         </div>
+
+        {selectedCity && !loading && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t('selectDealer')} <span className="text-red-500">*</span>
+            </label>
+            {localDealer && (
+              <p className="mb-3 text-sm text-[var(--muted)]">{t('dealerAutoSelectedHint')}</p>
+            )}
+            {dealersInCity.length === 0 ? (
+              <p className="py-4 text-[var(--muted)]">{t('noDealersInCity')}</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[min(24rem,50vh)] overflow-y-auto pr-1">
+                {dealersInCity.map((dealer) => {
+                  const isSelected = localDealer?.VendorCode === dealer.VendorCode;
+
+                  return (
+                    <button
+                      key={dealer.VendorCode}
+                      type="button"
+                      onClick={() => handleDealerClick(dealer)}
+                      className={`text-left px-4 py-3 rounded-lg border-2 transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'border-[#002c5f] bg-[#002c5f]/5 ring-2 ring-[#002c5f]/30'
+                          : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:bg-gray-50'
+                      }`}
+                    >
+                      <p className="font-medium text-gray-900">{dealer.VendorName}</p>
+                      {dealer.ZipCode && (
+                        <p className="mt-1 text-sm text-[var(--muted)]">
+                          {dealer.ZipCode}
+                          {dealer.OriOfficeName ? ` · ${dealer.OriOfficeName}` : ''}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!selectedCity && !loading && cities.length > 0 && (
+          <p className="text-sm text-[var(--muted)]">{t('selectCityFirst')}</p>
+        )}
+
+        {localDealer && !loading && (
+          <button
+            type="button"
+            onClick={() => onContinue(localDealer)}
+            className="w-full px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
+          >
+            {t('continueToModel')}
+          </button>
+        )}
       </div>
     </div>
   );
