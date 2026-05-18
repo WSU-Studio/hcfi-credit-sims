@@ -6,8 +6,10 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
+    environment: production
 
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       MODE_ENV: production
 
     steps:
@@ -17,18 +19,39 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\"" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "" >> .env
+          echo "AWS_ACCESS_KEY_ID=\"${{ secrets.AWS_ACCESS_KEY_ID }}\"" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=\"${{ secrets.AWS_SECRET_ACCESS_KEY }}\"" >> .env
+          echo "AWS_REGION=\"${{ secrets.AWS_REGION }}\"" >> .env
+          echo "AWS_S3_BUCKET=\"${{ secrets.AWS_S3_BUCKET }}\"" >> .env
+          echo "" >> .env
+          echo "USE_MOCK_API=${{ secrets.USE_MOCK_API }}" >> .env
+          echo "CREDIT_SIMULATION_API_URL=\"${{ secrets.CREDIT_SIMULATION_API_URL }}\"" >> .env
+          echo "CREDIT_SIMULATION_USERNAME=\"${{ secrets.CREDIT_SIMULATION_USERNAME }}\"" >> .env
+          echo "CREDIT_SIMULATION_PASSWORD=\"${{ secrets.CREDIT_SIMULATION_PASSWORD }}\"" >> .env
+          echo "" >> .env
+          echo "NEXTAUTH_URL=\"${{ secrets.NEXTAUTH_URL }}\"" >> .env
+          echo "NEXTAUTH_SECRET=\"${{ secrets.NEXTAUTH_SECRET }}\"" >> .env
+          echo "" >> .env
+          echo "API_BASE_URL=\"${{ secrets.API_BASE_URL }}\"" >> .env
+          echo "" >> .env
+          echo "NODE_ENV=production" >> .env
+  
+      - name: Generate Prisma Client
+        run: npx prisma generate
+      
       - name: Build application
         run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.PROD_AWS_REGION }}
+      - name: Apply Database Migrations
+        run: npx prisma migrate deploy
 
       - name: Restart App with PM2
         run: |
-          pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start -- -p 3000
+          pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
+          pm2 save
