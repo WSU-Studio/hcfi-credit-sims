@@ -6,6 +6,7 @@ import {
   fetchVendorsForAssignment,
   submitLeadToHyundai,
 } from '@/lib/hyundai-lead-integration';
+import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 
 export async function POST(
   request: NextRequest,
@@ -58,6 +59,7 @@ export async function POST(
         email: lead.email,
         productName: lead.productName,
         vehicleSummary: lead.vehicleSummary,
+        assetSnapshot: parseLeadAssetSnapshot(lead.assetSnapshot),
         otrPrice: lead.otrPrice,
         motherName: lead.motherName,
         homeOwnershipStatus: lead.homeOwnershipStatus,

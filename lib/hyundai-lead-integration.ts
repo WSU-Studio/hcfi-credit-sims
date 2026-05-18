@@ -12,17 +12,12 @@ import {
   normalizeBirthDate,
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
-import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
+import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
 export type HyundaiKeyValue = { Key: string; Value: string };
-
-type HyundaiApiEnvelope = {
-  TrxNo?: string;
-  HeaderObj?: { StatusCode?: string; Message?: string };
-  StatusCode?: string;
-  Message?: string;
-};
 
 const HOME_OWNERSHIP_MAP: Record<string, string> = {
   OWN: 'OWNED',
@@ -35,37 +30,6 @@ const HOME_OWNERSHIP_MAP: Record<string, string> = {
 
 function hyundaiNow(): string {
   return new Date().toISOString();
-}
-
-async function hyundaiPost<T = HyundaiApiEnvelope>(
-  path: string,
-  body: Record<string, unknown>
-): Promise<T> {
-  const headers = await getHyundaiRequestHeaders();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  let data: T & { Message?: string };
-  try {
-    data = text ? JSON.parse(text) : ({} as T);
-  } catch {
-    throw new Error('Invalid response from Hyundai API');
-  }
-  if (!res.ok) {
-    const msg =
-      (data as { Message?: string }).Message ||
-      text.slice(0, 300) ||
-      `Hyundai API error (${res.status})`;
-    throw new Error(msg);
-  }
-  const status = (data as HyundaiApiEnvelope).StatusCode ?? (data as HyundaiApiEnvelope).HeaderObj?.StatusCode;
-  if (status && status !== '200') {
-    throw new Error((data as HyundaiApiEnvelope).Message || 'Hyundai API returned non-success status');
-  }
-  return data;
 }
 
 export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
@@ -91,6 +55,7 @@ export type LeadRecordForHyundai = {
   email: string;
   productName: string | null;
   vehicleSummary: string | null;
+  assetSnapshot?: LeadAssetSnapshot | null;
   otrPrice: number | null;
   motherName: string | null;
   homeOwnershipStatus: string | null;
@@ -99,33 +64,23 @@ export type LeadRecordForHyundai = {
   ktpUrl: string | null;
 };
 
-function parseVehicleSummary(summary: string | null) {
-  if (!summary) return { year: new Date().getFullYear(), modelName: 'HYUNDAI', trimName: '' };
-  const yearMatch = summary.match(/\b(20\d{2})\b/);
-  const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
-  const parts = summary.split('·').map((p) => p.trim());
-  const modelPart = parts[0]?.replace(/^\d{4}\s*/, '').trim() || summary;
-  const trimPart = parts[1] || '';
-  return { year, modelName: modelPart || 'HYUNDAI', trimName: trimPart };
-}
-
 function buildAddLeadAssetBody(
   lead: LeadRecordForHyundai,
   vendor: Vendor,
-  cmoEmpNo: string
+  cmoEmpNo: string,
+  asset: ResolvedLeadAsset
 ): Record<string, unknown> {
-  const { year, modelName, trimName } = parseVehicleSummary(lead.vehicleSummary);
   const price = lead.otrPrice ?? 0;
 
   return {
     SerialNo1: null,
     SerialNo2: null,
     AssetLv1Code: 'HYUNDAI',
-    AssetLv2Code: '4U',
-    AssetLv2Name: modelName.slice(0, 100),
-    AssetLv3Code: '',
-    AssetLv3Name: trimName || modelName,
-    ManufacturingYear: String(year),
+    AssetLv2Code: asset.modelCode,
+    AssetLv2Name: asset.modelName.slice(0, 100),
+    AssetLv3Code: asset.fscCode,
+    AssetLv3Name: asset.trimName || asset.modelName,
+    ManufacturingYear: String(asset.manufacturingYear),
     AssetPriceAmt: price,
     OriOfficeName: vendor.OriOfficeName,
     OriOfficeCode: vendor.OriOfficeCode,
@@ -133,10 +88,10 @@ function buildAddLeadAssetBody(
     OriSupplierCode: vendor.VendorCode,
     SupplierEmpNo: cmoEmpNo,
     MrAssetUsageCode: 'NON_COMM',
-    MrAssetInteriorCode: '',
-    MrAssetInteriorName: '',
-    MrAssetExteriorCode: '',
-    MrAssetExteriorName: '',
+    MrAssetInteriorCode: asset.interiorColorCode,
+    MrAssetInteriorName: asset.interiorColorName,
+    MrAssetExteriorCode: asset.exteriorColorCode,
+    MrAssetExteriorName: asset.exteriorColorName,
     AssetDiscAmt: 0,
     AdditionalItemPriceAmt: 0,
     AdditionalItemName: '',
@@ -247,9 +202,15 @@ export async function submitLeadToHyundai(params: {
   cmoEmpNo: string;
   cmoName: string;
 }): Promise<{ leadNo: string }> {
+  const resolvedAsset = await resolveLeadAsset({
+    dealerCode: params.vendor.VendorCode,
+    vehicleSummary: params.lead.vehicleSummary,
+    snapshot: params.lead.assetSnapshot,
+  });
+
   const assetRes = await hyundaiPost<HyundaiApiEnvelope>(
     '/v1/IntegrationWebsite/AddLeadAsset',
-    buildAddLeadAssetBody(params.lead, params.vendor, params.cmoEmpNo)
+    buildAddLeadAssetBody(params.lead, params.vendor, params.cmoEmpNo, resolvedAsset)
   );
 
   const leadNo = assetRes.TrxNo;
@@ -287,7 +248,6 @@ export async function submitLeadToHyundai(params: {
         status: 'FAILED',
         errorMessage: msg,
       });
-      // Continue with form-only data if OCR fails
     }
   }
 

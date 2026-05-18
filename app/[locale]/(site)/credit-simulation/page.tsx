@@ -11,6 +11,7 @@ import { PriceStep } from '@/app/components/simulation/PriceStep';
 import { ResultStep } from '@/app/components/simulation/ResultStep';
 import { SimulationSidebar } from '@/app/components/simulation/SimulationSidebar';
 import type { Vendor, AssetMaster, ProductCalculation } from '@/app/types/credit-simulation';
+import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
@@ -107,6 +108,25 @@ export default function SimulasiKreditPage() {
   const handleProductSelect = (product: ProductCalculation) => {
     setSelectedProduct(product);
   };
+
+  const leadAssetSnapshot: LeadAssetSnapshot | null =
+    selectedAsset &&
+    specs.manufacturingYear &&
+    specs.fscCode &&
+    specs.exteriorColorCode &&
+    specs.interiorColorCode
+      ? {
+          modelCode: selectedAsset.AssetCode,
+          modelName: selectedAsset.AssetName,
+          manufacturingYear: specs.manufacturingYear,
+          fscCode: specs.fscCode,
+          trimName: specs.trimName || '',
+          exteriorColorCode: specs.exteriorColorCode,
+          exteriorColorName: specs.exteriorColorName || '',
+          interiorColorCode: specs.interiorColorCode,
+          interiorColorName: specs.interiorColorName || '',
+        }
+      : null;
 
   const goToStep = (step: Step) => {
     setCurrentStep(step);
@@ -249,6 +269,7 @@ export default function SimulasiKreditPage() {
                           }
                         : undefined
                     }
+                    assetSnapshot={leadAssetSnapshot}
                     onSelectProduct={handleProductSelect}
                   />
                 )}

@@ -31,7 +31,7 @@ interface LeadAssignRowProps {
 }
 
 const selectClass =
-  'w-full min-w-[9rem] px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed';
+  'w-full min-w-[9rem] px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer';
 
 export function LeadAssignRow({
   lead,
@@ -50,7 +50,7 @@ export function LeadAssignRow({
   const [salesPersons, setSalesPersons] = useState<HyundaiKeyValue[]>([]);
   const [cmoLoading, setCmoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(lead.hyundaiAssignError);
+  const [error, setError] = useState<string | null>(lead.hyundaiAssignError ?? null);
 
   const cities = useMemo(
     () => Array.from(new Set(vendors.map((v) => v.City).filter(Boolean))).sort(),
@@ -243,7 +243,7 @@ export function LeadAssignRow({
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit || submitting || !selection.vendorCode || !selection.cmoEmpNo}
-          className="w-full min-w-[5rem] px-2 py-1.5 bg-[#002c5f] text-white rounded-lg text-xs font-semibold hover:bg-[#002c5f]/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full min-w-[5rem] px-2 py-1.5 bg-[#002c5f] text-white rounded-lg text-xs font-semibold hover:bg-[#002c5f]/90 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
         >
           {submitting ? '...' : 'SUBMIT'}
         </button>

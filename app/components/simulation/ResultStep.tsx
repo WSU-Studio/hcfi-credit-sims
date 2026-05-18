@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProductCalculation, Vendor } from '@/app/types/credit-simulation';
+import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import { IconBrandWhatsapp, IconFileDescription, IconSend } from '@tabler/icons-react';
 import {
   SimulationSummaryModal,
@@ -19,12 +20,13 @@ interface ResultStepProps {
   otrPrice?: number;
   discount?: number;
   vehicle?: VehicleSummaryInfo;
+  assetSnapshot?: LeadAssetSnapshot | null;
   dealer?: Vendor | null;
   userLocation?: UserLocation;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, dealer, userLocation, onSelectProduct }: ResultStepProps) {
+export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnapshot, dealer, userLocation, onSelectProduct }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
@@ -457,6 +459,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, dealer, us
                         .join(' · ')
                     : undefined
                 }
+                assetSnapshot={assetSnapshot}
               />
             </div>
           )}

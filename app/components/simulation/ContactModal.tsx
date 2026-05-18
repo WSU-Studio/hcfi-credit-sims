@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
 import type { Vendor } from '@/app/types/credit-simulation';
+import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 
 export type UserLocation = { latitude: number; longitude: number } | null;
 
@@ -15,6 +16,7 @@ interface ContactModalProps {
   dpPercent?: number;
   tenor?: number;
   vehicleSummary?: string;
+  assetSnapshot?: LeadAssetSnapshot | null;
   dealer?: Vendor | null;
   userLocation?: UserLocation; // Fallback jika sudah di-capture di parent
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
@@ -28,6 +30,7 @@ export function ContactModal({
   dpPercent,
   tenor,
   vehicleSummary,
+  assetSnapshot,
   dealer,
   userLocation,
   onSubmit,
@@ -167,6 +170,7 @@ export function ContactModal({
           email: email.trim(),
           productName: productName || null,
           vehicleSummary: vehicleSummary || null,
+          assetSnapshot: assetSnapshot || null,
           vendorCode: dealer?.VendorCode ?? null,
           vendorName: dealer?.VendorName ?? null,
           vendorCity: dealer?.City ?? null,

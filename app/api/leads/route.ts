@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       email,
       productName,
       vehicleSummary,
+      assetSnapshot,
       vendorCode,
       vendorName,
       vendorCity,
@@ -76,6 +77,10 @@ export async function POST(request: NextRequest) {
         email: String(email).trim(),
         productName: productName ? String(productName).trim() : null,
         vehicleSummary: vehicleSummary ? String(vehicleSummary).trim() : null,
+        assetSnapshot:
+          assetSnapshot && typeof assetSnapshot === 'object'
+            ? (assetSnapshot as object)
+            : null,
         vendorCode: vendorCode ? String(vendorCode).trim() : null,
         vendorName: vendorName ? String(vendorName).trim() : null,
         vendorCity: vendorCity ? String(vendorCity).trim() : null,
