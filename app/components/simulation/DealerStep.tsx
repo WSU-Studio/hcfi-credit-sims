@@ -42,8 +42,8 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
     [vendors, selectedCity]
   );
 
-  const handleCityClick = (city: string) => {
-    if (city === selectedCity) return;
+  const handleCityChange = (city: string) => {
+    if (!city || city === selectedCity) return;
     setSelectedCity(city);
     const inCity = sortDealers(vendors.filter((v) => v.City === city));
     setLocalDealer(inCity[0] ?? null);
@@ -97,37 +97,44 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
 
       <div className="space-y-8">
         <div>
-          <label className="block text-sm font-medium mb-3">
+          <label htmlFor="dealer-city" className="block text-sm font-medium mb-2">
             {t('selectCity')} <span className="text-red-500">*</span>
           </label>
           {loading ? (
-            <div className="flex flex-wrap gap-3 py-4">
-              <div className="h-10 w-24 rounded-lg bg-gray-200 animate-pulse" />
-              <div className="h-10 w-28 rounded-lg bg-gray-200 animate-pulse" />
-              <div className="h-10 w-20 rounded-lg bg-gray-200 animate-pulse" />
-              <p className="w-full mt-2 text-sm text-[var(--muted)]">
-                {t('loadingDealers')}
-              </p>
-            </div>
+            <div className="h-11 rounded-lg bg-gray-200 animate-pulse" aria-hidden />
           ) : cities.length === 0 ? (
             <p className="py-4 text-[var(--muted)]">{t('noCities')}</p>
           ) : (
-            <div className="flex flex-wrap gap-3">
+            <select
+              id="dealer-city"
+              value={selectedCity}
+              onChange={(e) => handleCityChange(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] transition cursor-pointer"
+            >
+              <option value="">{t('selectCityPlaceholder')}</option>
               {cities.map((city) => (
-                <button
-                  key={city}
-                  type="button"
-                  onClick={() => handleCityClick(city)}
-                  className={`px-5 py-3 rounded-lg border-2 font-medium transition-colors cursor-pointer ${
-                    selectedCity === city
-                      ? 'border-[#002c5f] bg-[#002c5f] text-white ring-2 ring-[#002c5f]/40 ring-offset-2'
-                      : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:bg-gray-50 text-gray-700'
-                  }`}
-                >
+                <option key={city} value={city}>
                   {city}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
+            // {cities.map((city) => (
+            //   <button
+            //     key={city}
+            //     type="button"
+            //     onClick={() => handleCityClick(city)}
+            //     className={`px-5 py-3 rounded-lg border-2 font-medium transition-colors cursor-pointer ${
+            //       selectedCity === city
+            //         ? 'border-[#002c5f] bg-[#002c5f] text-white ring-2 ring-[#002c5f]/40 ring-offset-2'
+            //         : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:bg-gray-50 text-gray-700'
+            //     }`}
+            //   >
+            //     {city}
+            //   </button>
+            // ))}
+          )}
+          {loading && (
+            <p className="mt-1.5 text-sm text-[var(--muted)]">{t('loadingDealers')}</p>
           )}
         </div>
 

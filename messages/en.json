@@ -69,6 +69,7 @@
     "dealerStepTitle": "Select Dealer",
     "dealerStepDescription": "Choose a city and dealer to continue the simulation",
     "selectCity": "Select City",
+    "selectCityPlaceholder": "Select a city",
     "selectDealer": "Select Dealer",
     "loadingDealers": "Loading dealers...",
     "noCities": "No cities available",

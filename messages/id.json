@@ -69,6 +69,7 @@
     "dealerStepTitle": "Pilih Dealer",
     "dealerStepDescription": "Pilih kota dan dealer untuk melanjutkan simulasi",
     "selectCity": "Pilih Kota",
+    "selectCityPlaceholder": "Pilih kota",
     "selectDealer": "Pilih Dealer",
     "loadingDealers": "Mengambil daftar dealer...",
     "noCities": "Tidak ada kota tersedia",
