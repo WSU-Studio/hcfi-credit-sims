@@ -235,6 +235,7 @@ export default function SimulasiKreditPage() {
                     leadNo={leadNo || undefined}
                     otrPrice={otrPrice ?? undefined}
                     discount={discount}
+                    dealer={selectedDealer}
                     userLocation={userLocation}
                     vehicle={
                       specs.trimName || specs.exteriorColorName || specs.interiorColorName

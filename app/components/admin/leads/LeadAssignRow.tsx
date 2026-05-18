@@ -14,6 +14,7 @@ export type LeadForAssign = {
   id: string;
   vendorCode?: string | null;
   vendorName?: string | null;
+  vendorCity?: string | null;
   cmoEmpNo?: string | null;
   cmoName?: string | null;
   hyundaiLeadNo?: string | null;
@@ -59,11 +60,15 @@ export function LeadAssignRow({
   const [selectedCity, setSelectedCity] = useState('');
 
   useEffect(() => {
+    if (lead.vendorCity) {
+      setSelectedCity(lead.vendorCity);
+      return;
+    }
     if (lead.vendorCode && vendors.length > 0) {
       const vendor = vendors.find((v) => v.VendorCode === lead.vendorCode);
       if (vendor?.City) setSelectedCity(vendor.City);
     }
-  }, [lead.vendorCode, vendors]);
+  }, [lead.vendorCode, lead.vendorCity, vendors]);
 
   const dealersInCity = useMemo(() => {
     if (!selectedCity) return [];

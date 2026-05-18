@@ -27,6 +27,7 @@ type Lead = {
   status: string;
   vendorCode?: string | null;
   vendorName?: string | null;
+  vendorCity?: string | null;
   cmoEmpNo?: string | null;
   cmoName?: string | null;
   hyundaiLeadNo?: string | null;

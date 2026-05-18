@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
+import type { Vendor } from '@/app/types/credit-simulation';
 
 export type UserLocation = { latitude: number; longitude: number } | null;
 
@@ -14,6 +15,7 @@ interface ContactModalProps {
   dpPercent?: number;
   tenor?: number;
   vehicleSummary?: string;
+  dealer?: Vendor | null;
   userLocation?: UserLocation; // Fallback jika sudah di-capture di parent
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
 }
@@ -26,6 +28,7 @@ export function ContactModal({
   dpPercent,
   tenor,
   vehicleSummary,
+  dealer,
   userLocation,
   onSubmit,
 }: ContactModalProps) {
@@ -164,6 +167,11 @@ export function ContactModal({
           email: email.trim(),
           productName: productName || null,
           vehicleSummary: vehicleSummary || null,
+          vendorCode: dealer?.VendorCode ?? null,
+          vendorName: dealer?.VendorName ?? null,
+          vendorCity: dealer?.City ?? null,
+          oriOfficeCode: dealer?.OriOfficeCode ?? null,
+          oriOfficeName: dealer?.OriOfficeName ?? null,
           otrPrice: otrPrice || null,
           dpPercent: dpPercent || null,
           tenor: tenor || null,
@@ -221,7 +229,7 @@ export function ContactModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {(productName || vehicleSummary) && (
+          {(productName || vehicleSummary || dealer) && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               {productName && (
                 <p className="text-sm text-gray-600">
@@ -231,6 +239,11 @@ export function ContactModal({
               {vehicleSummary && (
                 <p className="mt-1 text-xs text-gray-600">
                   <span className="font-medium">Kendaraan:</span> {vehicleSummary}
+                </p>
+              )}
+              {dealer && (
+                <p className="mt-1 text-xs text-gray-600">
+                  <span className="font-medium">Dealer:</span> {dealer.City}, {dealer.VendorName}
                 </p>
               )}
             </div>
