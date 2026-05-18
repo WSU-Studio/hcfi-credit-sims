@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
-import { IconBrandWhatsapp, IconFileDescription, IconHeartHandshake, IconSend } from '@tabler/icons-react';
+import { IconBrandWhatsapp, IconFileDescription, IconSend } from '@tabler/icons-react';
 import {
   SimulationSummaryModal,
   type VehicleSummaryInfo,
 } from '@/app/components/simulation/SimulationSummaryModal';
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
+import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -41,6 +42,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
+  const fetchListGeneration = useRef(0);
 
   const products = tab === 'Standard' ? listStandard : listPromo;
 
@@ -82,6 +84,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
   }, [firstInstallment, selectedProduct?.ProductCode, selectedProduct?.ProductName, dpPercent]);
 
   const fetchList = async () => {
+    const generation = ++fetchListGeneration.current;
     setLoading(true);
     setError(null);
     try {
@@ -91,6 +94,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
         body: JSON.stringify({ LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
       });
       const data = await res.json();
+      if (generation !== fetchListGeneration.current) return;
       if (!res.ok) throw new Error(data.error || t('errorLoadProducts'));
       setListStandard(data.ListDefaultStandardProductObj ?? []);
       setListPromo(data.ListDefaultPromotionProductObj ?? []);
@@ -100,9 +104,12 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
         setDpPercent((prev) => (prev === 10 ? first.DPPrcnt : prev));
       }
     } catch (e) {
+      if (generation !== fetchListGeneration.current) return;
       setError(e instanceof Error ? e.message : t('errorLoadProducts'));
     } finally {
-      setLoading(false);
+      if (generation === fetchListGeneration.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -155,10 +162,15 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
 
   if (error) {
     return (
-      <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-gray-900">
-        <div className="text-red-700 font-semibold mb-2">Error</div>
-        <div className="text-red-600">{error}</div>
-      </div>
+      <SimulationRetryError
+        title={t('errorTitle')}
+        message={error}
+        hint={t('errorRetryHint')}
+        secondaryHint={t('errorRetrySecondaryHint')}
+        retryLabel={loading ? t('loadingProducts') : t('retryLoad')}
+        onRetry={fetchList}
+        retrying={loading}
+      />
     );
   }
 
@@ -309,9 +321,15 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
           )}
 
           {simulateError && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-              {simulateError}
-            </div>
+            <SimulationRetryError
+              compact
+              title={t('errorCalculate')}
+              message={simulateError}
+              hint={t('errorRetryHint')}
+              retryLabel={simulateLoading ? t('calculating') : t('retryCalculate')}
+              onRetry={handleCalculate}
+              retrying={simulateLoading}
+            />
           )}
 
           {/* Table */}

@@ -275,7 +275,7 @@ export default function SimulasiKreditPage() {
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 md:p-8 shadow-lg">
               {currentStep === 1 && (
                 <DealerStep
-                  onSelect={handleDealerSelect}
+                  onContinue={handleDealerSelect}
                   selectedDealer={selectedDealer}
                 />
               )}
