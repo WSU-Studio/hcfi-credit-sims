@@ -344,5 +344,37 @@ model Lead {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  ocrResults  LeadOcrResult[]
+
   @@map("leads")
+}
+
+model LeadOcrResult {
+  id               String   @id @default(uuid())
+  leadId           String
+  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  hyundaiLeadNo    String?
+  ktpFileName      String?
+  status           String   @default("SUCCESS")
+  errorMessage     String?  @db.Text
+  rawResponse      Json?
+  nik              String?
+  nama             String?
+  tempatLahir      String?
+  tanggalLahir     String?
+  jenisKelamin     String?
+  alamat           String?
+  kotaKabupaten    String?
+  kecamatan        String?
+  kelurahanDesa    String?
+  zipCode          String?
+  agama            String?
+  statusPerkawinan String?
+  mrNationalityCode String?
+  addLeadCustPayload Json?
+  createdAt        DateTime @default(now())
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("lead_ocr_results")
 }
