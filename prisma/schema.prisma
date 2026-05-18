@@ -332,6 +332,7 @@ model Lead {
   status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
   vendorCode          String?
   vendorName          String?
+  vendorCity          String?
   oriOfficeCode       String?
   oriOfficeName       String?
   cmoEmpNo            String?
