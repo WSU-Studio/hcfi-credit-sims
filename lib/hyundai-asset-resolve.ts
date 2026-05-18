@@ -110,8 +110,19 @@ export async function resolveLeadAsset(params: {
   dealerCode: string;
   vehicleSummary: string | null;
   snapshot?: LeadAssetSnapshot | null;
+  /** When set and differs from dealerCode, snapshot is ignored (admin changed dealer). */
+  simulationVendorCode?: string | null;
 }): Promise<ResolvedLeadAsset> {
-  if (params.snapshot?.fscCode && params.snapshot.exteriorColorCode && params.snapshot.interiorColorCode) {
+  const snapshotMatchesDealer =
+    !params.simulationVendorCode ||
+    params.simulationVendorCode === params.dealerCode;
+
+  if (
+    snapshotMatchesDealer &&
+    params.snapshot?.fscCode &&
+    params.snapshot.exteriorColorCode &&
+    params.snapshot.interiorColorCode
+  ) {
     return {
       modelCode: params.snapshot.modelCode,
       modelName: params.snapshot.modelName,

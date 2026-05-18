@@ -1,6 +1,7 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
- * Flow: AddLeadAsset → OCR KTP → AddLeadCust → ForwardLeadToCMO
+ * Flow: AddLeadAsset → bootstrap finansial → OCR KTP → AddLeadCust
+ * (ForwardLeadToCMO tidak dipakai — assignment CMO via SupplierEmpNo di AddLeadAsset)
  */
 
 import { prisma } from '@/lib/prisma';
@@ -14,6 +15,11 @@ import {
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
+import { resolveAssetPriceAmt, verifyLeadAssetExists } from '@/lib/hyundai-asset-price';
+import { bootstrapLeadFinancialAndInsurance } from '@/lib/hyundai-lead-financial';
+import { integrationRequestBody } from '@/lib/hyundai-integration-request';
+import { syncLeadAssetInsurance } from '@/lib/hyundai-insurance';
+import { resolveDefaultOemAccessories, type ResolvedOemAccessories } from '@/lib/hyundai-oem-accessory';
 import {
   resolveCustomerLocation,
   type HyundaiCustomerLocation,
@@ -31,10 +37,6 @@ const HOME_OWNERSHIP_MAP: Record<string, string> = {
   COMPANY: 'COMPANY',
   OTHER: 'OTHER',
 };
-
-function hyundaiNow(): string {
-  return new Date().toISOString();
-}
 
 export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
   const data = await hyundaiPost<{ ReturnObject?: Vendor[] }>(
@@ -60,7 +62,10 @@ export type LeadRecordForHyundai = {
   productName: string | null;
   vehicleSummary: string | null;
   assetSnapshot?: LeadAssetSnapshot | null;
+  vendorCode?: string | null;
   otrPrice: number | null;
+  dpPercent: number | null;
+  tenor: number | null;
   motherName: string | null;
   homeOwnershipStatus: string | null;
   citizenType: string | null;
@@ -69,13 +74,12 @@ export type LeadRecordForHyundai = {
 };
 
 function buildAddLeadAssetBody(
-  lead: LeadRecordForHyundai,
   vendor: Vendor,
   cmoEmpNo: string,
-  asset: ResolvedLeadAsset
+  asset: ResolvedLeadAsset,
+  oem: ResolvedOemAccessories,
+  assetPriceAmt: number
 ): Record<string, unknown> {
-  const price = lead.otrPrice ?? 0;
-
   return {
     SerialNo1: null,
     SerialNo2: null,
@@ -85,7 +89,7 @@ function buildAddLeadAssetBody(
     AssetLv3Code: asset.fscCode,
     AssetLv3Name: asset.trimName || asset.modelName,
     ManufacturingYear: String(asset.manufacturingYear),
-    AssetPriceAmt: price,
+    AssetPriceAmt: assetPriceAmt,
     OriOfficeName: vendor.OriOfficeName,
     OriOfficeCode: vendor.OriOfficeCode,
     OriSupplierName: vendor.VendorName,
@@ -99,11 +103,11 @@ function buildAddLeadAssetBody(
     AssetDiscAmt: 0,
     AdditionalItemPriceAmt: 0,
     AdditionalItemName: '',
-    ListMrAssetOEMAccessoryCode: [],
+    ListMrAssetOEMAccessoryCode: oem.codes,
     OEMWarrantyCode: '',
     OEMWarrantyName: '',
     OEMWarrantyPriceAmt: 0,
-    listAssetOEMAccessory: [],
+    listAssetOEMAccessory: oem.list,
   };
 }
 
@@ -121,9 +125,7 @@ function buildAddLeadCustBody(
     ? HOME_OWNERSHIP_MAP[lead.homeOwnershipStatus.toUpperCase()] ?? 'OTHER'
     : 'OTHER';
 
-  const body: Record<string, unknown> = {
-    requestDateTime: hyundaiNow(),
-    rowVersion: '',
+  const body: Record<string, unknown> = integrationRequestBody({
     LeadNo: leadNo,
     IdNo: ocr?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000',
     CustName: (ocr?.nama || lead.name).trim(),
@@ -152,7 +154,7 @@ function buildAddLeadCustBody(
     MotherMaidenName: lead.motherName || '-',
     MrEducationCode: 'S1',
     NumOfDependent: '0',
-  };
+  }) as Record<string, unknown>;
 
   if (ktpFile?.base64) {
     body.IdFile = {
@@ -211,17 +213,47 @@ export async function submitLeadToHyundai(params: {
     dealerCode: params.vendor.VendorCode,
     vehicleSummary: params.lead.vehicleSummary,
     snapshot: params.lead.assetSnapshot,
+    simulationVendorCode: params.lead.vendorCode,
+  });
+
+  if (!params.lead.otrPrice || params.lead.otrPrice <= 0) {
+    throw new Error('Lead tidak memiliki harga OTR. Data simulasi tidak lengkap.');
+  }
+
+  const oemAccessories = await resolveDefaultOemAccessories(resolvedAsset.modelCode);
+
+  const assetPriceAmt = await resolveAssetPriceAmt({
+    asset: resolvedAsset,
+    dealerCode: params.vendor.VendorCode,
+    oem: oemAccessories,
+    fallbackOtr: params.lead.otrPrice,
   });
 
   const assetRes = await hyundaiPost<HyundaiApiEnvelope>(
     '/v1/IntegrationWebsite/AddLeadAsset',
-    buildAddLeadAssetBody(params.lead, params.vendor, params.cmoEmpNo, resolvedAsset)
+    buildAddLeadAssetBody(
+      params.vendor,
+      params.cmoEmpNo,
+      resolvedAsset,
+      oemAccessories,
+      assetPriceAmt
+    )
   );
 
   const leadNo = assetRes.TrxNo;
   if (!leadNo) {
     throw new Error('AddLeadAsset did not return LeadNo (TrxNo)');
   }
+
+  await verifyLeadAssetExists(leadNo);
+
+  await bootstrapLeadFinancialAndInsurance({
+    leadNo,
+    otrPrice: params.lead.otrPrice ?? 0,
+    dpPercent: params.lead.dpPercent ?? 10,
+    tenor: params.lead.tenor ?? 36,
+    productName: params.lead.productName,
+  });
 
   let ocrRead: OcrKtpRead | null = null;
   let ktpFile: { fileName: string; base64: string } | undefined;
@@ -261,6 +293,14 @@ export async function submitLeadToHyundai(params: {
     vendorZipCode: params.vendor.ZipCode,
   });
 
+  const idNo = ocrRead?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000';
+  await syncLeadAssetInsurance({
+    leadNo,
+    location: customerLocation,
+    idNo,
+    vendorCity: params.vendor.City,
+  });
+
   const addLeadCustPayload = buildAddLeadCustBody(
     params.lead,
     leadNo,
@@ -281,14 +321,6 @@ export async function submitLeadToHyundai(params: {
       data: { addLeadCustPayload: addLeadCustPayload as object },
     });
   }
-
-  await hyundaiPost('/v1/IntegrationWebsite/ForwardLeadToCMO', {
-    requestDateTime: hyundaiNow(),
-    rowVersion: '',
-    LeadNo: leadNo,
-    CustName: (ocrRead?.nama || params.lead.name).trim(),
-    MobilePhnNo: params.lead.phone.replace(/\D/g, '').slice(0, 15),
-  });
 
   return { leadNo };
 }
