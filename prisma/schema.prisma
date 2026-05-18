@@ -312,6 +312,7 @@ model Lead {
   email       String
   productName String?
   vehicleSummary String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
+  assetSnapshot  Json?   // Kode model/trim/warna untuk Hyundai AddLeadAsset
   otrPrice    Float?
   discount    Float?   // Potongan harga (nominal)
   dpPercent   Float?
