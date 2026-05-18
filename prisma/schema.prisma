@@ -330,6 +330,16 @@ model Lead {
   slikResultDescr     String?
   slikRawResponse     Json?
   status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
+  vendorCode          String?
+  vendorName          String?
+  oriOfficeCode       String?
+  oriOfficeName       String?
+  cmoEmpNo            String?
+  cmoName             String?
+  hyundaiLeadNo       String?
+  hyundaiAssignStatus String   @default("PENDING") // PENDING, SUBMITTED, FAILED
+  hyundaiAssignError  String?  @db.Text
+  hyundaiAssignedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
