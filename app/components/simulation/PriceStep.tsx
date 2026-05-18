@@ -89,11 +89,11 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
           >
             {otrPrice > 0 ? formatPrice(otrPrice) : '-'}
           </div>
-          {suggestedPrice && (
+          {/* {suggestedPrice && (
             <p className="mt-1 text-xs text-gray-500">
               {t('priceHint')}
             </p>
-          )}
+          )} */}
           {error && (
             <p id="otr-error" className="mt-2 text-sm text-red-600" role="alert">
               {error}
@@ -113,9 +113,9 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
             placeholder={t('discountPlaceholder')}
             className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent"
           />
-          <p className="mt-1 text-xs text-gray-500">
+          {/* <p className="mt-1 text-xs text-gray-500">
             {t('discountHint', { percent: Math.round(MAX_DISCOUNT_PERCENT * 100) })}
-          </p>
+          </p> */}
         </div>
 
         <button

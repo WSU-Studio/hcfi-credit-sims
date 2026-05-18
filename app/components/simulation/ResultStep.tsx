@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
-import { IconBrandWhatsapp, IconFileDescription, IconHeartHandshake } from '@tabler/icons-react';
+import { IconBrandWhatsapp, IconFileDescription, IconHeartHandshake, IconSend } from '@tabler/icons-react';
 import {
   SimulationSummaryModal,
   type VehicleSummaryInfo,
@@ -396,7 +396,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, userLocati
                   onClick={() => setContactOpen(true)}
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
-                  <IconHeartHandshake size={20} />
+                  <IconSend size={20} />
                   {t('contact')}
                 </button>
                 <button
