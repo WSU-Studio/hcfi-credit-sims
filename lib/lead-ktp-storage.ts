@@ -1,18 +1,6 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { getS3Bucket, getS3Client } from '@/lib/s3-client';
 import { extractBucketAndKeyFromS3Url, isLeadKtpS3Key } from '@/lib/s3-url';
-
-function getS3Client(): S3Client {
-  const region = process.env.AWS_REGION;
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  if (!region || !accessKeyId || !secretAccessKey) {
-    throw new Error('Missing AWS env for S3');
-  }
-  return new S3Client({
-    region,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-}
 
 async function bodyToBuffer(body: unknown): Promise<Buffer> {
   if (!body) throw new Error('Empty S3 body');
@@ -31,8 +19,7 @@ export async function fetchLeadKtpFromS3(ktpUrl: string): Promise<{
   fileName: string;
   base64: string;
 }> {
-  const bucket = process.env.AWS_S3_BUCKET?.trim();
-  if (!bucket) throw new Error('AWS_S3_BUCKET not configured');
+  const bucket = getS3Bucket();
 
   const parsed = extractBucketAndKeyFromS3Url(ktpUrl.trim());
   if (!parsed || parsed.bucket !== bucket || !isLeadKtpS3Key(parsed.key)) {
