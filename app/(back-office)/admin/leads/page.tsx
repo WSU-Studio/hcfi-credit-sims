@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
@@ -28,6 +29,12 @@ export default async function LeadsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
           <p className="text-sm text-gray-500 mt-1">Data kontak dari simulasi kredit</p>
+          <Link
+            href="/admin/lead-ocr"
+            className="text-sm text-blue-600 hover:text-blue-800 mt-2 inline-block"
+          >
+            Lihat hasil OCR KTP →
+          </Link>
         </div>
       </div>
       <LeadsTable />

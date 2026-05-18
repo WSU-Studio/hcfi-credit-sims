@@ -63,6 +63,7 @@ export async function POST(
         homeOwnershipStatus: lead.homeOwnershipStatus,
         citizenType: lead.citizenType,
         notes: lead.notes,
+        ktpUrl: lead.ktpUrl,
       },
       vendor,
       cmoEmpNo,

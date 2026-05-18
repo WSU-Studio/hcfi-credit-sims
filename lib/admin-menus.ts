@@ -16,9 +16,10 @@ export const ADMIN_MENUS: AdminMenuConfig[] = [
   { code: 'ARTICLES', name: 'Article Management', path: '/admin/articles', order: 7 },
   { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', order: 8 },
   { code: 'LEADS', name: 'Leads', path: '/admin/leads', order: 9 },
-  { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 10 },
-  { code: 'VEHICLE_MODELS', name: 'Vehicle Model Images', path: '/admin/vehicle-models', order: 11 },
-  { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 12 },
-  { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 13 },
+  { code: 'LEAD_OCR', name: 'Hasil OCR KTP', path: '/admin/lead-ocr', order: 10 },
+  { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 11 },
+  { code: 'VEHICLE_MODELS', name: 'Vehicle Model Images', path: '/admin/vehicle-models', order: 12 },
+  { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 13 },
+  { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 14 },
 ];
 

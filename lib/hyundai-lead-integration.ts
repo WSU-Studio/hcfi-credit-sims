@@ -1,8 +1,17 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
- * Flow: AddLeadAsset → AddLeadCust → ForwardLeadToCMO
+ * Flow: AddLeadAsset → OCR KTP → AddLeadCust → ForwardLeadToCMO
  */
 
+import { prisma } from '@/lib/prisma';
+import { fetchLeadKtpFromS3 } from '@/lib/lead-ktp-storage';
+import {
+  getOcrKtpData,
+  mapGender,
+  mapMarital,
+  normalizeBirthDate,
+  type OcrKtpRead,
+} from '@/lib/hyundai-ocr';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -87,6 +96,7 @@ export type LeadRecordForHyundai = {
   homeOwnershipStatus: string | null;
   citizenType: string | null;
   notes: string | null;
+  ktpUrl: string | null;
 };
 
 function parseVehicleSummary(summary: string | null) {
@@ -138,33 +148,39 @@ function buildAddLeadAssetBody(
   };
 }
 
-function buildAddLeadCustBody(lead: LeadRecordForHyundai, leadNo: string): Record<string, unknown> {
+function buildAddLeadCustBody(
+  lead: LeadRecordForHyundai,
+  leadNo: string,
+  ocr: OcrKtpRead | null,
+  ktpFile?: { fileName: string; base64: string }
+): Record<string, unknown> {
   const nationality =
-    lead.citizenType === 'FOREIGNER' ? 'FOREIGNER' : 'LOCAL';
+    ocr?.mrNationalityCode ||
+    (lead.citizenType === 'FOREIGNER' ? 'FOREIGNER' : 'LOCAL');
   const houseCode = lead.homeOwnershipStatus
     ? HOME_OWNERSHIP_MAP[lead.homeOwnershipStatus.toUpperCase()] ?? 'OTHER'
     : 'OTHER';
 
-  return {
+  const body: Record<string, unknown> = {
     requestDateTime: hyundaiNow(),
     rowVersion: '',
     LeadNo: leadNo,
-    IdNo: '0000000000000000',
-    CustName: lead.name,
-    BirthPlace: '-',
-    BirthDt: '1990-01-01',
-    MrGenderCode: 'MALE',
-    MrMaritalStatCode: 'SINGLE',
-    MrReligionCode: 'ISLAM',
+    IdNo: ocr?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000',
+    CustName: (ocr?.nama || lead.name).trim(),
+    BirthPlace: ocr?.tempatLahir || '-',
+    BirthDt: normalizeBirthDate(ocr?.tanggalLahir),
+    MrGenderCode: mapGender(ocr?.jenisKelamin),
+    MrMaritalStatCode: mapMarital(ocr?.statusPerkawinan),
+    MrReligionCode: (ocr?.agama || 'ISLAM').toUpperCase(),
     MrNationalityCode: nationality,
     NationalityCountryCode: 'ID',
-    Addr: '-',
-    AreaCode4: '001',
-    AreaCode3: '001',
-    ZipCode: '00000',
-    AreaCode2: '-',
-    AreaCode1: '-',
-    City: '-',
+    Addr: ocr?.alamat || '-',
+    AreaCode4: ocr?.Rt || '001',
+    AreaCode3: ocr?.Rw || '001',
+    ZipCode: ocr?.Zipcode || '00000',
+    AreaCode2: ocr?.kelurahanDesa || '-',
+    AreaCode1: ocr?.kecamatan || '-',
+    City: ocr?.kotaKabupaten || '-',
     MrHouseOwnershipCode: houseCode,
     Notes: lead.notes || lead.productName || '',
     IsFamily: false,
@@ -177,6 +193,52 @@ function buildAddLeadCustBody(lead: LeadRecordForHyundai, leadNo: string): Recor
     MrEducationCode: 'S1',
     NumOfDependent: '0',
   };
+
+  if (ktpFile?.base64) {
+    body.IdFile = {
+      FileName: ktpFile.fileName,
+      Content: ktpFile.base64,
+    };
+  }
+
+  return body;
+}
+
+async function persistOcrResult(params: {
+  leadId: string;
+  hyundaiLeadNo: string;
+  ktpFileName?: string;
+  status: 'SUCCESS' | 'FAILED';
+  errorMessage?: string;
+  rawResponse?: unknown;
+  read?: OcrKtpRead | null;
+  addLeadCustPayload?: Record<string, unknown>;
+}) {
+  const r = params.read;
+  return prisma.leadOcrResult.create({
+    data: {
+      leadId: params.leadId,
+      hyundaiLeadNo: params.hyundaiLeadNo,
+      ktpFileName: params.ktpFileName,
+      status: params.status,
+      errorMessage: params.errorMessage,
+      rawResponse: params.rawResponse as object | undefined,
+      nik: r?.nik ?? null,
+      nama: r?.nama ?? null,
+      tempatLahir: r?.tempatLahir ?? null,
+      tanggalLahir: r?.tanggalLahir ?? null,
+      jenisKelamin: r?.jenisKelamin ?? null,
+      alamat: r?.alamat ?? null,
+      kotaKabupaten: r?.kotaKabupaten ?? null,
+      kecamatan: r?.kecamatan ?? null,
+      kelurahanDesa: r?.kelurahanDesa ?? null,
+      zipCode: r?.Zipcode ?? null,
+      agama: r?.agama ?? null,
+      statusPerkawinan: r?.statusPerkawinan ?? null,
+      mrNationalityCode: r?.mrNationalityCode ?? null,
+      addLeadCustPayload: params.addLeadCustPayload as object | undefined,
+    },
+  });
 }
 
 export async function submitLeadToHyundai(params: {
@@ -195,16 +257,65 @@ export async function submitLeadToHyundai(params: {
     throw new Error('AddLeadAsset did not return LeadNo (TrxNo)');
   }
 
-  await hyundaiPost(
-    '/v1/IntegrationWebsite/AddLeadCust',
-    buildAddLeadCustBody(params.lead, leadNo)
+  let ocrRead: OcrKtpRead | null = null;
+  let ktpFile: { fileName: string; base64: string } | undefined;
+
+  if (params.lead.ktpUrl) {
+    try {
+      ktpFile = await fetchLeadKtpFromS3(params.lead.ktpUrl);
+      const ocrRes = await getOcrKtpData({
+        trxNo: leadNo,
+        fileName: ktpFile.fileName,
+        byteBase64: ktpFile.base64,
+      });
+      ocrRead = ocrRes.Read ?? null;
+
+      await persistOcrResult({
+        leadId: params.lead.id,
+        hyundaiLeadNo: leadNo,
+        ktpFileName: ktpFile.fileName,
+        status: 'SUCCESS',
+        rawResponse: ocrRes,
+        read: ocrRead,
+      });
+    } catch (ocrErr) {
+      const msg = ocrErr instanceof Error ? ocrErr.message : 'OCR failed';
+      await persistOcrResult({
+        leadId: params.lead.id,
+        hyundaiLeadNo: leadNo,
+        ktpFileName: ktpFile?.fileName,
+        status: 'FAILED',
+        errorMessage: msg,
+      });
+      // Continue with form-only data if OCR fails
+    }
+  }
+
+  const addLeadCustPayload = buildAddLeadCustBody(
+    params.lead,
+    leadNo,
+    ocrRead,
+    ktpFile
   );
+
+  await hyundaiPost('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload);
+
+  if (ocrRead) {
+    await prisma.leadOcrResult.updateMany({
+      where: {
+        leadId: params.lead.id,
+        hyundaiLeadNo: leadNo,
+        status: 'SUCCESS',
+      },
+      data: { addLeadCustPayload: addLeadCustPayload as object },
+    });
+  }
 
   await hyundaiPost('/v1/IntegrationWebsite/ForwardLeadToCMO', {
     requestDateTime: hyundaiNow(),
     rowVersion: '',
     LeadNo: leadNo,
-    CustName: params.lead.name,
+    CustName: (ocrRead?.nama || params.lead.name).trim(),
     MobilePhnNo: params.lead.phone.replace(/\D/g, '').slice(0, 15),
   });
 

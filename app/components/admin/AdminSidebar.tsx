@@ -18,6 +18,7 @@ import {
   IconPhone,
   IconClipboardHeart,
   IconCar,
+  IconScan,
 } from '@tabler/icons-react';
 import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
 import { AdminLink } from '@/app/components/admin/AdminLink';
@@ -35,6 +36,7 @@ const menuIcons: Record<string, ComponentType<{ size?: number }>> = {
   ARTICLES: IconNews,
   PAGES: IconFileText,
   LEADS: IconPhone,
+  LEAD_OCR: IconScan,
   FOOTER: IconSettings,
   VEHICLE_MODELS: IconCar,
   MEDIA: IconFolder,
@@ -55,7 +57,14 @@ export function AdminSidebar() {
 
   const visibleItems = useMemo(() => {
     if (loading || !permissions) return [];
-    return menuItems.filter((item) => permissions[item.code]?.canView === true);
+    return menuItems.filter((item) => {
+      if (item.code === 'LEAD_OCR') {
+        return (
+          permissions.LEAD_OCR?.canView === true || permissions.LEADS?.canView === true
+        );
+      }
+      return permissions[item.code]?.canView === true;
+    });
   }, [permissions, loading]);
 
   useEffect(() => {
