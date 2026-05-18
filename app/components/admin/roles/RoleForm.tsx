@@ -28,6 +28,10 @@ const ACTIVITIES: Activity[] = [
     id: 'leads.downloadLeads',
     name: 'Boleh mengunduh daftar Leads',
   },
+  {
+    id: 'leads.assignToCmo',
+    name: 'Boleh assign dealer & CMO lalu submit ke Hyundai',
+  },
 ];
 
 type RoleFormProps = {

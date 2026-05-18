@@ -5,6 +5,8 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
 import Link from 'next/link';
+import type { Vendor } from '@/app/types/credit-simulation';
+import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
 
 type Lead = {
   id: string;
@@ -23,6 +25,13 @@ type Lead = {
   slikStatus?: string | null;
   slikResultCode?: string | null;
   status: string;
+  vendorCode?: string | null;
+  vendorName?: string | null;
+  cmoEmpNo?: string | null;
+  cmoName?: string | null;
+  hyundaiLeadNo?: string | null;
+  hyundaiAssignStatus?: string | null;
+  hyundaiAssignError?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -49,6 +58,8 @@ export function LeadsTable() {
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
   const [ktpPreviewLeadId, setKtpPreviewLeadId] = useState<string | null>(null);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
 
   useEffect(() => {
     fetchLeads();
@@ -78,6 +89,15 @@ export function LeadsTable() {
         setCanChangeFollowUp(false);
         setCanDownloadLeads(false);
       });
+  }, []);
+
+  useEffect(() => {
+    setVendorsLoading(true);
+    fetch('/api/admin/leads/vendors')
+      .then((res) => res.json())
+      .then((data) => setVendors(data.vendors ?? []))
+      .catch((err) => console.error('Error loading vendors:', err))
+      .finally(() => setVendorsLoading(false));
   }, []);
 
   const fetchLeads = async () => {
@@ -226,7 +246,7 @@ export function LeadsTable() {
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Lokasi
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              {/* <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 SLIK
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -234,6 +254,15 @@ export function LeadsTable() {
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Follow Up
+              </th> */}
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dealer
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                CMO
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Action
               </th>
             </tr>
           </thead>
@@ -315,7 +344,7 @@ export function LeadsTable() {
                         <span className="text-xs text-gray-500 italic">Tidak ada data</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs flex flex-col">
+                    {/* <td className="px-3 py-2 whitespace-nowrap text-xs flex flex-col">
                       <span
                         className={`inline-flex items-center rounded-full ${
                           lead.slikStatus === 'QUALIFIED'
@@ -375,7 +404,14 @@ export function LeadsTable() {
                       ) : (
                         <span className="text-xs text-gray-400">No follow up access</span>
                       )}
-                    </td>
+                    </td> */}
+                    <LeadAssignRow
+                      lead={lead}
+                      vendors={vendors}
+                      vendorsLoading={vendorsLoading}
+                      canSubmit
+                      onSubmitted={fetchLeads}
+                    />
                   </tr>
                 );
               })
