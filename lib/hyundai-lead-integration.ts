@@ -14,6 +14,10 @@ import {
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
+import {
+  resolveCustomerLocation,
+  type HyundaiCustomerLocation,
+} from '@/lib/hyundai-zipcode-resolve';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -107,6 +111,7 @@ function buildAddLeadCustBody(
   lead: LeadRecordForHyundai,
   leadNo: string,
   ocr: OcrKtpRead | null,
+  location: HyundaiCustomerLocation,
   ktpFile?: { fileName: string; base64: string }
 ): Record<string, unknown> {
   const nationality =
@@ -132,10 +137,10 @@ function buildAddLeadCustBody(
     Addr: ocr?.alamat || '-',
     AreaCode4: ocr?.Rt || '001',
     AreaCode3: ocr?.Rw || '001',
-    ZipCode: ocr?.Zipcode || '00000',
-    AreaCode2: ocr?.kelurahanDesa || '-',
-    AreaCode1: ocr?.kecamatan || '-',
-    City: ocr?.kotaKabupaten || '-',
+    ZipCode: location.zipCode,
+    AreaCode1: location.areaCode1,
+    AreaCode2: location.areaCode2,
+    City: location.city,
     MrHouseOwnershipCode: houseCode,
     Notes: lead.notes || lead.productName || '',
     IsFamily: false,
@@ -251,10 +256,16 @@ export async function submitLeadToHyundai(params: {
     }
   }
 
+  const customerLocation = await resolveCustomerLocation({
+    ocr: ocrRead,
+    vendorZipCode: params.vendor.ZipCode,
+  });
+
   const addLeadCustPayload = buildAddLeadCustBody(
     params.lead,
     leadNo,
     ocrRead,
+    customerLocation,
     ktpFile
   );
 
