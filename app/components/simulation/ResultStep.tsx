@@ -94,7 +94,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
       const res = await fetch('/api/simulation/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
+        body: JSON.stringify({ leadNo, LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
       });
       const data = await res.json();
       if (generation !== fetchListGeneration.current) return;
@@ -125,11 +125,14 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          leadNo,
+          LeadNo: leadNo,
           otrPrice,
           dpPrcnt: dpPercent,
           productCode: selectedProduct.ProductCode,
           productName: selectedProduct.ProductName,
           firstInstallment,
+          isPromotion: tab === 'Promotion',
         }),
       });
       const data = await res.json();

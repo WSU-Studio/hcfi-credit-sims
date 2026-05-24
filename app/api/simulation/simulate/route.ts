@@ -8,16 +8,34 @@ import {
 } from '@/lib/mock-api';
 import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import {
+  extractHyundaiErrorId,
+  toUserFacingHyundaiError,
+} from '@/lib/hyundai-known-errors';
 
 /**
- * SimulateFinancialCalculate / CalculateProductFromRule
- * Body: otrPrice, dpPrcnt, productCode, productName, firstInstallment (ADDM|ADDB)
- * Returns ListProductObj (rows per tenor 12,24,36,48,60; 5050 only 12)
+ * SimulateFinancialCalculate (Postman v1.1, Fase 2 — Financial Data).
+ * Body: leadNo, otrPrice, dpPrcnt, productCode, productName, firstInstallment (ADDM|ADDB), [isPromotion], [tenor]
+ * Returns ListProductObj (rows per tenor 12,24,36,48,60; 5050 only 12).
  */
+function isMockLeadNo(leadNo?: string | null): boolean {
+  if (!leadNo) return false;
+  return leadNo.startsWith('MOCK-LEAD-') || leadNo.startsWith('FAILED-');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { otrPrice, dpPrcnt, productCode, productName, firstInstallment } = body;
+    const {
+      otrPrice,
+      dpPrcnt,
+      productCode,
+      productName,
+      firstInstallment,
+      isPromotion,
+      tenor,
+    } = body;
+    const leadNo: string | undefined = body.leadNo || body.LeadNo;
 
     if (!otrPrice || dpPrcnt == null || !productCode || !productName || !firstInstallment) {
       return NextResponse.json(
@@ -36,7 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     const siteMock = await getMockApiSettings();
-    if (siteMock.enabled || isMockModeEnabled()) {
+    const mockEnabled = siteMock.enabled || isMockModeEnabled();
+
+    if (mockEnabled || isMockLeadNo(leadNo)) {
       await simulateDelay(400);
       const custom = siteMock.content?.simulate;
       if (custom && Array.isArray(custom.ListProductObj) && custom.ListProductObj.length > 0) {
@@ -49,7 +69,14 @@ export async function POST(request: NextRequest) {
         productName: String(productName),
         firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
       });
-      return NextResponse.json(res);
+      return NextResponse.json({ ...res, dataSource: 'mock' });
+    }
+
+    if (!leadNo) {
+      return NextResponse.json(
+        { error: 'LeadNo wajib untuk simulasi finansial.' },
+        { status: 400 }
+      );
     }
 
     const headers = await getHyundaiRequestHeaders();
@@ -65,14 +92,16 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          LeadNo: body.LeadNo || 'MOCK-LEAD-001',
+          requestDateTime: new Date().toISOString(),
+          rowVersion: '',
+          LeadNo: leadNo,
           DpPrcnt: Number(dpPrcnt),
           DpAmt: Math.round(Number(otrPrice) * (Number(dpPrcnt) / 100)),
           ProductCode: productCode,
           ProductName: productName,
-          IsPromotion: false,
+          IsPromotion: Boolean(isPromotion),
           FirstInstallment: firstInstallment,
-          Tenor: body.Tenor || 36,
+          Tenor: tenor != null ? Number(tenor) : 36,
         }),
       });
 
@@ -97,10 +126,25 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(data);
     } catch (e) {
-      console.warn('SimulateFinancialCalculate failed:', e);
+      const rawMessage = e instanceof Error ? e.message : 'Simulate failed';
+      const errorId = extractHyundaiErrorId(e);
+      console.warn(
+        '[simulate] SimulateFinancialCalculate failed:',
+        errorId ? `(Hyundai Error ID: ${errorId})` : '',
+        rawMessage
+      );
 
-      // Fallback ke mock perhitungan agar user tetap melihat tabel angsuran
-      // (API Hyundai bisa error mis. LINQ/DbContext di sisi mereka)
+      if (shouldNotUseMockFallback()) {
+        return NextResponse.json(
+          {
+            error: toUserFacingHyundaiError(e, PRODUCTION_DATA_ERROR_MESSAGE),
+            errorId,
+          },
+          { status: 502 }
+        );
+      }
+
+      // Dev fallback supaya UX tetap demo-able (USE_MOCK_API tidak di-set 'false').
       await simulateDelay(400);
       const mockResult = mockApi.calculateProductFromRule({
         otrPrice: Number(otrPrice),

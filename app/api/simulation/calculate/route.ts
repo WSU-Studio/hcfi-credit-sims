@@ -9,6 +9,10 @@ import {
 } from '@/lib/mock-api';
 import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import {
+  extractHyundaiErrorId,
+  toUserFacingHyundaiError,
+} from '@/lib/hyundai-known-errors';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -17,23 +21,33 @@ const hyundaiAgent = new Agent({
   connectTimeout: CONNECT_TIMEOUT_MS,
 });
 
-// Get List Product From Rule By LeadNo (With Calculation)
-// Step 5 (Hasil) memakai API ini untuk daftar produk/tenor.
-// Note: This requires a LeadNo which should be created first
+/**
+ * GetListDefaultProductFromRuleByLeadNo (Postman v1.1, Fase 2 — Financial Data).
+ * Step 5 (Hasil) memakai API ini untuk daftar produk standard/promotion berdasarkan LeadNo riil
+ * yang sudah dibuat di PriceStep via /api/simulation/lead-asset.
+ */
+function isMockLeadNo(leadNo?: string | null): boolean {
+  if (!leadNo) return false;
+  return leadNo.startsWith('MOCK-LEAD-') || leadNo.startsWith('FAILED-');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const leadNo: string | undefined = body.LeadNo || body.leadNo;
+    const otrPrice: number | undefined = body.otrPrice;
 
-    if (!body.LeadNo && !body.otrPrice) {
+    if (!leadNo && !otrPrice) {
       return NextResponse.json(
         { error: 'LeadNo or otrPrice is required for calculation' },
         { status: 400 }
       );
     }
 
-    // Check if mock mode is enabled (site settings or env)
     const siteMock = await getMockApiSettings();
-    if (siteMock.enabled || isMockModeEnabled()) {
+    const mockEnabled = siteMock.enabled || isMockModeEnabled();
+
+    if (mockEnabled || isMockLeadNo(leadNo)) {
       await simulateDelay(400);
       const custom = siteMock.content?.calculate;
       if (
@@ -43,129 +57,121 @@ export async function POST(request: NextRequest) {
       ) {
         return NextResponse.json({
           ListDefaultStandardProductObj: custom.ListDefaultStandardProductObj,
-          ListDefaultPromotionProductObj:
-            Array.isArray(custom.ListDefaultPromotionProductObj) ? custom.ListDefaultPromotionProductObj : [],
+          ListDefaultPromotionProductObj: Array.isArray(custom.ListDefaultPromotionProductObj)
+            ? custom.ListDefaultPromotionProductObj
+            : [],
           dataSource: 'mock-site-settings',
         });
       }
       const mockResponse = mockApi.getListDefaultProducts({
-        LeadNo: body.LeadNo || 'MOCK-LEAD-001',
-        otrPrice: body.otrPrice,
+        LeadNo: leadNo || 'MOCK-LEAD-001',
+        otrPrice,
       });
-      return NextResponse.json(mockResponse);
+      return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
     }
 
-    // Try real API first
-    if (body.LeadNo) {
-      const headers = await getHyundaiRequestHeaders();
-      if (!headers.AdInsKey && shouldNotUseMockFallback()) {
-        return NextResponse.json(
-          { error: PRODUCTION_DATA_ERROR_MESSAGE },
-          { status: 503 }
-        );
-      }
-
-      let timeoutId: NodeJS.Timeout | null = null;
-      try {
-        const controller = new AbortController();
-        timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-        const response = await undiciFetch(
-          `${API_BASE_URL}/v1/IntegrationWebsite/GetListProductFromRuleByLeadNo`,
-          {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ LeadNo: body.LeadNo }),
-            signal: controller.signal,
-            dispatcher: hyundaiAgent,
-          }
-        );
-
-        if (timeoutId) clearTimeout(timeoutId);
-
-        const text = await response.text();
-        let data: unknown;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          throw new Error('Invalid response from calculate API');
-        }
-
-        if (!response.ok) {
-          const apiMessage =
-            data && typeof data === 'object' && 'Message' in data
-              ? (data as { Message?: string }).Message
-              : null;
-          console.error(
-            `[calculate] Hyundai API GetListProductFromRuleByLeadNo returned ${response.status}:`,
-            apiMessage ?? text?.slice(0, 200) ?? 'no body'
-          );
-
-          // Jika API gagal (mis. LeadNo tidak ada di Hyundai) tapi kita punya otrPrice,
-          // kembalikan mock product list agar step 5 tetap menampilkan hasil.
-          if (body.otrPrice != null && body.otrPrice > 0) {
-            console.warn('[calculate] Fallback ke mock product list (LeadNo mungkin belum dibuat di Hyundai).');
-            const mockResponse = mockApi.getListDefaultProducts({
-              LeadNo: body.LeadNo,
-              otrPrice: body.otrPrice,
-            });
-            return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
-          }
-
-          throw new Error(apiMessage || 'Failed to calculate products');
-        }
-
-        return NextResponse.json(data);
-      } catch (apiError: unknown) {
-        if (timeoutId) clearTimeout(timeoutId);
-        console.error('Real API error:', apiError);
-
-        // Fallback ke mock bila ada otrPrice (mis. network error tapi form sudah isi)
-        if (body.otrPrice != null && body.otrPrice > 0) {
-          console.warn('[calculate] Fallback ke mock product list setelah error.');
-          const mockResponse = mockApi.getListDefaultProducts({
-            LeadNo: body.LeadNo || 'MOCK-LEAD-001',
-            otrPrice: body.otrPrice,
-          });
-          return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
-        }
-
-        if (shouldNotUseMockFallback()) {
-          return NextResponse.json(
-            { error: PRODUCTION_DATA_ERROR_MESSAGE },
-            { status: 503 }
-          );
-        }
-        // Fall through to mock API
-      }
+    if (!leadNo) {
+      return NextResponse.json(
+        { error: 'LeadNo wajib untuk memuat produk simulasi.' },
+        { status: 400 }
+      );
     }
 
-    // Fallback to mock API
-    await simulateDelay(400);
-    const mockResponse = mockApi.getListDefaultProducts({
-      LeadNo: body.LeadNo || 'MOCK-LEAD-001',
-      otrPrice: body.otrPrice,
-    });
-    return NextResponse.json(mockResponse);
-  } catch (error: unknown) {
-    console.error('Error calculating products:', error);
-    if (shouldNotUseMockFallback()) {
+    const headers = await getHyundaiRequestHeaders();
+    if (!headers.AdInsKey && shouldNotUseMockFallback()) {
       return NextResponse.json(
         { error: PRODUCTION_DATA_ERROR_MESSAGE },
         { status: 503 }
       );
     }
+
+    let timeoutId: NodeJS.Timeout | null = null;
     try {
-      const mockResponse = mockApi.getListDefaultProducts({
-        LeadNo: 'MOCK-LEAD-001',
-        otrPrice: 500000000,
-      });
-      return NextResponse.json(mockResponse);
-    } catch {
-      return NextResponse.json(
-        { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
-        { status: 500 }
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+      const response = await undiciFetch(
+        `${API_BASE_URL}/v1/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            requestDateTime: new Date().toISOString(),
+            rowVersion: '',
+            leadNo,
+            LeadNo: leadNo,
+          }),
+          signal: controller.signal,
+          dispatcher: hyundaiAgent,
+        }
       );
+
+      if (timeoutId) clearTimeout(timeoutId);
+
+      const text = await response.text();
+      let data: unknown;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error('Invalid response from calculate API');
+      }
+
+      if (!response.ok) {
+        const apiMessage =
+          data && typeof data === 'object' && 'Message' in data
+            ? (data as { Message?: string }).Message
+            : null;
+        console.error(
+          `[calculate] Hyundai GetListDefaultProductFromRuleByLeadNo returned ${response.status}:`,
+          apiMessage ?? text?.slice(0, 200) ?? 'no body'
+        );
+        throw new Error(apiMessage || 'Gagal memuat produk kredit dari Hyundai.');
+      }
+
+      return NextResponse.json(data);
+    } catch (apiError: unknown) {
+      if (timeoutId) clearTimeout(timeoutId);
+      const rawMessage =
+        apiError instanceof Error
+          ? apiError.message
+          : 'Gagal memuat produk kredit dari Hyundai.';
+      const errorId = extractHyundaiErrorId(apiError);
+      console.error(
+        '[calculate] Hyundai GetListDefaultProductFromRuleByLeadNo error:',
+        errorId ? `(Error ID: ${errorId})` : '',
+        rawMessage
+      );
+
+      if (shouldNotUseMockFallback()) {
+        return NextResponse.json(
+          {
+            error: toUserFacingHyundaiError(apiError, PRODUCTION_DATA_ERROR_MESSAGE),
+            errorId,
+          },
+          { status: 502 }
+        );
+      }
+
+      // Dev fallback (USE_MOCK_API tidak di-set 'false') — supaya UX tetap demo-able.
+      if (otrPrice != null && otrPrice > 0) {
+        console.warn('[calculate] Dev fallback ke mock product list setelah error.');
+        const mockResponse = mockApi.getListDefaultProducts({
+          LeadNo: leadNo,
+          otrPrice,
+        });
+        return NextResponse.json({ ...mockResponse, dataSource: 'mock' });
+      }
+
+      return NextResponse.json({ error: rawMessage }, { status: 502 });
     }
+  } catch (error: unknown) {
+    console.error('Error calculating products:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

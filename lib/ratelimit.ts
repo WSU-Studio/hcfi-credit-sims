@@ -47,6 +47,9 @@ export const loginLimiter = createLimiter(5, 15 * 60 * 1000);
 /** Leads: 10 submissions per minute per IP */
 export const leadsLimiter = createLimiter(10, 60 * 1000);
 
+/** Lead Asset draft (Hyundai AddLeadAsset): 5 per minute per IP — each call creates a Hyundai LOS lead */
+export const leadAssetDraftLimiter = createLimiter(5, 60 * 1000);
+
 export function getClientIp(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');
