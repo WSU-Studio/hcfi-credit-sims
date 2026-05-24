@@ -379,3 +379,41 @@ model LeadOcrResult {
   @@index([createdAt])
   @@map("lead_ocr_results")
 }
+
+/// Preliminary Hyundai lead created at PriceStep submit (before customer contact data is filled).
+/// Linked to a `Lead` record once user submits contact info via ResultStep — at that point,
+/// `convertedLeadId` is set and `Lead.hyundaiLeadNo` mirrors `hyundaiLeadNo` here.
+model LeadAssetDraft {
+  id                String   @id @default(uuid())
+  hyundaiLeadNo     String   @unique
+  vendorCode        String?
+  vendorName        String?
+  oriOfficeCode     String?
+  oriOfficeName     String?
+  modelCode         String?
+  modelName         String?
+  fscCode           String?
+  trimName          String?
+  manufacturingYear Int?
+  exteriorColorCode String?
+  exteriorColorName String?
+  interiorColorCode String?
+  interiorColorName String?
+  otrPrice          Float?
+  discount          Float?
+  assetPriceAmt     Float?
+  oemAccessoryCodes String[] @default([])
+  rawRequest        Json?
+  rawResponse       Json?
+  ipAddress         String?
+  userAgent         String?  @db.Text
+  status            String   @default("CREATED") // CREATED | CONVERTED | ABANDONED | FAILED
+  convertedLeadId   String?
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([convertedLeadId])
+  @@map("lead_asset_drafts")
+}
