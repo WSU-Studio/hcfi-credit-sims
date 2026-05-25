@@ -37,6 +37,7 @@ export default function SimulasiKreditPage() {
   const [leadNo, setLeadNo] = useState<string | null>(null);
   const [leadNoLoading, setLeadNoLoading] = useState(false);
   const [leadNoError, setLeadNoError] = useState<string | null>(null);
+  const [leadNoErrorId, setLeadNoErrorId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation>(null);
 
@@ -67,6 +68,7 @@ export default function SimulasiKreditPage() {
     setDiscount(0);
     setLeadNo(null);
     setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
 
   const handleAssetSelect = (asset: AssetMaster) => {
@@ -78,6 +80,7 @@ export default function SimulasiKreditPage() {
     setDiscount(0);
     setLeadNo(null);
     setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
 
   const handleSpecsComplete = (completedSpecs: {
@@ -95,6 +98,7 @@ export default function SimulasiKreditPage() {
     setOtrPrice(null);
     setLeadNo(null);
     setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
 
   const buildLeadAssetSnapshot = useCallback(
@@ -136,6 +140,7 @@ export default function SimulasiKreditPage() {
 
       setLeadNoLoading(true);
       setLeadNoError(null);
+      setLeadNoErrorId(null);
       try {
         const res = await fetch('/api/simulation/lead-asset', {
           method: 'POST',
@@ -149,6 +154,7 @@ export default function SimulasiKreditPage() {
         });
         const data = await res.json();
         if (!res.ok || !data.leadNo) {
+          if (data?.errorId) setLeadNoErrorId(String(data.errorId));
           throw new Error(data?.error || t('leadAssetError'));
         }
         setLeadNo(data.leadNo);
@@ -323,6 +329,7 @@ export default function SimulasiKreditPage() {
                     retryLabel={t('leadAssetRetry')}
                     onRetry={handleRetryLeadAsset}
                     retrying={leadNoLoading}
+                    errorId={leadNoErrorId}
                   />
                 )}
                 {currentStep === 5 && !leadNoLoading && !leadNoError && leadNo && (

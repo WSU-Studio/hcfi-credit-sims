@@ -20,6 +20,19 @@ const TRANSIENT_FRAGMENTS = [
   'an error occurred while processing your request',
 ];
 
+/**
+ * Pesan khas dari gateway/load balancer di depan service Hyundai (Envoy/Istio/nginx).
+ * Indikasi service backend sedang down / maintenance / unhealthy.
+ */
+const UPSTREAM_DOWN_FRAGMENTS = [
+  'no healthy upstream',
+  'upstream connect error',
+  'upstream request timeout',
+  'service unavailable',
+  'bad gateway',
+  'gateway timeout',
+];
+
 const ERROR_ID_REGEX = /Error ID\s*:\s*([0-9a-f-]{8,})/i;
 
 export function isHyundaiLinqException(error: unknown): boolean {
@@ -32,6 +45,13 @@ export function isHyundaiTransientException(error: unknown): boolean {
   if (isHyundaiLinqException(error)) return true;
   const msg = rawMessage(error).toLowerCase();
   return TRANSIENT_FRAGMENTS.some((fragment) => msg.includes(fragment));
+}
+
+/** True jika gateway Hyundai melaporkan upstream/backend mereka down (HTTP 502/503/504 dari Envoy/Istio). */
+export function isHyundaiUpstreamDown(error: unknown): boolean {
+  const msg = rawMessage(error).toLowerCase();
+  if (!msg) return false;
+  return UPSTREAM_DOWN_FRAGMENTS.some((fragment) => msg.includes(fragment));
 }
 
 /** Ambil Error ID dari pesan Hyundai (kalau ada) untuk eskalasi ke pihak Hyundai. */
@@ -49,6 +69,9 @@ export function toUserFacingHyundaiError(
   error: unknown,
   fallback: string = 'Layanan simulasi kredit Hyundai sedang tidak tersedia. Silakan coba beberapa saat lagi.'
 ): string {
+  if (isHyundaiUpstreamDown(error)) {
+    return 'Layanan simulasi kredit Hyundai sedang tidak tersedia. Silakan coba beberapa saat lagi atau hubungi customer service kami.';
+  }
   if (isHyundaiLinqException(error) || isHyundaiTransientException(error)) {
     return 'Layanan simulasi kredit Hyundai sedang sibuk. Silakan coba beberapa saat lagi atau hubungi customer service kami.';
   }

@@ -14,9 +14,21 @@ import {
 } from '@/lib/hyundai-known-errors';
 
 /**
- * SimulateFinancialCalculate (Postman v1.1, Fase 2 — Financial Data).
- * Body: leadNo, otrPrice, dpPrcnt, productCode, productName, firstInstallment (ADDM|ADDB), [isPromotion], [tenor]
- * Returns ListProductObj (rows per tenor 12,24,36,48,60; 5050 only 12).
+ * Hyundai Fase 2 — kalkulasi cicilan per tenor untuk satu produk yang user pilih.
+ *
+ * NOTE (2026-05-25): kami sengaja memanggil `CalculateProductFromRule` (bukan
+ * `SimulateFinancialCalculate`) karena `SimulateFinancialCalculate` di QA env
+ * Hyundai mengembalikan HTTP 500 "LINQ query parameter expression" untuk semua
+ * kombinasi produk (sudah dilaporkan ke Hyundai, lihat Error ID di history).
+ *
+ * `CalculateProductFromRule` mengembalikan array tenor (12/24/36/48/60) sekaligus
+ * dengan TdpAmt/InstallmentAmt/NtfAmt/EffRatePrcnt lengkap — semua field yang
+ * dibutuhkan untuk simulasi awal. Field yang hanya ada di Simulate (mis.
+ * `AssetInsAmt`) tidak dipakai untuk display ke user di tahap ini.
+ *
+ * Body request dari frontend kompatibel: `firstInstallment` & `tenor` tetap
+ * diterima (untuk kompatibilitas), tapi tidak diteruskan ke Hyundai karena
+ * `CalculateProductFromRule` tidak memerlukannya.
  */
 function isMockLeadNo(leadNo?: string | null): boolean {
   if (!leadNo) return false;
@@ -33,20 +45,21 @@ export async function POST(request: NextRequest) {
       productName,
       firstInstallment,
       isPromotion,
-      tenor,
     } = body;
     const leadNo: string | undefined = body.leadNo || body.LeadNo;
 
-    if (!otrPrice || dpPrcnt == null || !productCode || !productName || !firstInstallment) {
+    if (!otrPrice || dpPrcnt == null || !productCode || !productName) {
       return NextResponse.json(
         {
-          error:
-            'otrPrice, dpPrcnt, productCode, productName, and firstInstallment (ADDM|ADDB) are required',
+          error: 'otrPrice, dpPrcnt, productCode, dan productName wajib diisi.',
         },
         { status: 400 }
       );
     }
-    if (!['ADDM', 'ADDB'].includes(firstInstallment)) {
+    // firstInstallment masih diterima untuk kompatibilitas dengan UI, tapi
+    // `CalculateProductFromRule` tidak butuh field ini—jadi cukup divalidasi
+    // tipenya kalau memang dikirim.
+    if (firstInstallment && !['ADDM', 'ADDB'].includes(firstInstallment)) {
       return NextResponse.json(
         { error: 'firstInstallment must be ADDM or ADDB' },
         { status: 400 }
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
+        firstInstallment: (firstInstallment as 'ADDM' | 'ADDB') ?? 'ADDM',
       });
       return NextResponse.json({ ...res, dataSource: 'mock' });
     }
@@ -88,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/SimulateFinancialCalculate`, {
+      const res = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/CalculateProductFromRule`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -100,8 +113,6 @@ export async function POST(request: NextRequest) {
           ProductCode: productCode,
           ProductName: productName,
           IsPromotion: Boolean(isPromotion),
-          FirstInstallment: firstInstallment,
-          Tenor: tenor != null ? Number(tenor) : 36,
         }),
       });
 
@@ -118,18 +129,18 @@ export async function POST(request: NextRequest) {
           ? (data as { Message?: string }).Message
           : null;
         console.warn(
-          `[simulate] Hyundai SimulateFinancialCalculate returned ${res.status}:`,
+          `[simulate] Hyundai CalculateProductFromRule returned ${res.status}:`,
           apiMessage ?? text?.slice(0, 200) ?? 'no body'
         );
-        throw new Error(String(apiMessage || 'Simulate failed'));
+        throw new Error(String(apiMessage || 'Calculate failed'));
       }
 
       return NextResponse.json(data);
     } catch (e) {
-      const rawMessage = e instanceof Error ? e.message : 'Simulate failed';
+      const rawMessage = e instanceof Error ? e.message : 'Calculate failed';
       const errorId = extractHyundaiErrorId(e);
       console.warn(
-        '[simulate] SimulateFinancialCalculate failed:',
+        '[simulate] CalculateProductFromRule failed:',
         errorId ? `(Hyundai Error ID: ${errorId})` : '',
         rawMessage
       );
@@ -151,12 +162,12 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: firstInstallment as 'ADDM' | 'ADDB',
+        firstInstallment: (firstInstallment as 'ADDM' | 'ADDB') ?? 'ADDM',
       });
       return NextResponse.json({ ...mockResult, dataSource: 'mock' });
     }
   } catch (err: unknown) {
-    console.error('Simulate error:', err);
+    console.error('[simulate] handler error:', err);
     return NextResponse.json(
       {
         error: 'Internal server error',

@@ -14,6 +14,10 @@ import { resolveAssetPriceAmt } from '@/lib/hyundai-asset-price';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { getClientIp, leadAssetDraftLimiter } from '@/lib/ratelimit';
+import {
+  extractHyundaiErrorId,
+  toUserFacingHyundaiError,
+} from '@/lib/hyundai-known-errors';
 
 /**
  * Hyundai Fase 1: Add Lead Asset.
@@ -218,9 +222,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ leadNo });
   } catch (error: unknown) {
-    const message =
+    const rawMessage =
       error instanceof Error ? error.message : 'Gagal membuat lead di Hyundai LOS.';
-    console.error('[lead-asset] AddLeadAsset failed:', message);
+    const errorId = extractHyundaiErrorId(error);
+    console.error(
+      '[lead-asset] AddLeadAsset failed:',
+      errorId ? `(Hyundai Error ID: ${errorId})` : '',
+      rawMessage
+    );
 
     try {
       const failedData: Parameters<typeof prisma.leadAssetDraft.create>[0]['data'] = {
@@ -240,7 +249,7 @@ export async function POST(request: NextRequest) {
         interiorColorName: snapshot.interiorColorName,
         otrPrice,
         discount,
-        rawResponse: { error: message },
+        rawResponse: { error: rawMessage, errorId },
         ipAddress: ip,
         userAgent,
         status: 'FAILED',
@@ -254,7 +263,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: message },
+      {
+        error: toUserFacingHyundaiError(error, rawMessage),
+        errorId,
+      },
       { status: 502 }
     );
   }

@@ -11,7 +11,8 @@
     "db:seed": "node prisma/seed.js",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate && npm run postinstall",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:simulate": "tsx --env-file=.env scripts/test-hyundai-simulate.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

@@ -42,6 +42,8 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
   const [tableRows, setTableRows] = useState<ProductCalculation[]>([]);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateError, setSimulateError] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
+  const [listErrorId, setListErrorId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
@@ -90,6 +92,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
     const generation = ++fetchListGeneration.current;
     setLoading(true);
     setError(null);
+    setListErrorId(null);
     try {
       const res = await fetch('/api/simulation/calculate', {
         method: 'POST',
@@ -98,7 +101,10 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
       });
       const data = await res.json();
       if (generation !== fetchListGeneration.current) return;
-      if (!res.ok) throw new Error(data.error || t('errorLoadProducts'));
+      if (!res.ok) {
+        if (data?.errorId) setListErrorId(String(data.errorId));
+        throw new Error(data.error || t('errorLoadProducts'));
+      }
       setListStandard(data.ListDefaultStandardProductObj ?? []);
       setListPromo(data.ListDefaultPromotionProductObj ?? []);
       const first = data.ListDefaultStandardProductObj?.[0];
@@ -120,6 +126,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
     if (!selectedProduct || !otrPrice) return;
     setSimulateLoading(true);
     setSimulateError(null);
+    setErrorId(null);
     try {
       const res = await fetch('/api/simulation/simulate', {
         method: 'POST',
@@ -136,7 +143,10 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('errorCalculate'));
+      if (!res.ok) {
+        if (data?.errorId) setErrorId(String(data.errorId));
+        throw new Error(data.error || t('errorCalculate'));
+      }
       setTableRows(data.ListProductObj ?? []);
       const row36 = (data.ListProductObj ?? []).find((r: ProductCalculation) => r.Tenor === 36);
       const first = (data.ListProductObj ?? [])[0];
@@ -176,6 +186,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         retryLabel={loading ? t('loadingProducts') : t('retryLoad')}
         onRetry={fetchList}
         retrying={loading}
+        errorId={listErrorId}
       />
     );
   }
@@ -335,6 +346,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               retryLabel={simulateLoading ? t('calculating') : t('retryCalculate')}
               onRetry={handleCalculate}
               retrying={simulateLoading}
+              errorId={errorId}
             />
           )}
 
