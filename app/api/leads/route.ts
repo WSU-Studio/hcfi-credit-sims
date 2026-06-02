@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
+import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { leadCreateSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 
@@ -34,11 +34,11 @@ async function getLocationFromIp(ip: string): Promise<{ lat: number; lon: number
 
 export async function POST(request: NextRequest) {
   const serverIp = getClientIp(request);
-  const { success } = leadsLimiter.limit(serverIp);
-  if (!success) {
-    return NextResponse.json(
-      { error: 'Too many submissions. Please try again later.' },
-      { status: 429 }
+  const rl = leadsLimiter.limit(serverIp);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Too many submissions. Please try again later.',
+      rl.retryAfterSec
     );
   }
 

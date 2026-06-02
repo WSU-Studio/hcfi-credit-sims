@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
+import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 type SlikResult = {
   ResultCode?: string;
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = adminHyundaiCallLimiter.limit(`slik:${session.user.id}`);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak permintaan SLIK. Tunggu beberapa saat.',
+        rl.retryAfterSec
+      );
+    }
+
     await requirePermission('LEADS', 'edit');
 
     const body = await request.json();

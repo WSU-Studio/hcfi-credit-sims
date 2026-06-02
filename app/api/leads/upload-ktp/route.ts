@@ -3,7 +3,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
-import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
+import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { getPublicS3Url, getS3Bucket, getS3Client, getS3Region } from '@/lib/s3-client';
 
 const FOLDER = 'hcfi_leads_ktp';
@@ -11,11 +11,11 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB — keep in sync with image-u
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { success } = leadsLimiter.limit(`ktp:${ip}`);
-  if (!success) {
-    return NextResponse.json(
-      { error: 'Terlalu banyak upload. Silakan coba lagi beberapa saat.' },
-      { status: 429 }
+  const rl = leadsLimiter.limit(`ktp:${ip}`);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak upload. Silakan coba lagi beberapa saat.',
+      rl.retryAfterSec
     );
   }
 

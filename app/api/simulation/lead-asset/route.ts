@@ -13,7 +13,7 @@ import { resolveDefaultOemAccessories, type ResolvedOemAccessories } from '@/lib
 import { resolveAssetPriceAmt } from '@/lib/hyundai-asset-price';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
-import { getClientIp, leadAssetDraftLimiter } from '@/lib/ratelimit';
+import { getClientIp, leadAssetDraftLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import {
   extractHyundaiErrorId,
   toUserFacingHyundaiError,
@@ -34,11 +34,11 @@ import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
-  const { success } = leadAssetDraftLimiter.limit(ip);
-  if (!success) {
-    return NextResponse.json(
-      { error: 'Terlalu banyak permintaan. Silakan coba lagi sebentar.' },
-      { status: 429 }
+  const rl = leadAssetDraftLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
     );
   }
 
