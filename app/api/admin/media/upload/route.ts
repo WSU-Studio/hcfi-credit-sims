@@ -7,8 +7,10 @@ import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
 import { getPublicS3Url, getS3Bucket, getS3Client, getS3Region } from '@/lib/s3-client';
+import { adminMediaUploadLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 const FOLDER = 'hcfi_media';
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25MB — slightly higher than KTP because admin may upload promo banners
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +19,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const rl = adminMediaUploadLimiter.limit(session.user.id);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak upload. Tunggu beberapa saat.',
+        rl.retryAfterSec
+      );
+    }
+
     await requirePermission('MEDIA', 'create');
+
+    const declaredLength = Number(request.headers.get('content-length') ?? '0');
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES + 1024) {
+      return NextResponse.json({ error: 'Ukuran file maksimal 25MB' }, { status: 413 });
+    }
+
+    const contentType = request.headers.get('content-type') ?? '';
+    if (!contentType.toLowerCase().startsWith('multipart/form-data')) {
+      return NextResponse.json({ error: 'Content-Type harus multipart/form-data' }, { status: 415 });
+    }
 
     const bucket = getS3Bucket();
     const region = getS3Region();
@@ -26,6 +46,10 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
     if (!file || !(file instanceof File)) {
       return NextResponse.json({ error: 'File wajib diisi' }, { status: 400 });
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'Ukuran file maksimal 25MB' }, { status: 413 });
     }
 
     const arrayBuffer = await file.arrayBuffer();

@@ -7,6 +7,7 @@ import {
   submitLeadToHyundai,
 } from '@/lib/hyundai-lead-integration';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +19,15 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = adminHyundaiCallLimiter.limit(`submit:${session.user.id}`);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak submit lead. Tunggu beberapa saat.',
+        rl.retryAfterSec
+      );
+    }
+
     await requirePermission('LEADS', 'edit');
     const body = await request.json();
     const { vendorCode, cmoEmpNo, cmoName } = body as {
