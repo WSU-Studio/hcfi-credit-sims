@@ -2,12 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, hashPassword } from '@/lib/auth';
+import { passwordChangeLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rl = passwordChangeLimiter.limit(session.user.id);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak percobaan ubah password. Coba lagi nanti.',
+        rl.retryAfterSec
+      );
     }
 
     const body = await request.json();

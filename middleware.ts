@@ -2,7 +2,7 @@ import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth-middleware";
-import { getClientIp, loginLimiter } from "@/lib/ratelimit";
+import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -58,18 +58,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Rate limit login attempts (brute-force protection)
+  // Rate limit login attempts (brute-force protection) — per-IP layer only.
+  // A second layer (per-email + persistent DB lockout) lives in `lib/nextauth.ts`.
   if (
     pathname === "/api/auth/callback/credentials" &&
     request.method === "POST"
   ) {
     const ip = getClientIp(request);
-    const { success } = loginLimiter.limit(ip);
-    if (!success) {
+    const rl = loginLimiter.limit(ip);
+    if (!rl.success) {
       return withCors(
-        NextResponse.json(
-          { error: "Too many login attempts. Please try again later." },
-          { status: 429 }
+        tooManyRequestsResponse(
+          "Too many login attempts. Please try again later.",
+          rl.retryAfterSec
         ),
         request
       );
