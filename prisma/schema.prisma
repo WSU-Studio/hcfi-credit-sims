@@ -270,6 +270,28 @@ model Announcement {
   @@map("announcements")
 }
 
+/// Tamper-evident log of sensitive admin actions. Records WHO did WHAT to
+/// WHICH resource, and WHEN. Use `metadata` for free-form diff/details
+/// (avoid storing secrets / PII verbatim).
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String?  // null if the actor is gone / a system process
+  actorEmail   String?  // denormalized so log survives user deletion
+  action       String   // e.g. "user.unlock", "lead.statusChange"
+  resourceType String?  // e.g. "User", "Lead", "Role"
+  resourceId   String?
+  metadata     Json?    // diff / context (NEVER stores password)
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([resourceType, resourceId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 model Media {
   id          String   @id @default(uuid())
   filename    String
