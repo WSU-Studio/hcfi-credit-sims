@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -101,6 +102,19 @@ export async function POST(request: NextRequest) {
       include: {
         rolePermissions: { include: { permission: true } },
       },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ROLE_CREATE,
+      resourceType: 'Role',
+      resourceId: role.id,
+      metadata: {
+        name: role.name,
+        permissionIds: ids,
+        activities: activityIds,
+      },
+      request,
     });
 
     return NextResponse.json({ role: created });

@@ -21,5 +21,6 @@ export const ADMIN_MENUS: AdminMenuConfig[] = [
   { code: 'VEHICLE_MODELS', name: 'Vehicle Model Images', path: '/admin/vehicle-models', order: 12 },
   { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 13 },
   { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 14 },
+  { code: 'AUDIT_LOG', name: 'Audit Log', path: '/admin/audit-log', order: 15 },
 ];
 

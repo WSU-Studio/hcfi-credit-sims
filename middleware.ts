@@ -3,9 +3,24 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth-middleware";
 import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
+import { checkWriteOrigin } from "@/lib/security/origin-check";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
+
+/**
+ * Endpoints that intentionally accept third-party-initiated requests
+ * (e.g. NextAuth has its own CSRF token + state handling, and ELB health
+ * checks hit `/` without an Origin). Keep this list small.
+ */
+const ORIGIN_CHECK_BYPASS_PREFIXES = [
+  "/api/auth/", // NextAuth: protected by built-in CSRF token + state nonces
+];
+
+function shouldEnforceOrigin(pathname: string): boolean {
+  if (!pathname.startsWith("/api/")) return false;
+  return !ORIGIN_CHECK_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
 function getCorsHeaders(request: NextRequest): Record<string, string> | null {
   const allowed =
@@ -55,6 +70,26 @@ export async function middleware(request: NextRequest) {
         status: 204,
         headers: cors ?? {},
       });
+    }
+  }
+
+  // Cross-origin write guard (anti-CSRF). Runs *before* per-route limiters
+  // so we don't burn limit budget on rejected cross-origin probes.
+  if (shouldEnforceOrigin(pathname)) {
+    const verdict = checkWriteOrigin({
+      method: request.method,
+      origin: request.headers.get("origin"),
+      referer: request.headers.get("referer"),
+      host: request.headers.get("host"),
+    });
+    if (!verdict.ok) {
+      return withCors(
+        NextResponse.json(
+          { error: "Forbidden: cross-origin request rejected" },
+          { status: 403 }
+        ),
+        request
+      );
     }
   }
 

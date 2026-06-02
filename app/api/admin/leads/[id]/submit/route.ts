@@ -8,6 +8,7 @@ import {
 } from '@/lib/hyundai-lead-integration';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function POST(
   request: NextRequest,
@@ -100,6 +101,20 @@ export async function POST(
         hyundaiAssignedAt: new Date(),
         status: 'CONTACTED',
       },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.LEAD_SUBMIT_HYUNDAI,
+      resourceType: 'Lead',
+      resourceId: id,
+      metadata: {
+        hyundaiLeadNo: leadNo,
+        vendorCode: vendor.VendorCode,
+        cmoEmpNo,
+        cmoName,
+      },
+      request,
     });
 
     return NextResponse.json({ success: true, lead: updated, hyundaiLeadNo: leadNo });

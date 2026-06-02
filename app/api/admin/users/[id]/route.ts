@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   _request: NextRequest,
@@ -139,6 +140,30 @@ export async function PUT(
     });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     const { password: _p, ...safe } = user;
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.USER_UPDATE,
+      resourceType: 'User',
+      resourceId: id,
+      metadata: {
+        before: {
+          email: existing.email,
+          name: existing.name,
+          isActive: existing.isActive,
+          roleIds: existing.userRoles.map((r) => r.roleId),
+        },
+        after: {
+          email: safe.email,
+          name: safe.name,
+          isActive: safe.isActive,
+          roleIds: ids,
+        },
+        passwordChanged: typeof password === 'string' && password.trim().length > 0,
+      },
+      request,
+    });
+
     return NextResponse.json({ user: safe });
   } catch (error: unknown) {
     console.error('Error updating user:', error);
@@ -153,7 +178,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -173,9 +198,25 @@ export async function DELETE(
       );
     }
 
+    const target = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, name: true },
+    });
+
     await prisma.user.delete({
       where: { id },
     });
+
+    if (target) {
+      await recordAudit({
+        actor: actorFromSession(session),
+        action: AUDIT_ACTIONS.USER_DELETE,
+        resourceType: 'User',
+        resourceId: id,
+        metadata: { deletedEmail: target.email, deletedName: target.name },
+        request,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

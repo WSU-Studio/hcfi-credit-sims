@@ -3,13 +3,14 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { unlockUserAccount } from '@/lib/security/auth-lockout';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 /**
  * Admin-only: clear an account's lockout state immediately.
  * Resets `failedLoginAttempts` to 0 and `lockedUntil` to null.
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -23,7 +24,7 @@ export async function POST(
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true },
+      select: { id: true, email: true, failedLoginAttempts: true, lockedUntil: true },
     });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -31,11 +32,18 @@ export async function POST(
 
     await unlockUserAccount(id);
 
-    console.info(
-      '[admin/users/unlock] user=%s unlocked by admin=%s',
-      user.email,
-      session.user.email ?? session.user.id
-    );
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.USER_UNLOCK,
+      resourceType: 'User',
+      resourceId: id,
+      metadata: {
+        unlockedEmail: user.email,
+        failedAttemptsBefore: user.failedLoginAttempts,
+        lockedUntilBefore: user.lockedUntil,
+      },
+      request,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

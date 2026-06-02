@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 type SlikResult = {
   ResultCode?: string;
@@ -107,6 +108,18 @@ export async function POST(request: NextRequest) {
         slikResultDescr: data.ResultDescr ?? null,
         slikRawResponse: data,
       } as any,
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.LEAD_RUN_SLIK,
+      resourceType: 'Lead',
+      resourceId: id,
+      metadata: {
+        slikStatus: normalizedStatus,
+        resultCode: data.ResultCode ?? null,
+      },
+      request,
     });
 
     return NextResponse.json({ success: true, lead: updated });
