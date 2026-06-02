@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
+import { leadCreateSchema } from '@/lib/security/schemas';
+import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 
 const isPrivateOrLocalIp = (ip: string) =>
   !ip ||
@@ -40,80 +42,72 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let rawBody: unknown;
   try {
-    const body = await request.json();
-    const {
-      name,
-      phone,
-      email,
-      productName,
-      vehicleSummary,
-      assetSnapshot,
-      vendorCode,
-      vendorName,
-      vendorCity,
-      oriOfficeCode,
-      oriOfficeName,
-      otrPrice,
-      dpPercent,
-      tenor,
-      ktpUrl,
-      citizenType,
-      motherName,
-      homeOwnershipStatus,
-      consentAccepted,
-      latitude,
-      longitude,
-      clientPublicIp,
-    } = body;
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-    if (!name || !phone || !email) {
-      return NextResponse.json({ error: 'Name, phone, and email are required' }, { status: 400 });
-    }
+  // Honeypot: silently accept and discard bot traffic so the scanner does not
+  // learn the trap exists. Return a fake 201 with no DB write.
+  if (rawBody && typeof rawBody === 'object' && isHoneypotTripped((rawBody as Record<string, unknown>)[HONEYPOT_FIELD])) {
+    console.warn('[leads] honeypot tripped from ip=%s', serverIp);
+    return NextResponse.json({ success: true, id: 'discarded' }, { status: 201 });
+  }
 
+  const parsed = leadCreateSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    const fieldPath = firstIssue?.path?.join('.') ?? 'input';
+    return NextResponse.json(
+      {
+        error: 'Invalid input',
+        field: fieldPath,
+        message: firstIssue?.message ?? 'Validation failed',
+      },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  try {
     const leadPayload = {
-        name: String(name).trim(),
-        phone: String(phone).trim(),
-        email: String(email).trim(),
-        productName: productName ? String(productName).trim() : null,
-        vehicleSummary: vehicleSummary ? String(vehicleSummary).trim() : null,
-        assetSnapshot:
-          assetSnapshot && typeof assetSnapshot === 'object'
-            ? (assetSnapshot as object)
-            : null,
-        vendorCode: vendorCode ? String(vendorCode).trim() : null,
-        vendorName: vendorName ? String(vendorName).trim() : null,
-        vendorCity: vendorCity ? String(vendorCity).trim() : null,
-        oriOfficeCode: oriOfficeCode ? String(oriOfficeCode).trim() : null,
-        oriOfficeName: oriOfficeName ? String(oriOfficeName).trim() : null,
-        otrPrice: otrPrice ? Number(otrPrice) : null,
-        dpPercent: dpPercent ? Number(dpPercent) : null,
-        tenor: tenor ? Number(tenor) : null,
-        ktpUrl: ktpUrl ? String(ktpUrl).trim() : null,
-        citizenType:
-          citizenType === 'LOCAL' || citizenType === 'FOREIGNER' ? citizenType : null,
-        motherName: motherName ? String(motherName).trim() : null,
-        homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
-        consentAccepted: Boolean(consentAccepted),
-        status: 'NEW',
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      productName: data.productName,
+      vehicleSummary: data.vehicleSummary,
+      assetSnapshot:
+        data.assetSnapshot && typeof data.assetSnapshot === 'object'
+          ? (data.assetSnapshot as object)
+          : null,
+      vendorCode: data.vendorCode,
+      vendorName: data.vendorName,
+      vendorCity: data.vendorCity,
+      oriOfficeCode: data.oriOfficeCode,
+      oriOfficeName: data.oriOfficeName,
+      otrPrice: data.otrPrice,
+      dpPercent: data.dpPercent,
+      tenor: data.tenor != null ? Math.trunc(data.tenor) : null,
+      ktpUrl: data.ktpUrl,
+      citizenType: data.citizenType,
+      motherName: data.motherName,
+      homeOwnershipStatus: data.homeOwnershipStatus,
+      consentAccepted: Boolean(data.consentAccepted),
+      status: 'NEW',
     };
 
-    const clientIp = typeof clientPublicIp === 'string' && clientPublicIp.trim()
-      ? clientPublicIp.trim()
-      : null;
-    const ipAddress =
-      serverIp && !isPrivateOrLocalIp(serverIp)
-        ? serverIp
-        : clientIp || null;
+    // Server-derived IP only. We intentionally do NOT trust any client-supplied
+    // `clientPublicIp` field — that would let bots spoof the IP column.
+    const ipAddress = serverIp && !isPrivateOrLocalIp(serverIp) ? serverIp : null;
 
-    let lat =
-      latitude != null && !Number.isNaN(Number(latitude)) ? Number(latitude) : null;
-    let lon =
-      longitude != null && !Number.isNaN(Number(longitude)) ? Number(longitude) : null;
+    let lat = data.latitude;
+    let lon = data.longitude;
 
     if (lat == null || lon == null) {
-      const ipForGeo = ipAddress || serverIp;
-      const ipGeo = ipForGeo ? await getLocationFromIp(ipForGeo) : null;
+      const ipGeo = ipAddress ? await getLocationFromIp(ipAddress) : null;
       if (ipGeo) {
         lat = lat ?? ipGeo.lat;
         lon = lon ?? ipGeo.lon;
@@ -135,7 +129,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Error creating lead:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

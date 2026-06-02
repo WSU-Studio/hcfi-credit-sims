@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
 import type { Vendor } from '@/app/types/credit-simulation';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
+import { HoneypotField } from '@/app/components/security/HoneypotField';
 
 export type UserLocation = { latitude: number; longitude: number } | null;
 
@@ -51,16 +53,13 @@ export function ContactModal({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modalLocation, setModalLocation] = useState<UserLocation>(null);
-  const [clientPublicIp, setClientPublicIp] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState<string>('');
 
-  // Request geolocation + public IP when modal opens (setelah user click Contact = ada user gesture)
+  // Request geolocation when modal opens (setelah user click Contact = ada user gesture).
+  // The server derives the IP from request headers and intentionally ignores any
+  // client-supplied value to prevent spoofing.
   useEffect(() => {
     if (!open || typeof window === 'undefined') return;
-    setClientPublicIp(null);
-    fetch('https://api.ipify.org?format=json')
-      .then((r) => r.json())
-      .then((data) => setClientPublicIp(data?.ip || null))
-      .catch(() => setClientPublicIp(null));
     if (navigator.geolocation) {
       if (userLocation) {
         setModalLocation(userLocation);
@@ -108,7 +107,7 @@ export function ContactModal({
       setSuccess(false);
       setError(null);
       setModalLocation(null);
-      setClientPublicIp(null);
+      setHoneypot('');
     }
   }, [open]);
 
@@ -186,7 +185,7 @@ export function ContactModal({
           consentAccepted: consent,
           latitude: (modalLocation ?? userLocation)?.latitude ?? null,
           longitude: (modalLocation ?? userLocation)?.longitude ?? null,
-          clientPublicIp: clientPublicIp || undefined,
+          [HONEYPOT_FIELD]: honeypot,
         }),
       });
 
@@ -233,6 +232,7 @@ export function ContactModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <HoneypotField value={honeypot} onChange={setHoneypot} />
           {(productName || vehicleSummary || dealer) && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               {productName && (

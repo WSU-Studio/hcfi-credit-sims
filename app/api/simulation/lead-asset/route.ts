@@ -18,6 +18,8 @@ import {
   extractHyundaiErrorId,
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
+import { leadAssetDraftSchema } from '@/lib/security/schemas';
+import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 
 /**
  * Hyundai Fase 1: Add Lead Asset.
@@ -40,40 +42,39 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: unknown;
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const input = body as {
-    vendor?: Vendor;
-    assetSnapshot?: unknown;
-    otrPrice?: number;
-    discount?: number;
-  };
+  if (rawBody && typeof rawBody === 'object' && isHoneypotTripped((rawBody as Record<string, unknown>)[HONEYPOT_FIELD])) {
+    console.warn('[lead-asset] honeypot tripped from ip=%s', ip);
+    return NextResponse.json({ leadNo: `BOT-${Date.now()}`, dataSource: 'discarded' });
+  }
 
-  const vendor = input.vendor;
-  const snapshot = parseLeadAssetSnapshot(input.assetSnapshot);
-  const otrPrice = Number(input.otrPrice);
-  const discount = Number(input.discount ?? 0);
-
-  if (!vendor?.VendorCode || !vendor?.OriOfficeCode) {
+  const parsed = leadAssetDraftSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
     return NextResponse.json(
-      { error: 'Data dealer tidak lengkap (VendorCode/OriOfficeCode wajib).' },
+      {
+        error: 'Invalid input',
+        field: firstIssue?.path?.join('.') ?? 'input',
+        message: firstIssue?.message ?? 'Validation failed',
+      },
       { status: 400 }
     );
   }
+
+  const vendor = parsed.data.vendor as unknown as Vendor;
+  const snapshot = parseLeadAssetSnapshot(parsed.data.assetSnapshot);
+  const otrPrice = parsed.data.otrPrice;
+  const discount = parsed.data.discount ?? 0;
+
   if (!snapshot) {
     return NextResponse.json(
       { error: 'Data spesifikasi kendaraan tidak lengkap.' },
-      { status: 400 }
-    );
-  }
-  if (!otrPrice || otrPrice <= 0) {
-    return NextResponse.json(
-      { error: 'OTR price harus lebih dari 0.' },
       { status: 400 }
     );
   }
