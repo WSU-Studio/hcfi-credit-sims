@@ -365,6 +365,11 @@ model Lead {
   oriOfficeName       String?
   cmoEmpNo            String?
   cmoName             String?
+  /// LeadNo Hyundai dari Step 4 (PriceStep) — disimpan saat user submit ContactModal,
+  /// di-mirror dari `LeadAssetDraft.hyundaiLeadNo` yang dibuat ketika user submit harga.
+  /// Berbeda dari `hyundaiLeadNo` di bawah, yang baru di-set saat admin submit lead
+  /// (admin submit memicu AddLeadAsset baru → LeadNo baru lagi).
+  simulationLeadNo    String?
   hyundaiLeadNo       String?
   hyundaiAssignStatus String   @default("PENDING") // PENDING, SUBMITTED, FAILED
   hyundaiAssignError  String?  @db.Text
@@ -373,6 +378,8 @@ model Lead {
   updatedAt   DateTime @updatedAt
 
   ocrResults  LeadOcrResult[]
+
+  @@index([simulationLeadNo])
 
   @@map("leads")
 }
