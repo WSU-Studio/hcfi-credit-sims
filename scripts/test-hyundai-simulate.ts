@@ -261,12 +261,16 @@ async function main() {
     );
 
     // Step 5: Simulate (cuma dijalankan kalau Calculate OK supaya kita tahu chain effect-nya)
+    // NOTE (2026-06-03): MrChannelCode wajib — tanpa field ini Hyundai balas
+    // HTTP 500 LINQ exception. Konfirmasi dari tim Hyundai, belum ter-dokumentasi
+    // di Postman collection v1.1.
     let simR: Awaited<ReturnType<typeof hyundaiPost>>;
     if (calcR.ok) {
       simR = await hyundaiPost('/v1/IntegrationWebsite/SimulateFinancialCalculate', token, {
         ...baseBody,
         FirstInstallment: firstInstallment,
         Tenor: tenor,
+        MrChannelCode: 'WEBSITE',
       });
     } else {
       simR = {

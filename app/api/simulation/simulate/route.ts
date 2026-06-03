@@ -16,19 +16,21 @@ import {
 /**
  * Hyundai Fase 2 — kalkulasi cicilan per tenor untuk satu produk yang user pilih.
  *
- * NOTE (2026-05-25): kami sengaja memanggil `CalculateProductFromRule` (bukan
- * `SimulateFinancialCalculate`) karena `SimulateFinancialCalculate` di QA env
- * Hyundai mengembalikan HTTP 500 "LINQ query parameter expression" untuk semua
- * kombinasi produk (sudah dilaporkan ke Hyundai, lihat Error ID di history).
+ * Memanggil `CalculateProductFromRule` (Postman v1.1, Financial Data – Fase 2).
+ * Endpoint ini mengembalikan `ListProductObj` berisi SEMUA tenor varian
+ * (12/24/36/48/60) untuk satu produk — itu sebabnya UI dipakai untuk tabel
+ * "Result per Tenor" (Step 5). Field yang dikembalikan sudah lengkap:
+ * TdpAmt, InstallmentAmt, EffRatePrcnt, BalloonAmt, dst.
  *
- * `CalculateProductFromRule` mengembalikan array tenor (12/24/36/48/60) sekaligus
- * dengan TdpAmt/InstallmentAmt/NtfAmt/EffRatePrcnt lengkap — semua field yang
- * dibutuhkan untuk simulasi awal. Field yang hanya ada di Simulate (mis.
- * `AssetInsAmt`) tidak dipakai untuk display ke user di tahap ini.
- *
- * Body request dari frontend kompatibel: `firstInstallment` & `tenor` tetap
- * diterima (untuk kompatibilitas), tapi tidak diteruskan ke Hyundai karena
- * `CalculateProductFromRule` tidak memerlukannya.
+ * Catatan tentang `SimulateFinancialCalculate` (2026-06-03):
+ * - Endpoint berbeda di Hyundai LOS, dipakai untuk simulasi detail SATU tenor
+ *   spesifik (perlu field `Tenor` & `FirstInstallment` di body).
+ * - Body wajib `MrChannelCode` (mis. "WEBSITE"); tanpa itu service balas
+ *   HTTP 500 LINQ exception (sudah dikonfirmasi tim Hyundai, belum ter-
+ *   dokumentasi di Postman collection v1.1).
+ * - Karena tabel multi-tenor butuh semua varian sekaligus, kita TIDAK pakai
+ *   `SimulateFinancialCalculate` di route ini—itu akan dipakai nanti saat
+ *   user men-finalize satu tenor (mis. submit/save final calc).
  */
 function isMockLeadNo(leadNo?: string | null): boolean {
   if (!leadNo) return false;
@@ -56,15 +58,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // firstInstallment masih diterima untuk kompatibilitas dengan UI, tapi
-    // `CalculateProductFromRule` tidak butuh field ini—jadi cukup divalidasi
-    // tipenya kalau memang dikirim.
     if (firstInstallment && !['ADDM', 'ADDB'].includes(firstInstallment)) {
       return NextResponse.json(
         { error: 'firstInstallment must be ADDM or ADDB' },
         { status: 400 }
       );
     }
+    const resolvedFirstInstallment: 'ADDM' | 'ADDB' =
+      firstInstallment === 'ADDB' ? 'ADDB' : 'ADDM';
 
     const siteMock = await getMockApiSettings();
     const mockEnabled = siteMock.enabled || isMockModeEnabled();
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: (firstInstallment as 'ADDM' | 'ADDB') ?? 'ADDM',
+        firstInstallment: resolvedFirstInstallment,
       });
       return NextResponse.json({ ...res, dataSource: 'mock' });
     }
@@ -101,20 +102,23 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/v1/IntegrationWebsite/CalculateProductFromRule`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          requestDateTime: new Date().toISOString(),
-          rowVersion: '',
-          LeadNo: leadNo,
-          DpPrcnt: Number(dpPrcnt),
-          DpAmt: Math.round(Number(otrPrice) * (Number(dpPrcnt) / 100)),
-          ProductCode: productCode,
-          ProductName: productName,
-          IsPromotion: Boolean(isPromotion),
-        }),
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/v1/IntegrationWebsite/CalculateProductFromRule`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            requestDateTime: new Date().toISOString(),
+            rowVersion: '',
+            LeadNo: leadNo,
+            DpPrcnt: Number(dpPrcnt),
+            DpAmt: Math.round(Number(otrPrice) * (Number(dpPrcnt) / 100)),
+            ProductCode: productCode,
+            ProductName: productName,
+            IsPromotion: Boolean(isPromotion),
+          }),
+        }
+      );
 
       const text = await res.text();
       let data: unknown;
@@ -125,9 +129,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (!res.ok) {
-        const apiMessage = (data && typeof data === 'object' && 'Message' in data)
-          ? (data as { Message?: string }).Message
-          : null;
+        const apiMessage =
+          data && typeof data === 'object' && 'Message' in data
+            ? (data as { Message?: string }).Message
+            : null;
         console.warn(
           `[simulate] Hyundai CalculateProductFromRule returned ${res.status}:`,
           apiMessage ?? text?.slice(0, 200) ?? 'no body'
@@ -162,7 +167,7 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: (firstInstallment as 'ADDM' | 'ADDB') ?? 'ADDM',
+        firstInstallment: resolvedFirstInstallment,
       });
       return NextResponse.json({ ...mockResult, dataSource: 'mock' });
     }
