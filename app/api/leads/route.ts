@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       motherName: data.motherName,
       homeOwnershipStatus: data.homeOwnershipStatus,
       consentAccepted: Boolean(data.consentAccepted),
+      simulationLeadNo: data.simulationLeadNo,
       status: 'NEW',
     };
 
@@ -124,6 +125,29 @@ export async function POST(request: NextRequest) {
         longitude: lon,
       } as unknown as Parameters<typeof prisma.lead.create>[0]['data'],
     });
+
+    // Tautkan LeadAssetDraft (yang dibuat saat Step 4 PriceStep) ke Lead ini,
+    // supaya admin bisa trace kembali simulasi awalnya. Best-effort: kalau
+    // draft tidak ditemukan / sudah converted, tidak ganggu lead creation.
+    if (data.simulationLeadNo) {
+      try {
+        await prisma.leadAssetDraft.updateMany({
+          where: {
+            hyundaiLeadNo: data.simulationLeadNo,
+            convertedLeadId: null,
+          },
+          data: {
+            convertedLeadId: lead.id,
+            status: 'CONVERTED',
+          },
+        });
+      } catch (linkErr) {
+        console.warn(
+          '[leads] failed to link LeadAssetDraft → Lead (non-fatal):',
+          linkErr instanceof Error ? linkErr.message : linkErr
+        );
+      }
+    }
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (error: unknown) {

@@ -93,6 +93,15 @@ export const leadCreateSchema = z
     productName: optionalSafeText(MAX_PRODUCT),
     vehicleSummary: optionalSafeText(MAX_PRODUCT),
 
+    // LeadNo Hyundai dari Step 4 (PriceStep). Format Hyundai TrxNo:
+    // alphanumeric (mis. "11STGLD20260500022"), kita batasi 64 char.
+    simulationLeadNo: z
+      .union([z.string().max(64).transform(cleanString), z.literal(''), z.null(), z.undefined()])
+      .transform((v) => (v == null || v === '' ? null : v))
+      .refine((v) => v == null || /^[A-Za-z0-9_-]+$/.test(v), {
+        message: 'LeadNo simulasi hanya boleh huruf/angka/-/_',
+      }),
+
     // assetSnapshot validated separately via parseLeadAssetSnapshot.
     // Accept arbitrary JSON object or null here; deeper schema lives in lead-asset-snapshot.ts.
     assetSnapshot: z.record(z.string(), z.unknown()).nullable().optional(),

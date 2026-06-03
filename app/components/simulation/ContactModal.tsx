@@ -13,6 +13,11 @@ export type UserLocation = { latitude: number; longitude: number } | null;
 interface ContactModalProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * LeadNo Hyundai dari Step 4 (PriceStep). Akan disimpan ke `Lead.simulationLeadNo`
+   * dan men-trigger update `LeadAssetDraft.convertedLeadId` di backend.
+   */
+  leadNo?: string | null;
   productName?: string;
   otrPrice?: number;
   dpPercent?: number;
@@ -27,6 +32,7 @@ interface ContactModalProps {
 export function ContactModal({
   open,
   onClose,
+  leadNo,
   productName,
   otrPrice,
   dpPercent,
@@ -167,6 +173,7 @@ export function ContactModal({
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
+          simulationLeadNo: leadNo || null,
           productName: productName || null,
           vehicleSummary: vehicleSummary || null,
           assetSnapshot: assetSnapshot || null,
