@@ -350,9 +350,20 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   }
 
   // Step 5 — persist ke Adins.
+  //
+  // PENTING (2026-06-03): body request `SaveFinalCalculateResult` di Postman
+  // v1.1 adalah PERSIS seluruh response `FinalCalculateByLeadNo` (termasuk
+  // HeaderObj, StatusCode, dst) DITAMBAH `LeadNo` di paling atas. Kalau LeadNo
+  // tidak dikirim, Hyundai-side LINQ query lempar:
+  //   "An exception was thrown while attempting to evaluate a LINQ query
+  //    parameter expression"
+  // Pola yang sama dengan SimulateFinancialCalculate sebelum kita tambah
+  // MrChannelCode. Maka kita forward `finalRes` apa adanya + inject LeadNo.
   await hyundaiPost(
     '/v1/IntegrationWebsite/SaveFinalCalculateResult',
     integrationRequestBody({
+      LeadNo: params.leadNo,
+      ...(finalRes as Record<string, unknown>),
       SummaryInfoObj: finalRes.SummaryInfoObj,
       SaveLeadDataObj: finalRes.SaveLeadDataObj ?? { NumOfInst: params.tenor },
       SaveLeadFinDataObj: finalRes.SaveLeadFinDataObj ?? {},

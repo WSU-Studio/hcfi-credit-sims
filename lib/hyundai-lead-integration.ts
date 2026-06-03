@@ -1,7 +1,38 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
- * Flow: AddLeadAsset → bootstrap finansial → OCR KTP → AddLeadCust
- * (ForwardLeadToCMO tidak dipakai — assignment CMO via SupplierEmpNo di AddLeadAsset)
+ *
+ * Flow lengkap (per Postman v1.1) — dijalankan saat admin klik "Submit" di
+ * /admin/leads (setelah isi kota, dealer, dan MOC):
+ *
+ *   Fase 1 — Lead Asset
+ *     1. AddLeadAsset                            → return TrxNo (= LeadNo)
+ *     2. GetLeadAssetSummaryInfoByLeadNo (verify)
+ *
+ *   Fase 2 — Financial Data (lihat lib/hyundai-lead-financial.ts)
+ *     3. CalculateProductFromRule
+ *     4. SimulateFinancialCalculate
+ *     5. SaveFinancialData
+ *     6. FinalCalculateByLeadNo
+ *     7. SaveFinalCalculateResult
+ *
+ *   Fase 3 — Customer Data
+ *     8.  GetOcrKtpData                          (OCR)
+ *     9.  GetLocationDataByZipcode               (Master Data Dropdown)
+ *     10. sync insurance                         (helper internal)
+ *     11. ValidateCustZipCode                    (Validation, fail-fast)
+ *     12. ValidateDuplicatePhoneAndEmail         (Validation, fail-fast)
+ *     13. AddLeadCust                            (Save — ujung Fase 3)
+ *
+ * Catatan:
+ *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
+ *     AddLeadAsset.
+ *   - Master Data dropdown lain (Gender / Marital / Religion / Nationality /
+ *     Education / Country / Building Ownership) tidak dipanggil—kita pakai
+ *     static mapping di lib/hyundai-ocr.ts. Endpoint dropdown Hyundai hanya
+ *     untuk populate UI di mobile app mereka.
+ *   - Endpoint Postman v1.1 yang ditandai `[x]` (Validate Zipcode and Asset
+ *     Region, Recalculate Insurance Data - Change Region, Realculate By
+ *     Lead No, Save Final Calculate Result Fase 3) sudah deprecated.
  */
 
 import { prisma } from '@/lib/prisma';
@@ -24,6 +55,10 @@ import {
   resolveCustomerLocation,
   type HyundaiCustomerLocation,
 } from '@/lib/hyundai-zipcode-resolve';
+import {
+  validateCustomerZipcode,
+  validateCustomerPhoneAndEmail,
+} from '@/lib/hyundai-customer-validation';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -299,6 +334,24 @@ export async function submitLeadToHyundai(params: {
     location: customerLocation,
     idNo,
     vendorCity: params.vendor.City,
+  });
+
+  // Fase 3 Validation — fail-fast sebelum AddLeadCust (per Postman v1.1).
+  // ZipCode sudah resolved via GetLocationDataByZipcode, tapi Hyundai tetap
+  // minta ValidateCustZipCode untuk konfirmasi kombinasi master + permission.
+  await validateCustomerZipcode({
+    zipCode: customerLocation.zipCode,
+    city: customerLocation.city,
+    areaCode1: customerLocation.areaCode1,
+    areaCode2: customerLocation.areaCode2,
+  });
+
+  const sanitizedPhoneForValidation = params.lead.phone.replace(/\D/g, '').slice(0, 15);
+  await validateCustomerPhoneAndEmail({
+    leadNo,
+    email: params.lead.email,
+    phoneNo: sanitizedPhoneForValidation,
+    custType: 'CUSTOMER',
   });
 
   const addLeadCustPayload = buildAddLeadCustBody(
