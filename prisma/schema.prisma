@@ -377,7 +377,8 @@ model Lead {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  ocrResults  LeadOcrResult[]
+  ocrResults    LeadOcrResult[]
+  hyundaiCalls  HyundaiApiCallLog[]
 
   @@index([simulationLeadNo])
 
@@ -412,6 +413,36 @@ model LeadOcrResult {
   @@index([leadId])
   @@index([createdAt])
   @@map("lead_ocr_results")
+}
+
+/// Generic audit log untuk request + response Hyundai API call yang krusial
+/// (Save/Final/AddLeadCust). Tujuannya: troubleshooting lewat tim Hyundai
+/// (compare payload yang kita kirim vs yang mereka terima/proses).
+///
+/// Tidak meng-cover SEMUA call—cuma yang dilist di `hyundai-api-log.ts:LoggedEndpoint`.
+/// Whitelist supaya tabel tidak membengkak dengan call repetitive (Login, dropdown, dst).
+model HyundaiApiCallLog {
+  id              String   @id @default(uuid())
+  leadId          String?
+  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  hyundaiLeadNo   String?
+  endpoint        String   // "SaveFinalCalculateResult" | "FinalCalculateByLeadNo" | "AddLeadCust"
+  url             String
+  status          String   // "SUCCESS" | "FAILED"
+  httpStatus      Int?     // bisa null kalau request belum sampai/Hyundai unreachable
+  hyundaiStatus   String?  // dari envelope.StatusCode (bisa "200", "500", dll)
+  hyundaiMessage  String?  @db.Text
+  requestBody     Json
+  responseBody    Json?
+  errorMessage    String?  @db.Text
+  durationMs      Int?
+  createdAt       DateTime @default(now())
+
+  @@index([hyundaiLeadNo])
+  @@index([leadId])
+  @@index([endpoint])
+  @@index([createdAt])
+  @@map("hyundai_api_call_logs")
 }
 
 /// Preliminary Hyundai lead created at PriceStep submit (before customer contact data is filled).
