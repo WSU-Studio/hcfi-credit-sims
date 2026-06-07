@@ -157,6 +157,39 @@ async function main() {
     }
   }
 
+  console.log('\n=== HYUNDAI API CALL LOGS (krusial endpoints) ===');
+  const apiLogs = await prisma.hyundaiApiCallLog.findMany({
+    where: {
+      OR: [
+        { leadId: lead.id },
+        { hyundaiLeadNo: lead.hyundaiLeadNo ?? leadNoArg },
+        { hyundaiLeadNo: lead.simulationLeadNo ?? leadNoArg },
+      ],
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (!apiLogs.length) {
+    console.log('  (belum ada log — submit ulang setelah feature logging aktif)');
+  } else {
+    for (const log of apiLogs) {
+      console.log(`\n  --- [${log.endpoint}] ${log.status} (${log.durationMs ?? '?'}ms, ${log.createdAt.toISOString()}) ---`);
+      console.log('  url            :', log.url);
+      console.log('  hyundaiStatus  :', log.hyundaiStatus ?? '(null)');
+      console.log('  hyundaiMessage :', log.hyundaiMessage ?? '(null)');
+      if (log.errorMessage) {
+        console.log('  errorMessage   :', log.errorMessage);
+      }
+      console.log('  requestBody    :', JSON.stringify(log.requestBody, null, 2));
+      if (log.responseBody !== null) {
+        const rspStr = JSON.stringify(log.responseBody, null, 2);
+        console.log('  responseBody   :', rspStr.length > 4000 ? rspStr.slice(0, 4000) + '\n... (truncated)' : rspStr);
+      } else {
+        console.log('  responseBody   : (null)');
+      }
+    }
+  }
+
   console.log('\n=== ADD LEAD CUST PAYLOAD (yang dikirim ke Hyundai) ===');
   const persistedPayload = ocrResults[0]?.addLeadCustPayload;
   if (persistedPayload) {

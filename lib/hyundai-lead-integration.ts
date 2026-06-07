@@ -46,6 +46,7 @@ import {
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
 import { resolveAssetPriceAmt, verifyLeadAssetExists } from '@/lib/hyundai-asset-price';
 import { bootstrapLeadFinancialAndInsurance } from '@/lib/hyundai-lead-financial';
@@ -289,6 +290,7 @@ export async function submitLeadToHyundai(params: {
     dpPercent: params.lead.dpPercent ?? 10,
     tenor: params.lead.tenor ?? 36,
     productName: params.lead.productName,
+    leadId: params.lead.id,
   });
 
   let ocrRead: OcrKtpRead | null = null;
@@ -366,7 +368,13 @@ export async function submitLeadToHyundai(params: {
     ktpFile
   );
 
-  await hyundaiPost('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload);
+  // Endpoint terakhir & paling kritikal — full request/response dilog ke
+  // HyundaiApiCallLog untuk audit + troubleshooting dengan tim Hyundai.
+  await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload, {
+    leadId: params.lead.id,
+    hyundaiLeadNo: leadNo,
+    endpoint: 'AddLeadCust',
+  });
 
   // Persist payload yang dikirim ke `AddLeadCust` untuk audit & troubleshooting.
   // Field `IdFile.Content` (base64 KTP) bisa sangat besar—ganti dengan marker

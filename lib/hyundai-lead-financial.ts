@@ -1,4 +1,5 @@
 import { hyundaiPost } from '@/lib/hyundai-api-post';
+import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { resolveHyundaiProductFromSimulation } from '@/lib/hyundai-product-map';
 
@@ -252,7 +253,13 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   firstInstallment?: 'ADDM' | 'ADDB';
   isPromotion?: boolean;
   mrChannelCode?: string;
+  /**
+   * Optional Lead.id dari DB lokal — dipakai untuk relate baris log Hyundai
+   * ke Lead untuk audit trail. Boleh null kalau dipanggil di context lain.
+   */
+  leadId?: string | null;
 }): Promise<void> {
+  const logMeta = { leadId: params.leadId ?? null, hyundaiLeadNo: params.leadNo };
   const productsRes = await fetchDefaultProducts(params.leadNo, params.tenor);
 
   const products = [
@@ -339,10 +346,11 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
     })
   );
 
-  // Step 4 — final compute.
-  const finalRes = await hyundaiPost<FinalCalculateResponse>(
+  // Step 4 — final compute. Dilog ke HyundaiApiCallLog (sering jadi sumber error).
+  const finalRes = await hyundaiPostLogged<FinalCalculateResponse>(
     '/v1/IntegrationWebsite/FinalCalculateByLeadNo',
-    integrationRequestBody({ LeadNo: params.leadNo })
+    integrationRequestBody({ LeadNo: params.leadNo }),
+    { ...logMeta, endpoint: 'FinalCalculateByLeadNo' }
   );
 
   if (!finalRes.SummaryInfoObj) {
@@ -359,7 +367,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   //    parameter expression"
   // Pola yang sama dengan SimulateFinancialCalculate sebelum kita tambah
   // MrChannelCode. Maka kita forward `finalRes` apa adanya + inject LeadNo.
-  await hyundaiPost(
+  await hyundaiPostLogged(
     '/v1/IntegrationWebsite/SaveFinalCalculateResult',
     integrationRequestBody({
       LeadNo: params.leadNo,
@@ -368,6 +376,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
       SaveLeadDataObj: finalRes.SaveLeadDataObj ?? { NumOfInst: params.tenor },
       SaveLeadFinDataObj: finalRes.SaveLeadFinDataObj ?? {},
       ListSaveLeadInstSchdlObj: finalRes.ListSaveLeadInstSchdlObj ?? [],
-    })
+    }),
+    { ...logMeta, endpoint: 'SaveFinalCalculateResult' }
   );
 }
