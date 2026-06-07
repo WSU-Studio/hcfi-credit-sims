@@ -316,6 +316,8 @@ export function LeadsTable() {
                                   ? 'bg-green-100 text-green-700'
                                   : lead.hyundaiAssignStatus === 'FAILED'
                                   ? 'bg-red-100 text-red-700'
+                                  : lead.hyundaiAssignStatus === 'SUBMITTING'
+                                  ? 'bg-blue-100 text-blue-700 animate-pulse'
                                   : 'bg-gray-100 text-gray-600'
                               }`}
                             >
