@@ -197,7 +197,12 @@ export function ContactModal({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('submitError'));
+      if (!res.ok) {
+        // Prioritaskan `message` (lebih user-friendly, mis. "Sesi simulasi
+        // tidak valid. Silakan ulangi simulasi kredit.") sebelum fallback ke
+        // `error` yang biasanya berisi kode generik ("Invalid input").
+        throw new Error(data.message || data.error || t('submitError'));
+      }
 
       setSuccess(true);
       onSubmit?.({ name: name.trim(), phone: phone.trim(), email: email.trim() });

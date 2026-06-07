@@ -60,6 +60,15 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
     const fieldPath = firstIssue?.path?.join('.') ?? 'input';
+    // Log selalu di server supaya kita tahu kalau ada bot/scanner yang spam,
+    // tapi response ke client sengaja generic supaya bot tidak belajar
+    // field-field yang missing satu per satu.
+    console.warn(
+      '[leads] schema validation failed ip=%s field=%s message=%s',
+      serverIp,
+      fieldPath,
+      firstIssue?.message
+    );
     return NextResponse.json(
       {
         error: 'Invalid input',
@@ -71,6 +80,52 @@ export async function POST(request: NextRequest) {
   }
 
   const data = parsed.data;
+
+  // Tier 2 defense: pastikan simulationLeadNo benar-benar dihasilkan dari
+  // sesi simulasi yang lengkap. `LeadAssetDraft` dibuat saat user lewat
+  // Step 4 (PriceStep) yang memanggil Hyundai AddLeadAsset. Bot/scanner yang
+  // POST direct ke /api/leads tanpa pernah call /api/simulation/lead-asset
+  // dulu tidak akan punya hyundaiLeadNo yang valid → ditolak di sini.
+  //
+  // Catatan: kita PURPOSEFULLY pakai pesan generic biar bot tidak bisa
+  // membedakan "field missing" vs "leadNo invalid" vs "leadNo expired".
+  const draft = await prisma.leadAssetDraft.findUnique({
+    where: { hyundaiLeadNo: data.simulationLeadNo },
+    select: { id: true, convertedLeadId: true, status: true },
+  });
+  if (!draft) {
+    console.warn(
+      '[leads] simulationLeadNo not found in LeadAssetDraft ip=%s leadNo=%s',
+      serverIp,
+      data.simulationLeadNo
+    );
+    return NextResponse.json(
+      {
+        error: 'Invalid input',
+        field: 'simulationLeadNo',
+        message: 'Sesi simulasi tidak valid. Silakan ulangi simulasi kredit.',
+      },
+      { status: 400 }
+    );
+  }
+  if (draft.convertedLeadId) {
+    // Idempotency: kalau draft sudah pernah convert ke Lead, jangan bikin
+    // baris baru. Bisa terjadi kalau user double-click submit atau retry
+    // setelah network hiccup.
+    console.warn(
+      '[leads] LeadAssetDraft already converted ip=%s leadNo=%s convertedLeadId=%s',
+      serverIp,
+      data.simulationLeadNo,
+      draft.convertedLeadId
+    );
+    return NextResponse.json(
+      {
+        error: 'Already submitted',
+        message: 'Sesi simulasi ini sudah pernah di-submit.',
+      },
+      { status: 409 }
+    );
+  }
 
   try {
     const leadPayload = {
@@ -126,27 +181,28 @@ export async function POST(request: NextRequest) {
       } as unknown as Parameters<typeof prisma.lead.create>[0]['data'],
     });
 
-    // Tautkan LeadAssetDraft (yang dibuat saat Step 4 PriceStep) ke Lead ini,
-    // supaya admin bisa trace kembali simulasi awalnya. Best-effort: kalau
-    // draft tidak ditemukan / sudah converted, tidak ganggu lead creation.
-    if (data.simulationLeadNo) {
-      try {
-        await prisma.leadAssetDraft.updateMany({
-          where: {
-            hyundaiLeadNo: data.simulationLeadNo,
-            convertedLeadId: null,
-          },
-          data: {
-            convertedLeadId: lead.id,
-            status: 'CONVERTED',
-          },
-        });
-      } catch (linkErr) {
-        console.warn(
-          '[leads] failed to link LeadAssetDraft → Lead (non-fatal):',
-          linkErr instanceof Error ? linkErr.message : linkErr
-        );
-      }
+    // Tautkan LeadAssetDraft (yang dibuat saat Step 4 PriceStep) ke Lead ini.
+    // `data.simulationLeadNo` dijamin ada karena schema sudah required dan
+    // kita sudah verify draft eksis di atas. updateMany tetap menggunakan
+    // `convertedLeadId: null` sebagai safety guard — kalau ada race lain yang
+    // sempat convert, kita biarkan saja (lead saat ini akan tetap ada sebagai
+    // baris terpisah, tapi tidak menggandakan link).
+    try {
+      await prisma.leadAssetDraft.updateMany({
+        where: {
+          hyundaiLeadNo: data.simulationLeadNo,
+          convertedLeadId: null,
+        },
+        data: {
+          convertedLeadId: lead.id,
+          status: 'CONVERTED',
+        },
+      });
+    } catch (linkErr) {
+      console.warn(
+        '[leads] failed to link LeadAssetDraft → Lead (non-fatal):',
+        linkErr instanceof Error ? linkErr.message : linkErr
+      );
     }
 
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });

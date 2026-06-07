@@ -29,6 +29,56 @@ const optionalSafeText = (max: number) =>
     .union([safeText(max), z.literal(''), z.null(), z.undefined()])
     .transform((v) => (v == null || v === '' ? null : v));
 
+/**
+ * Required text variant: rejects null/undefined/empty after cleaning.
+ * Use when a string field must be present (mis. simulasi kredit fields).
+ *
+ * Menerima `null`/`undefined` di input level (supaya pesan error jadi
+ * "field wajib diisi" yang konsisten, bukan "expected string, received null"
+ * dari Zod default), lalu di-refine ke string non-empty setelahnya.
+ */
+const requiredSafeText = (max: number, label = 'field') =>
+  z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((v) => (v == null ? '' : cleanString(v)))
+    .refine((v) => v.length > 0, { message: `${label} wajib diisi` })
+    .refine((v) => v.length <= max, { message: `max ${max} karakter` })
+    .refine((v) => !looksMalicious(v), { message: 'mengandung karakter yang tidak diizinkan' });
+
+/**
+ * Required finite number with optional bounds.
+ * Coerces strings → number; rejects null/undefined/NaN/'' so simulasi numeric
+ * fields cannot be submitted blank by bots.
+ */
+const requiredFiniteNumber = (opts: {
+  min?: number;
+  max?: number;
+  integer?: boolean;
+  label?: string;
+} = {}) => {
+  const label = opts.label ?? 'nilai';
+  // Accept number | string | null | undefined di input level supaya kita
+  // bisa kasih pesan "wajib diisi" yang konsisten alih-alih error generik
+  // dari union mismatch ("Expected number, received null").
+  return z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (v === '' || v == null) return Number.NaN;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : Number.NaN;
+    })
+    .refine((v) => Number.isFinite(v), { message: `${label} wajib diisi` })
+    .refine((v) => (opts.integer ? Number.isInteger(v) : true), {
+      message: `${label} harus bilangan bulat`,
+    })
+    .refine((v) => v >= (opts.min ?? Number.NEGATIVE_INFINITY), {
+      message: `${label} minimal ${opts.min}`,
+    })
+    .refine((v) => opts.max == null || v <= opts.max, {
+      message: `${label} maksimal ${opts.max}`,
+    });
+};
+
 const phoneSchema = z
   .string()
   .max(MAX_PHONE)
@@ -43,16 +93,6 @@ const emailSchema = z
   .max(MAX_EMAIL)
   .transform((v) => cleanString(v).toLowerCase())
   .refine((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), { message: 'format email tidak valid' });
-
-/** Coerce to finite positive Float; passthrough null/undefined. */
-const optionalPositiveNumber = z
-  .union([z.number(), z.string(), z.null(), z.undefined()])
-  .transform((v) => {
-    if (v == null || v === '') return null;
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  })
-  .refine((v) => v == null || v >= 0, { message: 'nilai harus >= 0' });
 
 const latitudeSchema = z
   .union([z.number(), z.string(), z.null(), z.undefined()])
@@ -83,48 +123,68 @@ const optionalHttpUrl = z
 
 export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER'] as const;
 
-/** Public lead submission (POST /api/leads). */
+/**
+ * Public lead submission (POST /api/leads).
+ *
+ * NOTE (2026-06-07): semua field simulasi kredit di-required di sini supaya
+ * bot/scanner tidak bisa POST direct dengan body minimal `{name,phone,email}`
+ * dan menghasilkan baris-baris kosong di tabel leads. Endpoint ini hanya
+ * dipanggil dari `app/components/simulation/ContactModal.tsx` yang muncul
+ * setelah user menyelesaikan Step 1–5 simulasi, jadi field-field di bawah
+ * dijamin tersedia untuk submission yang legit.
+ *
+ * Lapisan defense tambahan ada di `app/api/leads/route.ts` yang memvalidasi
+ * `simulationLeadNo` benar-benar berasal dari sesi `LeadAssetDraft` (artinya
+ * user benar-benar memanggil Hyundai AddLeadAsset di Step 4).
+ */
 export const leadCreateSchema = z
   .object({
-    name: safeText(MAX_NAME).refine((v) => v.length > 0, { message: 'nama wajib diisi' }),
+    name: requiredSafeText(MAX_NAME, 'nama'),
     phone: phoneSchema,
     email: emailSchema,
 
-    productName: optionalSafeText(MAX_PRODUCT),
+    productName: requiredSafeText(MAX_PRODUCT, 'produk'),
     vehicleSummary: optionalSafeText(MAX_PRODUCT),
 
     // LeadNo Hyundai dari Step 4 (PriceStep). Format Hyundai TrxNo:
     // alphanumeric (mis. "11STGLD20260500022"), kita batasi 64 char.
+    // Wajib supaya kita bisa cross-check ke LeadAssetDraft di /api/leads.
     simulationLeadNo: z
-      .union([z.string().max(64).transform(cleanString), z.literal(''), z.null(), z.undefined()])
-      .transform((v) => (v == null || v === '' ? null : v))
-      .refine((v) => v == null || /^[A-Za-z0-9_-]+$/.test(v), {
+      .string({ message: 'simulationLeadNo wajib diisi' })
+      .max(64, 'max 64 karakter')
+      .transform(cleanString)
+      .refine((v) => v.length > 0, { message: 'simulationLeadNo wajib diisi' })
+      .refine((v) => /^[A-Za-z0-9_-]+$/.test(v), {
         message: 'LeadNo simulasi hanya boleh huruf/angka/-/_',
       }),
 
     // assetSnapshot validated separately via parseLeadAssetSnapshot.
-    // Accept arbitrary JSON object or null here; deeper schema lives in lead-asset-snapshot.ts.
-    assetSnapshot: z.record(z.string(), z.unknown()).nullable().optional(),
+    // Wajib non-null karena ini hasil AddLeadAsset Hyundai.
+    assetSnapshot: z.record(z.string(), z.unknown()),
 
-    vendorCode: optionalSafeText(MAX_VENDOR),
-    vendorName: optionalSafeText(MAX_VENDOR),
+    vendorCode: requiredSafeText(MAX_VENDOR, 'vendorCode'),
+    vendorName: requiredSafeText(MAX_VENDOR, 'vendorName'),
     vendorCity: optionalSafeText(MAX_VENDOR),
     oriOfficeCode: optionalSafeText(MAX_VENDOR),
     oriOfficeName: optionalSafeText(MAX_VENDOR),
 
-    otrPrice: optionalPositiveNumber,
-    dpPercent: optionalPositiveNumber,
-    tenor: optionalPositiveNumber,
+    otrPrice: requiredFiniteNumber({ min: 1, label: 'OTR' }),
+    dpPercent: requiredFiniteNumber({ min: 0, max: 100, label: 'DP %' }),
+    tenor: requiredFiniteNumber({ min: 1, max: 120, integer: true, label: 'tenor' }),
 
-    ktpUrl: optionalHttpUrl,
-    citizenType: z.enum(['LOCAL', 'FOREIGNER']).nullable().optional().transform((v) => v ?? null),
-    motherName: optionalSafeText(MAX_NAME),
-    homeOwnershipStatus: z
-      .union([z.enum(HOME_OWNERSHIP_VALUES), z.literal(''), z.null(), z.undefined()])
-      .transform((v) => (v == null || v === '' ? null : v)),
+    ktpUrl: httpUrlSchema,
+    citizenType: z.enum(['LOCAL', 'FOREIGNER'], { message: 'citizenType wajib diisi' }),
+    motherName: requiredSafeText(MAX_NAME, 'nama ibu kandung'),
+    homeOwnershipStatus: z.enum(HOME_OWNERSHIP_VALUES, {
+      message: 'status kepemilikan rumah wajib diisi',
+    }),
 
     notes: optionalSafeText(MAX_NOTES),
-    consentAccepted: z.boolean().optional().default(false),
+    // Harus literal `true` — bukan sekedar boolean. Tombol di ContactModal
+    // di-disable kalau consent belum dicentang, jadi nilai sah hanya `true`.
+    consentAccepted: z
+      .boolean({ message: 'consent wajib dicentang' })
+      .refine((v) => v === true, { message: 'consent wajib dicentang' }),
 
     latitude: latitudeSchema,
     longitude: longitudeSchema,
