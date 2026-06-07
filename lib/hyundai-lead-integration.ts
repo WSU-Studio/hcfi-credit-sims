@@ -39,6 +39,7 @@ import { prisma } from '@/lib/prisma';
 import { fetchLeadKtpFromS3 } from '@/lib/lead-ktp-storage';
 import {
   getOcrKtpData,
+  HyundaiOcrError,
   mapGender,
   mapMarital,
   normalizeBirthDate,
@@ -313,12 +314,15 @@ export async function submitLeadToHyundai(params: {
       });
     } catch (ocrErr) {
       const msg = ocrErr instanceof Error ? ocrErr.message : 'OCR failed';
+      const rawResponse =
+        ocrErr instanceof HyundaiOcrError ? ocrErr.rawResponse : undefined;
       await persistOcrResult({
         leadId: params.lead.id,
         hyundaiLeadNo: leadNo,
         ktpFileName: ktpFile?.fileName,
         status: 'FAILED',
         errorMessage: msg,
+        rawResponse,
       });
     }
   }
@@ -364,14 +368,40 @@ export async function submitLeadToHyundai(params: {
 
   await hyundaiPost('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload);
 
-  if (ocrRead) {
-    await prisma.leadOcrResult.updateMany({
-      where: {
-        leadId: params.lead.id,
-        hyundaiLeadNo: leadNo,
-        status: 'SUCCESS',
-      },
-      data: { addLeadCustPayload: addLeadCustPayload as object },
+  // Persist payload yang dikirim ke `AddLeadCust` untuk audit & troubleshooting.
+  // Field `IdFile.Content` (base64 KTP) bisa sangat besar—ganti dengan marker
+  // supaya record DB tidak membengkak; FileName tetap disimpan untuk traceability.
+  const persistablePayload = {
+    ...addLeadCustPayload,
+    IdFile:
+      addLeadCustPayload.IdFile && typeof addLeadCustPayload.IdFile === 'object'
+        ? {
+            FileName: (addLeadCustPayload.IdFile as { FileName?: string }).FileName,
+            Content: '<base64 omitted>',
+          }
+        : undefined,
+  };
+
+  // Update untuk SEMUA status (SUCCESS / FAILED) — sebelumnya hanya SUCCESS.
+  // Kalau OCR sukses, akan ada 1 row LeadOcrResult di-update.
+  // Kalau OCR gagal tapi KTP ter-upload, juga ada 1 row FAILED yang di-update.
+  // Kalau lead tidak punya KTP, tidak ada row OCR sama sekali → buat satu sebagai
+  // marker NO_KTP supaya payload tetap ter-trace.
+  const ocrUpdate = await prisma.leadOcrResult.updateMany({
+    where: {
+      leadId: params.lead.id,
+      hyundaiLeadNo: leadNo,
+    },
+    data: { addLeadCustPayload: persistablePayload as object },
+  });
+
+  if (ocrUpdate.count === 0) {
+    await persistOcrResult({
+      leadId: params.lead.id,
+      hyundaiLeadNo: leadNo,
+      status: 'FAILED',
+      errorMessage: 'KTP tidak di-upload — payload AddLeadCust pakai placeholder',
+      addLeadCustPayload: persistablePayload,
     });
   }
 

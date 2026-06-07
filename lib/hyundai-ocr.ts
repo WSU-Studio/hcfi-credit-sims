@@ -32,6 +32,19 @@ export type OcrKtpResponse = {
   Message?: string;
 };
 
+/**
+ * Custom error agar caller bisa simpan response Hyundai apa adanya untuk
+ * troubleshooting. Tanpa ini, kita hanya tahu error message string.
+ */
+export class HyundaiOcrError extends Error {
+  rawResponse: unknown;
+  constructor(message: string, rawResponse: unknown) {
+    super(message);
+    this.name = 'HyundaiOcrError';
+    this.rawResponse = rawResponse;
+  }
+}
+
 export async function getOcrKtpData(params: {
   trxNo: string;
   fileName: string;
@@ -55,20 +68,23 @@ export async function getOcrKtpData(params: {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error('Invalid OCR response from Hyundai API');
+    throw new HyundaiOcrError('Invalid OCR response from Hyundai API', { rawText: text.slice(0, 500) });
   }
 
   if (!res.ok) {
-    throw new Error(data.Message || text.slice(0, 300) || `OCR API error (${res.status})`);
+    throw new HyundaiOcrError(
+      data.Message || text.slice(0, 300) || `OCR API error (${res.status})`,
+      data
+    );
   }
 
   const status = data.StatusCode ?? data.HeaderObj?.StatusCode;
   if (status && status !== '200') {
-    throw new Error(data.Message || 'OCR returned non-success status');
+    throw new HyundaiOcrError(data.Message || 'OCR returned non-success status', data);
   }
 
   if (!data.Read) {
-    throw new Error('OCR response missing Read data');
+    throw new HyundaiOcrError('OCR response missing Read data', data);
   }
 
   return data;
