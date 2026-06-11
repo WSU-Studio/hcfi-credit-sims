@@ -42,14 +42,19 @@ jobs:
           echo "" >> .env
           echo "NODE_ENV=production" >> .env
   
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      - name: Run first-time setup 
+        if: ${{ github.run_number == 1}}
+        run: |
+          npm run db:migrate
+          npm run db:seed
       
       - name: Build application
         run: npm run build
 
-      - name: Apply Database Migrations
-        run: npx prisma migrate deploy
+      - name: Apply Database Migrations & Prisma Seed
+        run: |
+          npm run db:seed
+          npx prisma migrate deploy
 
       - name: Restart App with PM2
         run: |
