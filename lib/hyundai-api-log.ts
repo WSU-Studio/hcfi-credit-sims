@@ -12,6 +12,7 @@
  *   record DB membengkak.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
 import { API_BASE_URL } from '@/lib/hyundai-api-client';
@@ -77,8 +78,11 @@ async function persistLog(data: {
         httpStatus: data.httpStatus ?? null,
         hyundaiStatus: data.hyundaiStatus ?? null,
         hyundaiMessage: data.hyundaiMessage ?? null,
-        requestBody: sanitizeForPersist(data.requestBody) as object,
-        responseBody: (data.responseBody ?? null) as object | null,
+        requestBody: sanitizeForPersist(data.requestBody) as Prisma.InputJsonValue,
+        responseBody:
+          data.responseBody === undefined || data.responseBody === null
+            ? Prisma.DbNull
+            : (data.responseBody as Prisma.InputJsonValue),
         errorMessage: data.errorMessage ?? null,
         durationMs: data.durationMs,
       },
