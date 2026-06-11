@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import type { UserLocation } from '@/app/components/simulation/ContactModal';
 import { Container } from '@/app/components/ui/Container';
@@ -10,6 +10,7 @@ import { SpecificationStep } from '@/app/components/simulation/SpecificationStep
 import { PriceStep } from '@/app/components/simulation/PriceStep';
 import { ResultStep } from '@/app/components/simulation/ResultStep';
 import { SimulationSidebar } from '@/app/components/simulation/SimulationSidebar';
+import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 import type { Vendor, AssetMaster, ProductCalculation } from '@/app/types/credit-simulation';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 
@@ -34,6 +35,9 @@ export default function SimulasiKreditPage() {
   const [otrPrice, setOtrPrice] = useState<number | null>(null);
   const [discount, setDiscount] = useState<number>(0);
   const [leadNo, setLeadNo] = useState<string | null>(null);
+  const [leadNoLoading, setLeadNoLoading] = useState(false);
+  const [leadNoError, setLeadNoError] = useState<string | null>(null);
+  const [leadNoErrorId, setLeadNoErrorId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation>(null);
 
@@ -63,6 +67,8 @@ export default function SimulasiKreditPage() {
     setOtrPrice(null);
     setDiscount(0);
     setLeadNo(null);
+    setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
 
   const handleAssetSelect = (asset: AssetMaster) => {
@@ -73,6 +79,8 @@ export default function SimulasiKreditPage() {
     setOtrPrice(null);
     setDiscount(0);
     setLeadNo(null);
+    setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
 
   const handleSpecsComplete = (completedSpecs: {
@@ -89,44 +97,98 @@ export default function SimulasiKreditPage() {
     // Reset step 4–5: user harus ulang input harga dan lihat hasil
     setOtrPrice(null);
     setLeadNo(null);
+    setLeadNoError(null);
+    setLeadNoErrorId(null);
   };
+
+  const buildLeadAssetSnapshot = useCallback(
+    (
+      asset: AssetMaster,
+      currentSpecs: typeof specs
+    ): LeadAssetSnapshot | null => {
+      if (
+        !currentSpecs.manufacturingYear ||
+        !currentSpecs.fscCode ||
+        !currentSpecs.exteriorColorCode ||
+        !currentSpecs.interiorColorCode
+      ) {
+        return null;
+      }
+      return {
+        modelCode: asset.AssetCode,
+        modelName: asset.AssetName,
+        manufacturingYear: currentSpecs.manufacturingYear,
+        fscCode: currentSpecs.fscCode,
+        trimName: currentSpecs.trimName || '',
+        exteriorColorCode: currentSpecs.exteriorColorCode,
+        exteriorColorName: currentSpecs.exteriorColorName || '',
+        interiorColorCode: currentSpecs.interiorColorCode,
+        interiorColorName: currentSpecs.interiorColorName || '',
+      };
+    },
+    []
+  );
+
+  const requestLeadAsset = useCallback(
+    async (params: { netPrice: number; discountAmount: number }) => {
+      if (!selectedDealer || !selectedAsset) return;
+      const snapshot = buildLeadAssetSnapshot(selectedAsset, specs);
+      if (!snapshot) {
+        setLeadNoError(t('leadAssetError'));
+        return;
+      }
+
+      setLeadNoLoading(true);
+      setLeadNoError(null);
+      setLeadNoErrorId(null);
+      try {
+        const res = await fetch('/api/simulation/lead-asset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vendor: selectedDealer,
+            assetSnapshot: snapshot,
+            otrPrice: params.netPrice,
+            discount: params.discountAmount,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.leadNo) {
+          if (data?.errorId) setLeadNoErrorId(String(data.errorId));
+          throw new Error(data?.error || t('leadAssetError'));
+        }
+        setLeadNo(data.leadNo);
+      } catch (err) {
+        setLeadNoError(
+          err instanceof Error && err.message ? err.message : t('leadAssetError')
+        );
+      } finally {
+        setLeadNoLoading(false);
+      }
+    },
+    [selectedDealer, selectedAsset, specs, buildLeadAssetSnapshot, t]
+  );
 
   const handlePriceComplete = async (netPrice: number, discountAmount: number) => {
     setOtrPrice(netPrice);
     setDiscount(discountAmount);
-
-    // TODO: Create Lead via API first to get LeadNo
-    // For now, we'll simulate with a placeholder
-    // In production, you would call: POST /v1/IntegrationWebsite/CreateLead
-    // and get LeadNo from response
-    
-    // Mock LeadNo for development
-    setLeadNo('MOCK-LEAD-001');
     setCurrentStep(5);
+    setLeadNo(null);
+    await requestLeadAsset({ netPrice, discountAmount });
   };
+
+  const handleRetryLeadAsset = useCallback(() => {
+    if (otrPrice == null) return;
+    void requestLeadAsset({ netPrice: otrPrice, discountAmount: discount });
+  }, [otrPrice, discount, requestLeadAsset]);
 
   const handleProductSelect = (product: ProductCalculation) => {
     setSelectedProduct(product);
   };
 
-  const leadAssetSnapshot: LeadAssetSnapshot | null =
-    selectedAsset &&
-    specs.manufacturingYear &&
-    specs.fscCode &&
-    specs.exteriorColorCode &&
-    specs.interiorColorCode
-      ? {
-          modelCode: selectedAsset.AssetCode,
-          modelName: selectedAsset.AssetName,
-          manufacturingYear: specs.manufacturingYear,
-          fscCode: specs.fscCode,
-          trimName: specs.trimName || '',
-          exteriorColorCode: specs.exteriorColorCode,
-          exteriorColorName: specs.exteriorColorName || '',
-          interiorColorCode: specs.interiorColorCode,
-          interiorColorName: specs.interiorColorName || '',
-        }
-      : null;
+  const leadAssetSnapshot: LeadAssetSnapshot | null = selectedAsset
+    ? buildLeadAssetSnapshot(selectedAsset, specs)
+    : null;
 
   const goToStep = (step: Step) => {
     setCurrentStep(step);
@@ -250,9 +312,29 @@ export default function SimulasiKreditPage() {
                     onComplete={handlePriceComplete}
                   />
                 )}
-                {currentStep === 5 && (
+                {currentStep === 5 && leadNoLoading && (
+                  <div className="text-center py-12 text-gray-900">
+                    <div className="inline-flex items-center gap-3 text-gray-500">
+                      <span className="inline-block w-4 h-4 border-2 border-[#002c5f] border-t-transparent rounded-full animate-spin" />
+                      {t('leadAssetLoading')}
+                    </div>
+                  </div>
+                )}
+                {currentStep === 5 && !leadNoLoading && leadNoError && (
+                  <SimulationRetryError
+                    title={t('errorTitle')}
+                    message={leadNoError}
+                    hint={t('errorRetryHint')}
+                    secondaryHint={t('errorRetrySecondaryHint')}
+                    retryLabel={t('leadAssetRetry')}
+                    onRetry={handleRetryLeadAsset}
+                    retrying={leadNoLoading}
+                    errorId={leadNoErrorId}
+                  />
+                )}
+                {currentStep === 5 && !leadNoLoading && !leadNoError && leadNo && (
                   <ResultStep
-                    leadNo={leadNo || undefined}
+                    leadNo={leadNo}
                     otrPrice={otrPrice ?? undefined}
                     discount={discount}
                     dealer={selectedDealer}

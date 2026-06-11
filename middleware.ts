@@ -2,10 +2,25 @@ import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth-middleware";
-import { getClientIp, loginLimiter } from "@/lib/ratelimit";
+import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
+import { checkWriteOrigin } from "@/lib/security/origin-check";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
+
+/**
+ * Endpoints that intentionally accept third-party-initiated requests
+ * (e.g. NextAuth has its own CSRF token + state handling, and ELB health
+ * checks hit `/` without an Origin). Keep this list small.
+ */
+const ORIGIN_CHECK_BYPASS_PREFIXES = [
+  "/api/auth/", // NextAuth: protected by built-in CSRF token + state nonces
+];
+
+function shouldEnforceOrigin(pathname: string): boolean {
+  if (!pathname.startsWith("/api/")) return false;
+  return !ORIGIN_CHECK_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+}
 
 function getCorsHeaders(request: NextRequest): Record<string, string> | null {
   const allowed =
@@ -58,18 +73,39 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Rate limit login attempts (brute-force protection)
+  // Cross-origin write guard (anti-CSRF). Runs *before* per-route limiters
+  // so we don't burn limit budget on rejected cross-origin probes.
+  if (shouldEnforceOrigin(pathname)) {
+    const verdict = checkWriteOrigin({
+      method: request.method,
+      origin: request.headers.get("origin"),
+      referer: request.headers.get("referer"),
+      host: request.headers.get("host"),
+    });
+    if (!verdict.ok) {
+      return withCors(
+        NextResponse.json(
+          { error: "Forbidden: cross-origin request rejected" },
+          { status: 403 }
+        ),
+        request
+      );
+    }
+  }
+
+  // Rate limit login attempts (brute-force protection) — per-IP layer only.
+  // A second layer (per-email + persistent DB lockout) lives in `lib/nextauth.ts`.
   if (
     pathname === "/api/auth/callback/credentials" &&
     request.method === "POST"
   ) {
     const ip = getClientIp(request);
-    const { success } = loginLimiter.limit(ip);
-    if (!success) {
+    const rl = loginLimiter.limit(ip);
+    if (!rl.success) {
       return withCors(
-        NextResponse.json(
-          { error: "Too many login attempts. Please try again later." },
-          { status: 429 }
+        tooManyRequestsResponse(
+          "Too many login attempts. Please try again later.",
+          rl.retryAfterSec
         ),
         request
       );

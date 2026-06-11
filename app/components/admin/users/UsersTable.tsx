@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
+import { IconEdit, IconTrash, IconPlus, IconLockOpen, IconLock } from '@tabler/icons-react';
 
 type User = {
   id: string;
@@ -10,6 +10,9 @@ type User = {
   name: string;
   isActive: boolean;
   createdAt: string;
+  lockedUntil?: string | null;
+  failedLoginAttempts?: number;
+  lastLoginAt?: string | null;
   userRoles: Array<{
     role: {
       name: string;
@@ -17,10 +20,21 @@ type User = {
   }>;
 };
 
+const isLocked = (user: User): boolean =>
+  !!user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now();
+
+const formatLockExpiry = (iso: string): string => {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  if (diffMs <= 0) return 'expired';
+  const mins = Math.ceil(diffMs / 60_000);
+  return mins < 60 ? `${mins} menit` : `${Math.ceil(mins / 60)} jam`;
+};
+
 export function UsersTable() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   const loadUsers = () => {
     return fetch('/api/admin/users')
@@ -45,6 +59,21 @@ export function UsersTable() {
       alert(err instanceof Error ? err.message : 'Gagal menghapus user');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleUnlock = async (user: User) => {
+    if (!confirm(`Unlock akun "${user.email}"? Counter percobaan login akan direset.`)) return;
+    setUnlockingId(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/unlock`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal unlock akun');
+      await loadUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Gagal unlock akun');
+    } finally {
+      setUnlockingId(null);
     }
   };
 
@@ -98,15 +127,31 @@ export function UsersTable() {
                   {user.userRoles.map((ur) => ur.role.name).join(', ') || 'No roles'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full w-fit ${
+                        user.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    {isLocked(user) && user.lockedUntil && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 w-fit"
+                        title={`Auto-unlock in ${formatLockExpiry(user.lockedUntil)}`}
+                      >
+                        <IconLock size={12} />
+                        Locked
+                      </span>
+                    )}
+                    {!isLocked(user) && (user.failedLoginAttempts ?? 0) > 0 && (
+                      <span className="text-[10px] text-gray-500">
+                        {user.failedLoginAttempts} gagal login
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
                   <div className="flex items-center gap-2">
@@ -117,6 +162,17 @@ export function UsersTable() {
                     >
                       <IconEdit size={18} className="text-blue-500" />
                     </AdminLink>
+                    {isLocked(user) && (
+                      <button
+                        type="button"
+                        className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-amber-100/80 rounded-lg border border-amber-200/80 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Unlock account"
+                        disabled={unlockingId === user.id}
+                        onClick={() => handleUnlock(user)}
+                      >
+                        <IconLockOpen size={18} className="text-amber-600" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="h-8 w-8 flex items-center justify-center cursor-pointer hover:bg-red-100/80 rounded-lg border border-red-200/80 disabled:opacity-50 disabled:cursor-not-allowed"

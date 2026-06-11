@@ -41,6 +41,7 @@ export function LeadAssignRow({
   onSubmitted,
 }: LeadAssignRowProps) {
   const isSubmitted = lead.hyundaiAssignStatus === 'SUBMITTED' && !!lead.hyundaiLeadNo;
+  const isSubmittingOnServer = lead.hyundaiAssignStatus === 'SUBMITTING';
 
   const [selection, setSelection] = useState<LeadAssignState>({
     vendorCode: lead.vendorCode ?? '',
@@ -175,6 +176,28 @@ export function LeadAssignRow({
     );
   }
 
+  if (isSubmittingOnServer) {
+    return (
+      <>
+        <td className="px-3 py-2 align-top text-xs text-gray-700">
+          {lead.vendorName || lead.vendorCode || '-'}
+        </td>
+        <td className="px-3 py-2 align-top text-xs text-gray-700">
+          {lead.cmoName || lead.cmoEmpNo || '-'}
+        </td>
+        <td className="px-3 py-2 align-top">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            <p className="text-xs font-medium text-blue-700">Sedang dikirim...</p>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-0.5">
+            Submit sedang diproses di server (~30 detik). Refresh halaman untuk update status.
+          </p>
+        </td>
+      </>
+    );
+  }
+
   return (
     <>
       <td className="px-3 py-2 align-top">
@@ -238,7 +261,7 @@ export function LeadAssignRow({
           ))}
         </select>
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2 align-top max-w-[10rem]">
         <button
           type="button"
           onClick={handleSubmit}

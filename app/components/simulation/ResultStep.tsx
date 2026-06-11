@@ -42,10 +42,17 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
   const [tableRows, setTableRows] = useState<ProductCalculation[]>([]);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateError, setSimulateError] = useState<string | null>(null);
+  const [errorId, setErrorId] = useState<string | null>(null);
+  const [listErrorId, setListErrorId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
   const fetchListGeneration = useRef(0);
+  // Counter + abort controller untuk drop stale response saat user ubah
+  // DP%/firstInstallment cepat (race condition: tabel bisa nampilkan data dari
+  // fetch sebelumnya kalau response lama tiba setelah response baru).
+  const simulateGeneration = useRef(0);
+  const simulateAbortRef = useRef<AbortController | null>(null);
 
   const products = tab === 'Standard' ? listStandard : listPromo;
 
@@ -73,11 +80,14 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
     if (selectedProduct) setDpPercent(selectedProduct.DPPrcnt);
   }, [selectedProduct]);
 
-  // Auto-calculate ketika firstInstallment, selectedProduct, atau dpPercent berubah
-  // Hanya trigger jika semua data sudah lengkap dan tidak sedang loading
+  // Auto-calculate setiap kali firstInstallment, selectedProduct, atau
+  // dpPercent berubah. Tidak ada guard `!simulateLoading` — supaya user bisa
+  // klik DP% berturut-turut dan request terbaru tetap dijalankan. Stale
+  // response di-drop via generation counter di `handleCalculate`.
   useEffect(() => {
-    if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode && !simulateLoading) {
-      // Delay sedikit untuk menghindari multiple calls saat initial load
+    if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode) {
+      // Debounce 100ms supaya klik beruntun (mis. drag tombol DP%) tidak
+      // generate puluhan request berurutan.
       const timer = setTimeout(() => {
         handleCalculate();
       }, 100);
@@ -86,19 +96,30 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstInstallment, selectedProduct?.ProductCode, selectedProduct?.ProductName, dpPercent]);
 
+  // Bersihin in-flight request kalau komponen unmount.
+  useEffect(() => {
+    return () => {
+      simulateAbortRef.current?.abort();
+    };
+  }, []);
+
   const fetchList = async () => {
     const generation = ++fetchListGeneration.current;
     setLoading(true);
     setError(null);
+    setListErrorId(null);
     try {
       const res = await fetch('/api/simulation/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
+        body: JSON.stringify({ leadNo, LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
       });
       const data = await res.json();
       if (generation !== fetchListGeneration.current) return;
-      if (!res.ok) throw new Error(data.error || t('errorLoadProducts'));
+      if (!res.ok) {
+        if (data?.errorId) setListErrorId(String(data.errorId));
+        throw new Error(data.error || t('errorLoadProducts'));
+      }
       setListStandard(data.ListDefaultStandardProductObj ?? []);
       setListPromo(data.ListDefaultPromotionProductObj ?? []);
       const first = data.ListDefaultStandardProductObj?.[0];
@@ -118,31 +139,55 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
 
   const handleCalculate = async () => {
     if (!selectedProduct || !otrPrice) return;
+
+    // Cancel request sebelumnya & bump generation supaya response stale di-drop.
+    simulateAbortRef.current?.abort();
+    const controller = new AbortController();
+    simulateAbortRef.current = controller;
+    const generation = ++simulateGeneration.current;
+
     setSimulateLoading(true);
     setSimulateError(null);
+    setErrorId(null);
     try {
       const res = await fetch('/api/simulation/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          leadNo,
+          LeadNo: leadNo,
           otrPrice,
           dpPrcnt: dpPercent,
           productCode: selectedProduct.ProductCode,
           productName: selectedProduct.ProductName,
           firstInstallment,
+          isPromotion: tab === 'Promotion',
         }),
+        signal: controller.signal,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('errorCalculate'));
+      // Drop response kalau ada request baru yang sudah jalan setelah ini.
+      if (generation !== simulateGeneration.current) return;
+      if (!res.ok) {
+        if (data?.errorId) setErrorId(String(data.errorId));
+        throw new Error(data.error || t('errorCalculate'));
+      }
       setTableRows(data.ListProductObj ?? []);
       const row36 = (data.ListProductObj ?? []).find((r: ProductCalculation) => r.Tenor === 36);
       const first = (data.ListProductObj ?? [])[0];
       setSelectedTenor(row36?.Tenor ?? first?.Tenor ?? 36);
     } catch (e) {
+      // AbortError dari controller.abort() bukan error sungguhan — skip diam-diam.
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (generation !== simulateGeneration.current) return;
       setSimulateError(e instanceof Error ? e.message : t('errorCalculate'));
       setTableRows([]);
     } finally {
-      setSimulateLoading(false);
+      // Hanya clear loading kalau ini generation terakhir; kalau sudah
+      // di-supersede, biarkan generation berikutnya yang ngatur loading.
+      if (generation === simulateGeneration.current) {
+        setSimulateLoading(false);
+      }
     }
   };
 
@@ -173,6 +218,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         retryLabel={loading ? t('loadingProducts') : t('retryLoad')}
         onRetry={fetchList}
         retrying={loading}
+        errorId={listErrorId}
       />
     );
   }
@@ -332,6 +378,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               retryLabel={simulateLoading ? t('calculating') : t('retryCalculate')}
               onRetry={handleCalculate}
               retrying={simulateLoading}
+              errorId={errorId}
             />
           )}
 
@@ -442,6 +489,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               <ContactModal
                 open={contactOpen}
                 onClose={() => setContactOpen(false)}
+                leadNo={leadNo}
                 dealer={dealer}
                 userLocation={userLocation}
                 productName={

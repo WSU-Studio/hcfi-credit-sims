@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../lib/auth';
+import { ADMIN_MENUS } from '../lib/admin-menus';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in environment variables');
@@ -11,32 +12,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // Create Menus
-  const menus = [
-    { code: 'DASHBOARD', name: 'Dashboard', path: '/admin/dashboard', order: 1 },
-    { code: 'USERS', name: 'User Management', path: '/admin/users', order: 2 },
-    { code: 'ROLES', name: 'Role & Permission', path: '/admin/roles', order: 3 },
-    { code: 'BANNERS', name: 'Banner Management', path: '/admin/banners', order: 4 },
-    { code: 'PRODUCTS', name: 'Product Section', path: '/admin/products', order: 5 },
-    { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', order: 6 },
-    { code: 'ARTICLES', name: 'Artikel/Berita', path: '/admin/articles', order: 7 },
-    { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', order: 8 },
-    { code: 'LEADS', name: 'Leads', path: '/admin/leads', order: 9 },
-    { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 10 },
-    { code: 'BENEFITS', name: 'Benefit Settings', path: '/admin/benefits', order: 11 },
-    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 12 },
-    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 13 },
-  ];
+  const menus = ADMIN_MENUS;
 
   for (const menu of menus) {
     await prisma.menu.upsert({
       where: { code: menu.code },
-      update: {},
+      update: { name: menu.name, path: menu.path, order: menu.order },
       create: menu,
     });
   }
 
-  console.log('Menus created');
+  console.log(`Menus synced (${menus.length})`);
 
   // Create Permissions for each menu (default: all false)
   for (const menu of menus) {

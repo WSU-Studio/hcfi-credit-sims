@@ -30,6 +30,7 @@ type Lead = {
   vendorCity?: string | null;
   cmoEmpNo?: string | null;
   cmoName?: string | null;
+  simulationLeadNo?: string | null;
   hyundaiLeadNo?: string | null;
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
@@ -232,6 +233,9 @@ export function LeadsTable() {
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Tanggal
               </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                LeadNo
+              </th>
               {/* <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nama
               </th> */}
@@ -270,7 +274,7 @@ export function LeadsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-4 text-center text-gray-500">
+                <td colSpan={9} className="px-3 py-4 text-center text-gray-500">
                   Tidak ada data leads
                 </td>
               </tr>
@@ -282,6 +286,49 @@ export function LeadsTable() {
                   <tr key={lead.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(lead.createdAt)}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5">
+                        {lead.simulationLeadNo && (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className="font-mono text-xs text-gray-900 select-all"
+                              title="LeadNo dari simulasi (Step 4 PriceStep)"
+                            >
+                              {lead.simulationLeadNo}
+                            </span>
+                            <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">
+                              SIMULASI
+                            </span>
+                          </div>
+                        )}
+                        {lead.hyundaiLeadNo && (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className="font-mono text-xs text-gray-900 select-all"
+                              title="LeadNo final (post admin submit ke Hyundai)"
+                            >
+                              {lead.hyundaiLeadNo}
+                            </span>
+                            <span
+                              className={`inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                lead.hyundaiAssignStatus === 'SUBMITTED'
+                                  ? 'bg-green-100 text-green-700'
+                                  : lead.hyundaiAssignStatus === 'FAILED'
+                                  ? 'bg-red-100 text-red-700'
+                                  : lead.hyundaiAssignStatus === 'SUBMITTING'
+                                  ? 'bg-blue-100 text-blue-700 animate-pulse'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {lead.hyundaiAssignStatus ?? 'PENDING'}
+                            </span>
+                          </div>
+                        )}
+                        {!lead.simulationLeadNo && !lead.hyundaiLeadNo && (
+                          <span className="text-xs text-gray-400 italic">belum ada</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex-col items-center gap-2">

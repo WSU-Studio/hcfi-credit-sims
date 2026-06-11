@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -110,6 +111,21 @@ export async function POST(request: NextRequest) {
     });
     if (!created) return NextResponse.json({ error: 'Failed to load user' }, { status: 500 });
     const { password: _p, ...safe } = created;
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.USER_CREATE,
+      resourceType: 'User',
+      resourceId: created.id,
+      metadata: {
+        email: safe.email,
+        name: safe.name,
+        isActive: safe.isActive,
+        roleIds: ids,
+      },
+      request,
+    });
+
     return NextResponse.json({ user: safe });
   } catch (error: unknown) {
     console.error('Error creating user:', error);

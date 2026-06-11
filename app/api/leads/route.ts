@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClientIp, leadsLimiter } from '@/lib/ratelimit';
+import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { leadCreateSchema } from '@/lib/security/schemas';
+import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 
 const isPrivateOrLocalIp = (ip: string) =>
   !ip ||
@@ -32,88 +34,136 @@ async function getLocationFromIp(ip: string): Promise<{ lat: number; lon: number
 
 export async function POST(request: NextRequest) {
   const serverIp = getClientIp(request);
-  const { success } = leadsLimiter.limit(serverIp);
-  if (!success) {
+  const rl = leadsLimiter.limit(serverIp);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Too many submissions. Please try again later.',
+      rl.retryAfterSec
+    );
+  }
+
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  // Honeypot: silently accept and discard bot traffic so the scanner does not
+  // learn the trap exists. Return a fake 201 with no DB write.
+  if (rawBody && typeof rawBody === 'object' && isHoneypotTripped((rawBody as Record<string, unknown>)[HONEYPOT_FIELD])) {
+    console.warn('[leads] honeypot tripped from ip=%s', serverIp);
+    return NextResponse.json({ success: true, id: 'discarded' }, { status: 201 });
+  }
+
+  const parsed = leadCreateSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    const fieldPath = firstIssue?.path?.join('.') ?? 'input';
+    // Log selalu di server supaya kita tahu kalau ada bot/scanner yang spam,
+    // tapi response ke client sengaja generic supaya bot tidak belajar
+    // field-field yang missing satu per satu.
+    console.warn(
+      '[leads] schema validation failed ip=%s field=%s message=%s',
+      serverIp,
+      fieldPath,
+      firstIssue?.message
+    );
     return NextResponse.json(
-      { error: 'Too many submissions. Please try again later.' },
-      { status: 429 }
+      {
+        error: 'Invalid input',
+        field: fieldPath,
+        message: firstIssue?.message ?? 'Validation failed',
+      },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  // Tier 2 defense: pastikan simulationLeadNo benar-benar dihasilkan dari
+  // sesi simulasi yang lengkap. `LeadAssetDraft` dibuat saat user lewat
+  // Step 4 (PriceStep) yang memanggil Hyundai AddLeadAsset. Bot/scanner yang
+  // POST direct ke /api/leads tanpa pernah call /api/simulation/lead-asset
+  // dulu tidak akan punya hyundaiLeadNo yang valid → ditolak di sini.
+  //
+  // Catatan: kita PURPOSEFULLY pakai pesan generic biar bot tidak bisa
+  // membedakan "field missing" vs "leadNo invalid" vs "leadNo expired".
+  const draft = await prisma.leadAssetDraft.findUnique({
+    where: { hyundaiLeadNo: data.simulationLeadNo },
+    select: { id: true, convertedLeadId: true, status: true },
+  });
+  if (!draft) {
+    console.warn(
+      '[leads] simulationLeadNo not found in LeadAssetDraft ip=%s leadNo=%s',
+      serverIp,
+      data.simulationLeadNo
+    );
+    return NextResponse.json(
+      {
+        error: 'Invalid input',
+        field: 'simulationLeadNo',
+        message: 'Sesi simulasi tidak valid. Silakan ulangi simulasi kredit.',
+      },
+      { status: 400 }
+    );
+  }
+  if (draft.convertedLeadId) {
+    // Idempotency: kalau draft sudah pernah convert ke Lead, jangan bikin
+    // baris baru. Bisa terjadi kalau user double-click submit atau retry
+    // setelah network hiccup.
+    console.warn(
+      '[leads] LeadAssetDraft already converted ip=%s leadNo=%s convertedLeadId=%s',
+      serverIp,
+      data.simulationLeadNo,
+      draft.convertedLeadId
+    );
+    return NextResponse.json(
+      {
+        error: 'Already submitted',
+        message: 'Sesi simulasi ini sudah pernah di-submit.',
+      },
+      { status: 409 }
     );
   }
 
   try {
-    const body = await request.json();
-    const {
-      name,
-      phone,
-      email,
-      productName,
-      vehicleSummary,
-      assetSnapshot,
-      vendorCode,
-      vendorName,
-      vendorCity,
-      oriOfficeCode,
-      oriOfficeName,
-      otrPrice,
-      dpPercent,
-      tenor,
-      ktpUrl,
-      citizenType,
-      motherName,
-      homeOwnershipStatus,
-      consentAccepted,
-      latitude,
-      longitude,
-      clientPublicIp,
-    } = body;
-
-    if (!name || !phone || !email) {
-      return NextResponse.json({ error: 'Name, phone, and email are required' }, { status: 400 });
-    }
-
     const leadPayload = {
-        name: String(name).trim(),
-        phone: String(phone).trim(),
-        email: String(email).trim(),
-        productName: productName ? String(productName).trim() : null,
-        vehicleSummary: vehicleSummary ? String(vehicleSummary).trim() : null,
-        assetSnapshot:
-          assetSnapshot && typeof assetSnapshot === 'object'
-            ? (assetSnapshot as object)
-            : null,
-        vendorCode: vendorCode ? String(vendorCode).trim() : null,
-        vendorName: vendorName ? String(vendorName).trim() : null,
-        vendorCity: vendorCity ? String(vendorCity).trim() : null,
-        oriOfficeCode: oriOfficeCode ? String(oriOfficeCode).trim() : null,
-        oriOfficeName: oriOfficeName ? String(oriOfficeName).trim() : null,
-        otrPrice: otrPrice ? Number(otrPrice) : null,
-        dpPercent: dpPercent ? Number(dpPercent) : null,
-        tenor: tenor ? Number(tenor) : null,
-        ktpUrl: ktpUrl ? String(ktpUrl).trim() : null,
-        citizenType:
-          citizenType === 'LOCAL' || citizenType === 'FOREIGNER' ? citizenType : null,
-        motherName: motherName ? String(motherName).trim() : null,
-        homeOwnershipStatus: homeOwnershipStatus ? String(homeOwnershipStatus).trim() : null,
-        consentAccepted: Boolean(consentAccepted),
-        status: 'NEW',
+      name: data.name,
+      phone: data.phone,
+      email: data.email,
+      productName: data.productName,
+      vehicleSummary: data.vehicleSummary,
+      assetSnapshot:
+        data.assetSnapshot && typeof data.assetSnapshot === 'object'
+          ? (data.assetSnapshot as object)
+          : null,
+      vendorCode: data.vendorCode,
+      vendorName: data.vendorName,
+      vendorCity: data.vendorCity,
+      oriOfficeCode: data.oriOfficeCode,
+      oriOfficeName: data.oriOfficeName,
+      otrPrice: data.otrPrice,
+      dpPercent: data.dpPercent,
+      tenor: data.tenor != null ? Math.trunc(data.tenor) : null,
+      ktpUrl: data.ktpUrl,
+      citizenType: data.citizenType,
+      motherName: data.motherName,
+      homeOwnershipStatus: data.homeOwnershipStatus,
+      consentAccepted: Boolean(data.consentAccepted),
+      simulationLeadNo: data.simulationLeadNo,
+      status: 'NEW',
     };
 
-    const clientIp = typeof clientPublicIp === 'string' && clientPublicIp.trim()
-      ? clientPublicIp.trim()
-      : null;
-    const ipAddress =
-      serverIp && !isPrivateOrLocalIp(serverIp)
-        ? serverIp
-        : clientIp || null;
+    // Server-derived IP only. We intentionally do NOT trust any client-supplied
+    // `clientPublicIp` field — that would let bots spoof the IP column.
+    const ipAddress = serverIp && !isPrivateOrLocalIp(serverIp) ? serverIp : null;
 
-    let lat =
-      latitude != null && !Number.isNaN(Number(latitude)) ? Number(latitude) : null;
-    let lon =
-      longitude != null && !Number.isNaN(Number(longitude)) ? Number(longitude) : null;
+    let lat = data.latitude;
+    let lon = data.longitude;
 
     if (lat == null || lon == null) {
-      const ipForGeo = ipAddress || serverIp;
-      const ipGeo = ipForGeo ? await getLocationFromIp(ipForGeo) : null;
+      const ipGeo = ipAddress ? await getLocationFromIp(ipAddress) : null;
       if (ipGeo) {
         lat = lat ?? ipGeo.lat;
         lon = lon ?? ipGeo.lon;
@@ -131,11 +181,35 @@ export async function POST(request: NextRequest) {
       } as unknown as Parameters<typeof prisma.lead.create>[0]['data'],
     });
 
+    // Tautkan LeadAssetDraft (yang dibuat saat Step 4 PriceStep) ke Lead ini.
+    // `data.simulationLeadNo` dijamin ada karena schema sudah required dan
+    // kita sudah verify draft eksis di atas. updateMany tetap menggunakan
+    // `convertedLeadId: null` sebagai safety guard — kalau ada race lain yang
+    // sempat convert, kita biarkan saja (lead saat ini akan tetap ada sebagai
+    // baris terpisah, tapi tidak menggandakan link).
+    try {
+      await prisma.leadAssetDraft.updateMany({
+        where: {
+          hyundaiLeadNo: data.simulationLeadNo,
+          convertedLeadId: null,
+        },
+        data: {
+          convertedLeadId: lead.id,
+          status: 'CONVERTED',
+        },
+      });
+    } catch (linkErr) {
+      console.warn(
+        '[leads] failed to link LeadAssetDraft → Lead (non-fatal):',
+        linkErr instanceof Error ? linkErr.message : linkErr
+      );
+    }
+
     return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
   } catch (error: unknown) {
     console.error('Error creating lead:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

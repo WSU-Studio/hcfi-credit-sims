@@ -1,19 +1,52 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
- * Flow: AddLeadAsset → bootstrap finansial → OCR KTP → AddLeadCust
- * (ForwardLeadToCMO tidak dipakai — assignment CMO via SupplierEmpNo di AddLeadAsset)
+ *
+ * Flow lengkap (per Postman v1.1) — dijalankan saat admin klik "Submit" di
+ * /admin/leads (setelah isi kota, dealer, dan MOC):
+ *
+ *   Fase 1 — Lead Asset
+ *     1. AddLeadAsset                            → return TrxNo (= LeadNo)
+ *     2. GetLeadAssetSummaryInfoByLeadNo (verify)
+ *
+ *   Fase 2 — Financial Data (lihat lib/hyundai-lead-financial.ts)
+ *     3. CalculateProductFromRule
+ *     4. SimulateFinancialCalculate
+ *     5. SaveFinancialData
+ *     6. FinalCalculateByLeadNo
+ *     7. SaveFinalCalculateResult
+ *
+ *   Fase 3 — Customer Data
+ *     8.  GetOcrKtpData                          (OCR)
+ *     9.  GetLocationDataByZipcode               (Master Data Dropdown)
+ *     10. sync insurance                         (helper internal)
+ *     11. ValidateCustZipCode                    (Validation, fail-fast)
+ *     12. ValidateDuplicatePhoneAndEmail         (Validation, fail-fast)
+ *     13. AddLeadCust                            (Save — ujung Fase 3)
+ *
+ * Catatan:
+ *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
+ *     AddLeadAsset.
+ *   - Master Data dropdown lain (Gender / Marital / Religion / Nationality /
+ *     Education / Country / Building Ownership) tidak dipanggil—kita pakai
+ *     static mapping di lib/hyundai-ocr.ts. Endpoint dropdown Hyundai hanya
+ *     untuk populate UI di mobile app mereka.
+ *   - Endpoint Postman v1.1 yang ditandai `[x]` (Validate Zipcode and Asset
+ *     Region, Recalculate Insurance Data - Change Region, Realculate By
+ *     Lead No, Save Final Calculate Result Fase 3) sudah deprecated.
  */
 
 import { prisma } from '@/lib/prisma';
 import { fetchLeadKtpFromS3 } from '@/lib/lead-ktp-storage';
 import {
   getOcrKtpData,
+  HyundaiOcrError,
   mapGender,
   mapMarital,
   normalizeBirthDate,
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
 import { resolveAssetPriceAmt, verifyLeadAssetExists } from '@/lib/hyundai-asset-price';
 import { bootstrapLeadFinancialAndInsurance } from '@/lib/hyundai-lead-financial';
@@ -24,6 +57,10 @@ import {
   resolveCustomerLocation,
   type HyundaiCustomerLocation,
 } from '@/lib/hyundai-zipcode-resolve';
+import {
+  validateCustomerZipcode,
+  validateCustomerPhoneAndEmail,
+} from '@/lib/hyundai-customer-validation';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -253,6 +290,7 @@ export async function submitLeadToHyundai(params: {
     dpPercent: params.lead.dpPercent ?? 10,
     tenor: params.lead.tenor ?? 36,
     productName: params.lead.productName,
+    leadId: params.lead.id,
   });
 
   let ocrRead: OcrKtpRead | null = null;
@@ -278,12 +316,15 @@ export async function submitLeadToHyundai(params: {
       });
     } catch (ocrErr) {
       const msg = ocrErr instanceof Error ? ocrErr.message : 'OCR failed';
+      const rawResponse =
+        ocrErr instanceof HyundaiOcrError ? ocrErr.rawResponse : undefined;
       await persistOcrResult({
         leadId: params.lead.id,
         hyundaiLeadNo: leadNo,
         ktpFileName: ktpFile?.fileName,
         status: 'FAILED',
         errorMessage: msg,
+        rawResponse,
       });
     }
   }
@@ -301,6 +342,24 @@ export async function submitLeadToHyundai(params: {
     vendorCity: params.vendor.City,
   });
 
+  // Fase 3 Validation — fail-fast sebelum AddLeadCust (per Postman v1.1).
+  // ZipCode sudah resolved via GetLocationDataByZipcode, tapi Hyundai tetap
+  // minta ValidateCustZipCode untuk konfirmasi kombinasi master + permission.
+  await validateCustomerZipcode({
+    zipCode: customerLocation.zipCode,
+    city: customerLocation.city,
+    areaCode1: customerLocation.areaCode1,
+    areaCode2: customerLocation.areaCode2,
+  });
+
+  const sanitizedPhoneForValidation = params.lead.phone.replace(/\D/g, '').slice(0, 15);
+  await validateCustomerPhoneAndEmail({
+    leadNo,
+    email: params.lead.email,
+    phoneNo: sanitizedPhoneForValidation,
+    custType: 'CUSTOMER',
+  });
+
   const addLeadCustPayload = buildAddLeadCustBody(
     params.lead,
     leadNo,
@@ -309,16 +368,48 @@ export async function submitLeadToHyundai(params: {
     ktpFile
   );
 
-  await hyundaiPost('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload);
+  // Endpoint terakhir & paling kritikal — full request/response dilog ke
+  // HyundaiApiCallLog untuk audit + troubleshooting dengan tim Hyundai.
+  await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload, {
+    leadId: params.lead.id,
+    hyundaiLeadNo: leadNo,
+    endpoint: 'AddLeadCust',
+  });
 
-  if (ocrRead) {
-    await prisma.leadOcrResult.updateMany({
-      where: {
-        leadId: params.lead.id,
-        hyundaiLeadNo: leadNo,
-        status: 'SUCCESS',
-      },
-      data: { addLeadCustPayload: addLeadCustPayload as object },
+  // Persist payload yang dikirim ke `AddLeadCust` untuk audit & troubleshooting.
+  // Field `IdFile.Content` (base64 KTP) bisa sangat besar—ganti dengan marker
+  // supaya record DB tidak membengkak; FileName tetap disimpan untuk traceability.
+  const persistablePayload = {
+    ...addLeadCustPayload,
+    IdFile:
+      addLeadCustPayload.IdFile && typeof addLeadCustPayload.IdFile === 'object'
+        ? {
+            FileName: (addLeadCustPayload.IdFile as { FileName?: string }).FileName,
+            Content: '<base64 omitted>',
+          }
+        : undefined,
+  };
+
+  // Update untuk SEMUA status (SUCCESS / FAILED) — sebelumnya hanya SUCCESS.
+  // Kalau OCR sukses, akan ada 1 row LeadOcrResult di-update.
+  // Kalau OCR gagal tapi KTP ter-upload, juga ada 1 row FAILED yang di-update.
+  // Kalau lead tidak punya KTP, tidak ada row OCR sama sekali → buat satu sebagai
+  // marker NO_KTP supaya payload tetap ter-trace.
+  const ocrUpdate = await prisma.leadOcrResult.updateMany({
+    where: {
+      leadId: params.lead.id,
+      hyundaiLeadNo: leadNo,
+    },
+    data: { addLeadCustPayload: persistablePayload as object },
+  });
+
+  if (ocrUpdate.count === 0) {
+    await persistOcrResult({
+      leadId: params.lead.id,
+      hyundaiLeadNo: leadNo,
+      status: 'FAILED',
+      errorMessage: 'KTP tidak di-upload — payload AddLeadCust pakai placeholder',
+      addLeadCustPayload: persistablePayload,
     });
   }
 

@@ -9,6 +9,8 @@ interface SimulationRetryErrorProps {
   onRetry: () => void;
   retrying?: boolean;
   compact?: boolean;
+  /** Error reference ID from upstream (Hyundai). Shown small at the bottom for CS escalation. */
+  errorId?: string | null;
 }
 
 export function SimulationRetryError({
@@ -20,6 +22,7 @@ export function SimulationRetryError({
   onRetry,
   retrying = false,
   compact = false,
+  errorId,
 }: SimulationRetryErrorProps) {
   return (
     <div
@@ -44,6 +47,11 @@ export function SimulationRetryError({
       >
         {retryLabel}
       </button>
+      {errorId && (
+        <p className="pt-2 text-[11px] font-mono text-gray-400 select-all">
+          Ref: {errorId}
+        </p>
+      )}
     </div>
   );
 }

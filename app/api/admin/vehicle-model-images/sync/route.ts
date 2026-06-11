@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import type { AssetMaster } from '@/app/types/credit-simulation';
 import { normalizeVehicleModelName } from '@/lib/vehicle-model-images';
+import { adminSyncLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 type AssetsResponse = {
   ListAssetMasterObj?: AssetMaster[];
@@ -15,6 +16,14 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rl = adminSyncLimiter.limit(`vehicle-images:${session.user.id}`);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Sync hanya boleh dijalankan beberapa kali per jam.',
+        rl.retryAfterSec
+      );
     }
 
     await requirePermission('VEHICLE_MODELS', 'create');

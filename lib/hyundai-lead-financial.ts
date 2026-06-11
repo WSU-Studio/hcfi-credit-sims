@@ -1,4 +1,5 @@
 import { hyundaiPost } from '@/lib/hyundai-api-post';
+import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { resolveHyundaiProductFromSimulation } from '@/lib/hyundai-product-map';
 
@@ -32,6 +33,33 @@ type FinalCalculateResponse = {
   SaveLeadFinDataObj?: Record<string, unknown>;
   ListSaveLeadInstSchdlObj?: Record<string, unknown>[];
 };
+
+/**
+ * Row dalam `ListProductObj` dari `SimulateFinancialCalculate`.
+ * Field di response sudah lengkap untuk dipakai sebagai payload `SaveFinancialData`
+ * (kecuali wrapper LeadNo/dpAmt/dpPrcnt/isPromotion yang kita inject di luar).
+ */
+type SimulateFinancialRow = Record<string, unknown> & {
+  ProductCode?: string;
+  ProductName?: string;
+  Tenor?: number;
+  FirstInstallment?: string;
+};
+
+type SimulateFinancialResponse = {
+  ListProductObj?: SimulateFinancialRow[];
+};
+
+const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
+
+function pickSimulateRowForTenor(
+  rows: SimulateFinancialRow[],
+  tenor: number
+): SimulateFinancialRow | null {
+  if (!rows.length) return null;
+  const exact = rows.find((r) => Number(r.Tenor) === tenor);
+  return exact ?? rows[0];
+}
 
 function parseProductNameHint(productName: string | null | undefined): string {
   if (!productName) return '';
@@ -203,8 +231,18 @@ async function fetchDefaultProducts(
 }
 
 /**
- * Postman Fase 2: product rule + calculate + final calculate + save.
- * When Hyundai returns no product list (common for some dealers), we map from simulation data.
+ * Postman Fase 2 — chain finansial lengkap (5 step):
+ *   1. CalculateProductFromRule  — priming rule produk
+ *   2. SimulateFinancialCalculate — kalkulasi detail tenor terpilih
+ *      (wajib `MrChannelCode: "WEBSITE"`, `FirstInstallment`, `Tenor` —
+ *      tanpa `MrChannelCode` Hyundai balas HTTP 500 LINQ exception per
+ *      konfirmasi tim Hyundai 2026-06-03; field belum ada di Postman v1.1)
+ *   3. SaveFinancialData         — commit pilihan finansial user
+ *   4. FinalCalculateByLeadNo    — final compute
+ *   5. SaveFinalCalculateResult  — persist ke Adins
+ *
+ * Saat Hyundai tidak return produk default (common di sebagian dealer), kita
+ * fallback ke mapping dari simulation product (`productFromSimulationFallback`).
  */
 export async function bootstrapLeadFinancialAndInsurance(params: {
   leadNo: string;
@@ -212,7 +250,16 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   dpPercent: number;
   tenor: number;
   productName?: string | null;
+  firstInstallment?: 'ADDM' | 'ADDB';
+  isPromotion?: boolean;
+  mrChannelCode?: string;
+  /**
+   * Optional Lead.id dari DB lokal — dipakai untuk relate baris log Hyundai
+   * ke Lead untuk audit trail. Boleh null kalau dipanggil di context lain.
+   */
+  leadId?: string | null;
 }): Promise<void> {
+  const logMeta = { leadId: params.leadId ?? null, hyundaiLeadNo: params.leadNo };
   const productsRes = await fetchDefaultProducts(params.leadNo, params.tenor);
 
   const products = [
@@ -234,7 +281,11 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
         });
 
   const dpAmt = Math.round(params.otrPrice * (params.dpPercent / 100));
+  const firstInstallment: 'ADDM' | 'ADDB' = params.firstInstallment ?? 'ADDM';
+  const isPromotion = Boolean(params.isPromotion);
+  const channelCode = params.mrChannelCode || HYUNDAI_CHANNEL_CODE;
 
+  // Step 1 — priming rule produk untuk Hyundai DB.
   try {
     await hyundaiPost(
       '/v1/IntegrationWebsite/CalculateProductFromRule',
@@ -244,7 +295,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
         DpAmt: dpAmt,
         ProductCode: product.ProductCode,
         ProductName: product.ProductName,
-        IsPromotion: false,
+        IsPromotion: isPromotion,
       })
     );
   } catch (calcError) {
@@ -255,22 +306,77 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
     );
   }
 
-  const finalRes = await hyundaiPost<FinalCalculateResponse>(
+  // Step 2 — simulate detail untuk tenor yang dipilih user.
+  const simulateRes = await hyundaiPost<SimulateFinancialResponse>(
+    '/v1/IntegrationWebsite/SimulateFinancialCalculate',
+    integrationRequestBody({
+      LeadNo: params.leadNo,
+      DpPrcnt: params.dpPercent,
+      DpAmt: dpAmt,
+      ProductCode: product.ProductCode,
+      ProductName: product.ProductName,
+      IsPromotion: isPromotion,
+      FirstInstallment: firstInstallment,
+      Tenor: params.tenor,
+      MrChannelCode: channelCode,
+    })
+  );
+
+  const simulateRow = pickSimulateRowForTenor(
+    simulateRes.ListProductObj ?? [],
+    params.tenor
+  );
+  if (!simulateRow) {
+    throw new Error(
+      `SimulateFinancialCalculate tidak mengembalikan baris untuk tenor ${params.tenor} ` +
+        `(produk ${product.ProductName}). Cek dealer/asset rule di Hyundai.`
+    );
+  }
+
+  // Step 3 — commit pilihan ke Hyundai. Body = wrapper camelCase + spread row
+  // dari simulate (PascalCase). Hyundai menerima campuran ini per Postman v1.1.
+  await hyundaiPost(
+    '/v1/IntegrationWebsite/SaveFinancialData',
+    integrationRequestBody({
+      LeadNo: params.leadNo,
+      dpAmt,
+      dpPrcnt: params.dpPercent,
+      isPromotion,
+      ...simulateRow,
+    })
+  );
+
+  // Step 4 — final compute. Dilog ke HyundaiApiCallLog (sering jadi sumber error).
+  const finalRes = await hyundaiPostLogged<FinalCalculateResponse>(
     '/v1/IntegrationWebsite/FinalCalculateByLeadNo',
-    integrationRequestBody({ LeadNo: params.leadNo })
+    integrationRequestBody({ LeadNo: params.leadNo }),
+    { ...logMeta, endpoint: 'FinalCalculateByLeadNo' }
   );
 
   if (!finalRes.SummaryInfoObj) {
     throw new Error('FinalCalculateByLeadNo tidak mengembalikan data kalkulasi.');
   }
 
-  await hyundaiPost(
+  // Step 5 — persist ke Adins.
+  //
+  // PENTING (2026-06-03): body request `SaveFinalCalculateResult` di Postman
+  // v1.1 adalah PERSIS seluruh response `FinalCalculateByLeadNo` (termasuk
+  // HeaderObj, StatusCode, dst) DITAMBAH `LeadNo` di paling atas. Kalau LeadNo
+  // tidak dikirim, Hyundai-side LINQ query lempar:
+  //   "An exception was thrown while attempting to evaluate a LINQ query
+  //    parameter expression"
+  // Pola yang sama dengan SimulateFinancialCalculate sebelum kita tambah
+  // MrChannelCode. Maka kita forward `finalRes` apa adanya + inject LeadNo.
+  await hyundaiPostLogged(
     '/v1/IntegrationWebsite/SaveFinalCalculateResult',
     integrationRequestBody({
+      LeadNo: params.leadNo,
+      ...(finalRes as Record<string, unknown>),
       SummaryInfoObj: finalRes.SummaryInfoObj,
       SaveLeadDataObj: finalRes.SaveLeadDataObj ?? { NumOfInst: params.tenor },
       SaveLeadFinDataObj: finalRes.SaveLeadFinDataObj ?? {},
       ListSaveLeadInstSchdlObj: finalRes.ListSaveLeadInstSchdlObj ?? [],
-    })
+    }),
+    { ...logMeta, endpoint: 'SaveFinalCalculateResult' }
   );
 }

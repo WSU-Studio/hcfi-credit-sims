@@ -7,6 +7,8 @@ import {
   submitLeadToHyundai,
 } from '@/lib/hyundai-lead-integration';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +20,15 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const rl = adminHyundaiCallLimiter.limit(`submit:${session.user.id}`);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak submit lead. Tunggu beberapa saat.',
+        rl.retryAfterSec
+      );
+    }
+
     await requirePermission('LEADS', 'edit');
     const body = await request.json();
     const { vendorCode, cmoEmpNo, cmoName } = body as {
@@ -45,9 +56,71 @@ export async function POST(
       );
     }
 
+    // Atomic lock: transition status ke SUBMITTING HANYA kalau saat ini bukan
+    // SUBMITTING aktif / SUBMITTED. Mencegah double-submit di lead yang sama
+    // (mis. user reload tab lalu klik Submit lagi sementara submit pertama
+    // masih jalan, atau dua admin paralel di device berbeda).
+    //
+    // Stale lock release: kalau status SUBMITTING > 10 menit, anggap proses
+    // sebelumnya hang/crash → boleh override. Submit chain biasanya ~30 detik,
+    // jadi 10 menit cukup safety margin.
+    const STALE_LOCK_MINUTES = 10;
+    const staleThreshold = new Date(Date.now() - STALE_LOCK_MINUTES * 60_000);
+    const lockResult = await prisma.lead.updateMany({
+      where: {
+        id,
+        OR: [
+          { hyundaiAssignStatus: { in: ['PENDING', 'FAILED'] } },
+          // Allow override kalau status SUBMITTING tapi sudah lewat batas stale
+          {
+            AND: [
+              { hyundaiAssignStatus: 'SUBMITTING' },
+              { hyundaiAssignedAt: { lt: staleThreshold } },
+            ],
+          },
+        ],
+      },
+      data: {
+        hyundaiAssignStatus: 'SUBMITTING',
+        hyundaiAssignedAt: new Date(),
+        hyundaiAssignError: null,
+      },
+    });
+
+    if (lockResult.count === 0) {
+      // Tidak dapat lock — fetch ulang status terkini untuk pesan yang akurat.
+      const current = await prisma.lead.findUnique({
+        where: { id },
+        select: { hyundaiAssignStatus: true, hyundaiAssignedAt: true, hyundaiLeadNo: true },
+      });
+      if (current?.hyundaiAssignStatus === 'SUBMITTED') {
+        return NextResponse.json(
+          { error: 'Lead sudah dikirim ke Hyundai', hyundaiLeadNo: current.hyundaiLeadNo },
+          { status: 409 }
+        );
+      }
+      const startedAt = current?.hyundaiAssignedAt
+        ? new Date(current.hyundaiAssignedAt).toLocaleString('id-ID')
+        : '-';
+      return NextResponse.json(
+        {
+          error: `Submit lead ini sedang diproses (dimulai ${startedAt}). Tunggu sampai selesai—kalau lebih dari ${STALE_LOCK_MINUTES} menit belum selesai, klik Submit lagi.`,
+        },
+        { status: 409 }
+      );
+    }
+
     const vendors = await fetchVendorsForAssignment();
     const vendor = vendors.find((v) => v.VendorCode === vendorCode);
     if (!vendor) {
+      // Lock didapat tapi vendor invalid — release lock kembali ke FAILED
+      // supaya admin bisa retry tanpa perlu nunggu stale timer.
+      await prisma.lead
+        .update({
+          where: { id },
+          data: { hyundaiAssignStatus: 'FAILED', hyundaiAssignError: 'Dealer tidak ditemukan' },
+        })
+        .catch(() => {});
       return NextResponse.json({ error: 'Dealer tidak ditemukan' }, { status: 400 });
     }
 
@@ -90,6 +163,20 @@ export async function POST(
         hyundaiAssignedAt: new Date(),
         status: 'CONTACTED',
       },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.LEAD_SUBMIT_HYUNDAI,
+      resourceType: 'Lead',
+      resourceId: id,
+      metadata: {
+        hyundaiLeadNo: leadNo,
+        vendorCode: vendor.VendorCode,
+        cmoEmpNo,
+        cmoName,
+      },
+      request,
     });
 
     return NextResponse.json({ success: true, lead: updated, hyundaiLeadNo: leadNo });

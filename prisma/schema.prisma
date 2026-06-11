@@ -21,6 +21,11 @@ model User {
   password  String
   name      String
   isActive  Boolean  @default(true)
+  // Account lockout / login hardening
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  lastFailedLoginAt   DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -265,6 +270,28 @@ model Announcement {
   @@map("announcements")
 }
 
+/// Tamper-evident log of sensitive admin actions. Records WHO did WHAT to
+/// WHICH resource, and WHEN. Use `metadata` for free-form diff/details
+/// (avoid storing secrets / PII verbatim).
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String?  // null if the actor is gone / a system process
+  actorEmail   String?  // denormalized so log survives user deletion
+  action       String   // e.g. "user.unlock", "lead.statusChange"
+  resourceType String?  // e.g. "User", "Lead", "Role"
+  resourceId   String?
+  metadata     Json?    // diff / context (NEVER stores password)
+  ipAddress    String?
+  userAgent    String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([resourceType, resourceId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 model Media {
   id          String   @id @default(uuid())
   filename    String
@@ -338,6 +365,11 @@ model Lead {
   oriOfficeName       String?
   cmoEmpNo            String?
   cmoName             String?
+  /// LeadNo Hyundai dari Step 4 (PriceStep) — disimpan saat user submit ContactModal,
+  /// di-mirror dari `LeadAssetDraft.hyundaiLeadNo` yang dibuat ketika user submit harga.
+  /// Berbeda dari `hyundaiLeadNo` di bawah, yang baru di-set saat admin submit lead
+  /// (admin submit memicu AddLeadAsset baru → LeadNo baru lagi).
+  simulationLeadNo    String?
   hyundaiLeadNo       String?
   hyundaiAssignStatus String   @default("PENDING") // PENDING, SUBMITTED, FAILED
   hyundaiAssignError  String?  @db.Text
@@ -345,7 +377,10 @@ model Lead {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  ocrResults  LeadOcrResult[]
+  ocrResults    LeadOcrResult[]
+  hyundaiCalls  HyundaiApiCallLog[]
+
+  @@index([simulationLeadNo])
 
   @@map("leads")
 }
@@ -378,4 +413,72 @@ model LeadOcrResult {
   @@index([leadId])
   @@index([createdAt])
   @@map("lead_ocr_results")
+}
+
+/// Generic audit log untuk request + response Hyundai API call yang krusial
+/// (Save/Final/AddLeadCust). Tujuannya: troubleshooting lewat tim Hyundai
+/// (compare payload yang kita kirim vs yang mereka terima/proses).
+///
+/// Tidak meng-cover SEMUA call—cuma yang dilist di `hyundai-api-log.ts:LoggedEndpoint`.
+/// Whitelist supaya tabel tidak membengkak dengan call repetitive (Login, dropdown, dst).
+model HyundaiApiCallLog {
+  id              String   @id @default(uuid())
+  leadId          String?
+  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  hyundaiLeadNo   String?
+  endpoint        String   // "SaveFinalCalculateResult" | "FinalCalculateByLeadNo" | "AddLeadCust"
+  url             String
+  status          String   // "SUCCESS" | "FAILED"
+  httpStatus      Int?     // bisa null kalau request belum sampai/Hyundai unreachable
+  hyundaiStatus   String?  // dari envelope.StatusCode (bisa "200", "500", dll)
+  hyundaiMessage  String?  @db.Text
+  requestBody     Json
+  responseBody    Json?
+  errorMessage    String?  @db.Text
+  durationMs      Int?
+  createdAt       DateTime @default(now())
+
+  @@index([hyundaiLeadNo])
+  @@index([leadId])
+  @@index([endpoint])
+  @@index([createdAt])
+  @@map("hyundai_api_call_logs")
+}
+
+/// Preliminary Hyundai lead created at PriceStep submit (before customer contact data is filled).
+/// Linked to a `Lead` record once user submits contact info via ResultStep — at that point,
+/// `convertedLeadId` is set and `Lead.hyundaiLeadNo` mirrors `hyundaiLeadNo` here.
+model LeadAssetDraft {
+  id                String   @id @default(uuid())
+  hyundaiLeadNo     String   @unique
+  vendorCode        String?
+  vendorName        String?
+  oriOfficeCode     String?
+  oriOfficeName     String?
+  modelCode         String?
+  modelName         String?
+  fscCode           String?
+  trimName          String?
+  manufacturingYear Int?
+  exteriorColorCode String?
+  exteriorColorName String?
+  interiorColorCode String?
+  interiorColorName String?
+  otrPrice          Float?
+  discount          Float?
+  assetPriceAmt     Float?
+  oemAccessoryCodes String[] @default([])
+  rawRequest        Json?
+  rawResponse       Json?
+  ipAddress         String?
+  userAgent         String?  @db.Text
+  status            String   @default("CREATED") // CREATED | CONVERTED | ABANDONED | FAILED
+  convertedLeadId   String?
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([convertedLeadId])
+  @@map("lead_asset_drafts")
 }

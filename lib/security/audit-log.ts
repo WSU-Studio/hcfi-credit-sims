@@ -1,0 +1,138 @@
+/**
+ * Audit-log helper.
+ *
+ * - {@link AUDIT_ACTIONS} is the *only* place new action codes are added.
+ *   Keeping the catalog central prevents drift (e.g. "user.delete" vs
+ *   "users.deleted") that makes querying the log painful later.
+ * - {@link recordAudit} is best-effort: a logging failure must never break
+ *   the originating action. We log to console as a fallback and move on.
+ * - Caller is responsible for *not* passing secrets (raw passwords, JWTs,
+ *   etc.) in `metadata`. We do a final defensive scrub of common keys.
+ */
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import type { NextRequest } from 'next/server';
+import { getClientIp } from '@/lib/ratelimit';
+
+export const AUDIT_ACTIONS = {
+  // Users / RBAC
+  USER_CREATE: 'user.create',
+  USER_UPDATE: 'user.update',
+  USER_DELETE: 'user.delete',
+  USER_UNLOCK: 'user.unlock',
+  USER_PASSWORD_CHANGE: 'user.passwordChange',
+  ROLE_CREATE: 'role.create',
+  ROLE_UPDATE: 'role.update',
+  ROLE_DELETE: 'role.delete',
+  PERMISSION_UPDATE: 'permission.update',
+
+  // Leads
+  LEAD_STATUS_CHANGE: 'lead.statusChange',
+  LEAD_DELETE: 'lead.delete',
+  LEAD_SUBMIT_HYUNDAI: 'lead.submitHyundai',
+  LEAD_RUN_SLIK: 'lead.runSlik',
+  LEAD_DOWNLOAD_PDF: 'lead.downloadPdf',
+
+  // Content
+  ARTICLE_PUBLISH: 'article.publish',
+  ARTICLE_UNPUBLISH: 'article.unpublish',
+
+  // Settings / system
+  SETTINGS_UPDATE: 'settings.update',
+} as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
+
+export type AuditActor = {
+  userId: string | null;
+  email: string | null;
+};
+
+/** Pull actor info from a NextAuth session shape. */
+export function actorFromSession(session: {
+  user?: { id?: string | null; email?: string | null } | null;
+} | null): AuditActor {
+  return {
+    userId: session?.user?.id ?? null,
+    email: session?.user?.email ?? null,
+  };
+}
+
+export type AuditRequestContext = {
+  ip: string | null;
+  userAgent: string | null;
+};
+
+export function contextFromRequest(request: NextRequest): AuditRequestContext {
+  return {
+    ip: getClientIp(request) || null,
+    userAgent: request.headers.get('user-agent'),
+  };
+}
+
+const SENSITIVE_KEY_RE = /(password|secret|token|api[-_]?key|authorization)/i;
+
+function scrubMetadata(input: unknown): unknown {
+  if (input == null || typeof input !== 'object') return input;
+  if (Array.isArray(input)) return input.map(scrubMetadata);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) {
+    if (SENSITIVE_KEY_RE.test(k)) {
+      out[k] = '[REDACTED]';
+    } else if (typeof v === 'object' && v !== null) {
+      out[k] = scrubMetadata(v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+type RecordAuditOpts = {
+  actor: AuditActor;
+  action: AuditAction;
+  resourceType?: string;
+  resourceId?: string;
+  metadata?: Record<string, unknown>;
+  request?: NextRequest;
+  context?: AuditRequestContext;
+};
+
+/**
+ * Append an audit log entry. Best-effort — never throws back to the caller.
+ *
+ * Usage:
+ *   await recordAudit({
+ *     actor: actorFromSession(session),
+ *     action: AUDIT_ACTIONS.USER_UNLOCK,
+ *     resourceType: 'User',
+ *     resourceId: user.id,
+ *     metadata: { unlockedEmail: user.email },
+ *     request,
+ *   });
+ */
+export async function recordAudit(opts: RecordAuditOpts): Promise<void> {
+  try {
+    const ctx = opts.context ?? (opts.request ? contextFromRequest(opts.request) : { ip: null, userAgent: null });
+    const metadata = opts.metadata ? scrubMetadata(opts.metadata) : undefined;
+
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: opts.actor.userId,
+        actorEmail: opts.actor.email,
+        action: opts.action,
+        resourceType: opts.resourceType ?? null,
+        resourceId: opts.resourceId ?? null,
+        metadata:
+          metadata === undefined || metadata === null
+            ? Prisma.JsonNull
+            : (metadata as Prisma.InputJsonValue),
+        ipAddress: ctx.ip,
+        userAgent: ctx.userAgent,
+      },
+    });
+  } catch (err) {
+    // Never break the originating request because logging failed.
+    console.error('[audit-log] failed to record:', opts.action, err);
+  }
+}

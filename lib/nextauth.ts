@@ -1,6 +1,20 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUserByEmail, verifyPassword } from '@/lib/auth';
+import { loginEmailLimiter } from '@/lib/ratelimit';
+import {
+  readLockState,
+  recordFailedLogin,
+  recordSuccessfulLogin,
+} from '@/lib/security/auth-lockout';
+
+/**
+ * `authorize()` error messages are surfaced to the UI verbatim by next-auth.
+ * Use generic "Invalid credentials" for missing/wrong password to avoid
+ * leaking whether the email exists. Lockout messages are intentionally
+ * specific so legit users know to wait / contact admin.
+ */
+const GENERIC_INVALID = 'Invalid credentials';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -17,10 +31,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error('Email and password are required');
         }
 
-        const user = await getUserByEmail(credentials.email as string);
+        const email = String(credentials.email).toLowerCase().trim();
 
+        // Layer 1: per-email in-memory limiter. Stops botnet brute-force
+        // even when each request comes from a different IP.
+        const rl = loginEmailLimiter.limit(`email:${email}`);
+        if (!rl.success) {
+          throw new Error(
+            `Akun di-lock sementara karena terlalu banyak percobaan. Coba lagi dalam ${rl.retryAfterSec} detik.`
+          );
+        }
+
+        const user = await getUserByEmail(email);
+
+        // Don't leak whether the email exists.
         if (!user || !user.isActive) {
-          throw new Error('Invalid credentials');
+          throw new Error(GENERIC_INVALID);
+        }
+
+        // Layer 2: persistent DB lockout — survives restarts.
+        const lockState = readLockState(user);
+        if (lockState.locked) {
+          throw new Error(
+            `Akun terkunci. Coba lagi dalam ${Math.ceil(lockState.retryAfterSec / 60)} menit atau hubungi admin.`
+          );
         }
 
         const isValid = await verifyPassword(
@@ -29,8 +63,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!isValid) {
-          throw new Error('Invalid credentials');
+          const next = await recordFailedLogin(user.id);
+          if (next.locked) {
+            throw new Error(
+              'Akun terkunci karena terlalu banyak percobaan login. Hubungi admin untuk membuka kembali.'
+            );
+          }
+          throw new Error(GENERIC_INVALID);
         }
+
+        await recordSuccessfulLogin(user.id);
 
         const rememberMe =
           credentials.rememberMe === true || credentials.rememberMe === 'true';

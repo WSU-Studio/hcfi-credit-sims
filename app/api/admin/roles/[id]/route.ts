@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   _request: NextRequest,
@@ -130,6 +131,26 @@ export async function PUT(
       },
     });
 
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ROLE_UPDATE,
+      resourceType: 'Role',
+      resourceId: id,
+      metadata: {
+        before: {
+          name: existing.name,
+          permissionIds: existing.rolePermissions.map((rp) => rp.permissionId),
+          activities: existing.activities,
+        },
+        after: {
+          name: role?.name,
+          permissionIds: ids,
+          activities: activityIds,
+        },
+      },
+      request,
+    });
+
     return NextResponse.json({ role });
   } catch (error: unknown) {
     console.error('Error updating role:', error);
@@ -144,7 +165,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -156,9 +177,19 @@ export async function DELETE(
     await requirePermission('ROLES', 'delete');
 
     const { id } = await params;
+    const target = await prisma.role.findUnique({ where: { id }, select: { name: true } });
 
     await prisma.role.delete({
       where: { id },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ROLE_DELETE,
+      resourceType: 'Role',
+      resourceId: id,
+      metadata: { deletedName: target?.name ?? null },
+      request,
     });
 
     return NextResponse.json({ success: true });

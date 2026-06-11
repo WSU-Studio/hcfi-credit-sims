@@ -217,13 +217,13 @@ export default async function Home() {
       />
 
       <ProductSection
-        products={products}
+        products={products.slice(0, 3)}
         titleOverrideId={siteSettings.homeProductSectionTitle}
         titleOverrideEn={siteSettings.homeProductSectionTitleEn}
       />
 
       <ArticleSection
-        articles={articles}
+        articles={articles.slice(0, 3)}
         titleOverrideId={siteSettings.homeArticlesTitle}
         titleOverrideEn={siteSettings.homeArticlesTitleEn}
       />

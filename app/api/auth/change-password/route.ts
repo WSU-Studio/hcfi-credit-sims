@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth-server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword, hashPassword } from '@/lib/auth';
+import { passwordChangeLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const rl = passwordChangeLimiter.limit(session.user.id);
+    if (!rl.success) {
+      return tooManyRequestsResponse(
+        'Terlalu banyak percobaan ubah password. Coba lagi nanti.',
+        rl.retryAfterSec
+      );
     }
 
     const body = await request.json();
@@ -40,6 +50,15 @@ export async function PUT(request: NextRequest) {
     await prisma.user.update({
       where: { id: session.user.id },
       data: { password: hashed },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.USER_PASSWORD_CHANGE,
+      resourceType: 'User',
+      resourceId: session.user.id,
+      metadata: { selfService: true },
+      request,
     });
 
     return NextResponse.json({ success: true });
