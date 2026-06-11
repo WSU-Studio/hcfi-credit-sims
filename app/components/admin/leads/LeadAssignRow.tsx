@@ -261,7 +261,7 @@ export function LeadAssignRow({
           ))}
         </select>
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2 align-top max-w-[10rem]">
         <button
           type="button"
           onClick={handleSubmit}
