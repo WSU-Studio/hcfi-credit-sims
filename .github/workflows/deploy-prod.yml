@@ -41,18 +41,13 @@ jobs:
           echo "API_BASE_URL=\"${{ secrets.API_BASE_URL }}\"" >> .env
           echo "" >> .env
           echo "NODE_ENV=production" >> .env
-  
-      - name: Run first-time setup 
-        if: ${{ github.run_number == 1}}
-        run: |
-          npm run db:migrate
-          npm run db:seed
-      
+   
       - name: Build application
         run: npm run build
 
       - name: Apply Database Migrations & Prisma Seed
         run: |
+          npm run db:migrate
           npm run db:seed
           npx prisma migrate deploy
 
