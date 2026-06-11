@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, db:seed) */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+// Single source of truth: shared with the runtime app via lib/admin-menus.ts
+const menus = require('../lib/admin-menus.data.json');
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in environment variables');
@@ -15,30 +17,15 @@ async function hashPassword(password) {
 async function main() {
   console.log('Seeding database...');
 
-  const menus = [
-    { code: 'DASHBOARD', name: 'Dashboard', path: '/admin/dashboard', order: 1 },
-    { code: 'USERS', name: 'User Management', path: '/admin/users', order: 2 },
-    { code: 'ROLES', name: 'Role & Permission', path: '/admin/roles', order: 3 },
-    { code: 'BANNERS', name: 'Banner Management', path: '/admin/banners', order: 4 },
-    { code: 'BENEFITS', name: 'Benefit Settings', path: '/admin/benefits', order: 11 },
-    { code: 'PRODUCTS', name: 'Product Section', path: '/admin/products', order: 5 },
-    { code: 'PROMOS', name: 'Promo Management', path: '/admin/promos', order: 6 },
-    { code: 'ARTICLES', name: 'Artikel/Berita', path: '/admin/articles', order: 7 },
-    { code: 'PAGES', name: 'Static Pages', path: '/admin/pages', order: 8 },
-    { code: 'LEADS', name: 'Leads', path: '/admin/leads', order: 9 },
-    { code: 'FOOTER', name: 'Footer Settings', path: '/admin/footer', order: 10 },
-    { code: 'MEDIA', name: 'Media Library', path: '/admin/media', order: 12 },
-    { code: 'SETTINGS', name: 'Site Settings', path: '/admin/settings', order: 13 },
-  ];
-
   for (const menu of menus) {
     await prisma.menu.upsert({
       where: { code: menu.code },
-      update: {},
+      // Re-apply name/path/order so renames in admin-menus.data.json propagate.
+      update: { name: menu.name, path: menu.path, order: menu.order },
       create: menu,
     });
   }
-  console.log('Menus created');
+  console.log(`Menus synced (${menus.length})`);
 
   for (const menu of menus) {
     await prisma.permission.upsert({
