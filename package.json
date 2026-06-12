@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate && npm run postinstall",
     "db:studio": "prisma studio",
-    "test:simulate": "tsx --env-file=.env scripts/test-hyundai-simulate.ts"
+    "test:simulate": "tsx --env-file=.env scripts/test-hyundai-simulate.ts",
+    "migrate:s3-proxy": "tsx --env-file=.env scripts/migrate-s3-urls-to-proxy.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

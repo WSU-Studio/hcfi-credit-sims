@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { toMediaProxyUrl } from '@/lib/s3-url';
 
 export async function GET() {
   try {
@@ -13,11 +14,19 @@ export async function GET() {
 
     await requirePermission('MEDIA', 'view');
 
-    const media = await prisma.media.findMany({
+    const rows = await prisma.media.findMany({
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    // Normalize legacy records (direct S3 URLs uploaded before the proxy
+    // existed) so MediaLibrary / MediaPicker can render them without 403s.
+    // Idempotent — proxy URLs and external URLs pass through unchanged.
+    const media = rows.map((m) => ({
+      ...m,
+      url: toMediaProxyUrl(m.url) ?? m.url,
+    }));
 
     return NextResponse.json({ media });
   } catch (error: any) {

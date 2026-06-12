@@ -6,7 +6,8 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
-import { getPublicS3Url, getS3Bucket, getS3Client, getS3Region } from '@/lib/s3-client';
+import { getS3Bucket, getS3Client } from '@/lib/s3-client';
+import { mediaProxyUrlFromKey } from '@/lib/s3-url';
 import { adminMediaUploadLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 
 const FOLDER = 'hcfi_media';
@@ -40,7 +41,6 @@ export async function POST(request: NextRequest) {
     }
 
     const bucket = getS3Bucket();
-    const region = getS3Region();
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -77,7 +77,9 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    const url = getPublicS3Url(key, bucket, region);
+    // Bucket is private (VPC endpoint only). Browsers must hit our proxy
+    // (`/api/media/file/{key}`), not the direct S3 URL.
+    const url = mediaProxyUrlFromKey(key);
 
     const media = await prisma.media.create({
       data: {

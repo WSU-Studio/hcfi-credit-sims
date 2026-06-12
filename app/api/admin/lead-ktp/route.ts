@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from '@/lib/prisma';
-import { getS3Bucket, getS3Client } from '@/lib/s3-client';
+import { getS3Bucket } from '@/lib/s3-client';
+import { streamS3ObjectAsResponse } from '@/lib/s3-stream';
 import { extractBucketAndKeyFromS3Url, isLeadKtpS3Key } from '@/lib/s3-url';
-
-async function bodyToBuffer(body: unknown): Promise<Buffer> {
-  if (!body) throw new Error('Empty S3 body');
-  if (body instanceof Uint8Array) return Buffer.from(body);
-  const chunks: Buffer[] = [];
-  const stream = body as AsyncIterable<Uint8Array>;
-  for await (const chunk of stream) {
-    chunks.push(Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks);
-}
 
 /**
  * Streams KTP image from private S3 for authenticated admins (same-origin, no presign / no Next image optimizer).
@@ -46,25 +35,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid KTP URL' }, { status: 400 });
   }
 
-  try {
-    const client = getS3Client();
-    const out = await client.send(
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: parsed.key,
-      })
-    );
-
-    const buf = await bodyToBuffer(out.Body);
-    return new NextResponse(new Uint8Array(buf), {
-      status: 200,
-      headers: {
-        'Content-Type': out.ContentType ?? 'image/webp',
-        'Cache-Control': 'private, no-store',
-      },
-    });
-  } catch (err) {
-    console.error('[lead-ktp] GetObject failed', err);
-    return NextResponse.json({ error: 'Failed to load image' }, { status: 502 });
-  }
+  return streamS3ObjectAsResponse({
+    bucket,
+    key: parsed.key,
+    cacheControl: 'private, no-store',
+    fallbackContentType: 'image/webp',
+  });
 }
