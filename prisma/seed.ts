@@ -118,11 +118,6 @@ async function main() {
       roleId: superAdminRole.id,
     },
   });
-
-  console.log('Super Admin role assigned to user');
-  console.log('✅ Seeding completed!');
-  console.log('📧 Email: admin@hcfi.com');
-  console.log('🔑 Password: admin123');
 }
 
 main()

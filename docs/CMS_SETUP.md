@@ -50,10 +50,6 @@ npm run db:generate
 npm run db:seed
 ```
 
-**Default Super Admin Credentials:**
-- Email: `admin@hcfi.com`
-- Password: `admin123`
-
 ⚠️ **PENTING:** Ganti password default setelah login pertama kali!
 
 ### 3. S3 Setup (untuk Media Library)
