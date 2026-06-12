@@ -130,10 +130,7 @@ function EmptyReadHint() {
         <li>KTP lama dengan layout yang berbeda</li>
       </ul>
       <p className="text-xs text-amber-900">
-        Untuk verifikasi ini bukan masalah engine OCR Hyundai (e.g. mereka down):
-        coba upload sample KTP yang Hyundai pakai di Postman collection mereka — kalau
-        sample mereka pun balik <code>Read: null</code>, masalah di sisi engine
-        mereka, bukan gambar Anda.
+        Verifikasi terlebih dahulu ini case dari sisi aplikasi atau dari endpoint yang disediakan
       </p>
     </div>
   );

@@ -121,12 +121,8 @@ export function PostmanExportPanel({ request }: { request: OcrRequestExport }) {
         </span>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-blue-900">
-            Replikasi di Postman / cURL
+            Replikasi cURL
           </h3>
-          <p className="text-xs text-blue-800/80 mt-0.5">
-            Salin URL, headers, dan body persis seperti yang dikirim — bisa
-            di-forward ke tim Hyundai untuk debugging dari sisi mereka.
-          </p>
         </div>
       </header>
 
