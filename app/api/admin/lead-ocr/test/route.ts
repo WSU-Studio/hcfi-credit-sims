@@ -6,8 +6,7 @@ import { validateImageFile } from '@/lib/image-utils';
 import { prepareImageForOcr } from '@/lib/ocr-image-prepare';
 import {
   buildOcrKtpRequest,
-  parseOcrKtpResponse,
-  HyundaiOcrError,
+  analyzeOcrKtpResponse,
 } from '@/lib/hyundai-ocr';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB — sejajar dengan upload KTP user
@@ -123,39 +122,30 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(hyundaiReq.body),
       });
       const text = await fetchRes.text();
-      try {
-        const ocrRes = parseOcrKtpResponse(text, fetchRes.ok, fetchRes.status);
-        return NextResponse.json({
-          status: 'SUCCESS' as const,
-          durationMs: Date.now() - startedAt,
-          meta,
-          read: ocrRes.Read ?? null,
-          rawResponse: ocrRes,
-          httpStatus: fetchRes.status,
-          request: exportedRequest,
-        });
-      } catch (parseErr) {
-        const message = parseErr instanceof Error ? parseErr.message : 'OCR failed';
-        const rawResponse =
-          parseErr instanceof HyundaiOcrError ? parseErr.rawResponse : null;
-        return NextResponse.json({
-          status: 'FAILED' as const,
-          durationMs: Date.now() - startedAt,
-          meta,
-          errorMessage: message,
-          rawResponse,
-          httpStatus: fetchRes.status,
-          request: exportedRequest,
-        });
-      }
+      const analysis = analyzeOcrKtpResponse(text, fetchRes.ok, fetchRes.status);
+
+      return NextResponse.json({
+        category: analysis.category,
+        diagnosis: analysis.diagnosis,
+        errorMessage: analysis.errorMessage,
+        durationMs: Date.now() - startedAt,
+        meta,
+        read: analysis.data?.Read ?? null,
+        rawResponse: analysis.data,
+        httpStatus: fetchRes.status,
+        request: exportedRequest,
+      });
     } catch (networkErr) {
       const message =
         networkErr instanceof Error ? networkErr.message : 'Network error';
       return NextResponse.json({
-        status: 'FAILED' as const,
+        category: 'NETWORK_ERROR' as const,
+        diagnosis:
+          'Tidak bisa menjangkau server Hyundai sama sekali (DNS / TCP / TLS / timeout). Cek internet atau status endpoint mereka.',
+        errorMessage: `Gagal kontak Hyundai: ${message}`,
         durationMs: Date.now() - startedAt,
         meta,
-        errorMessage: `Gagal kontak Hyundai: ${message}`,
+        read: null,
         rawResponse: null,
         httpStatus: null,
         request: exportedRequest,

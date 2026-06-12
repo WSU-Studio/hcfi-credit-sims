@@ -1,6 +1,10 @@
 'use client';
 
-import { IconCheck, IconAlertTriangle } from '@tabler/icons-react';
+import {
+  IconCheck,
+  IconAlertTriangle,
+  IconScanEye,
+} from '@tabler/icons-react';
 import { JsonBlock } from '@/app/components/admin/lead-ocr/JsonBlock';
 import {
   PostmanExportPanel,
@@ -18,25 +22,69 @@ export type OcrTestResultMeta = {
   reEncoded: boolean;
 };
 
-export type OcrTestResult =
-  | {
-      status: 'SUCCESS';
-      durationMs: number;
-      meta: OcrTestResultMeta;
-      read: OcrKtpRead | null;
-      rawResponse: unknown;
-      httpStatus?: number | null;
-      request?: OcrRequestExport;
-    }
-  | {
-      status: 'FAILED';
-      durationMs: number;
-      meta: OcrTestResultMeta;
-      errorMessage: string;
-      rawResponse: unknown;
-      httpStatus?: number | null;
-      request?: OcrRequestExport;
-    };
+export type OcrTestResultCategory =
+  | 'SUCCESS'
+  | 'EMPTY_READ'
+  | 'HTTP_ERROR'
+  | 'API_ERROR'
+  | 'INVALID_JSON'
+  | 'NETWORK_ERROR';
+
+export type OcrTestResult = {
+  category: OcrTestResultCategory;
+  diagnosis: string;
+  errorMessage: string | null;
+  durationMs: number;
+  meta: OcrTestResultMeta;
+  read: OcrKtpRead | null;
+  rawResponse: unknown;
+  httpStatus?: number | null;
+  request?: OcrRequestExport;
+};
+
+type Tone = 'success' | 'warning' | 'error';
+
+const TONE_BY_CATEGORY: Record<OcrTestResultCategory, Tone> = {
+  SUCCESS: 'success',
+  EMPTY_READ: 'warning',
+  HTTP_ERROR: 'error',
+  API_ERROR: 'error',
+  INVALID_JSON: 'error',
+  NETWORK_ERROR: 'error',
+};
+
+const TITLE_BY_CATEGORY: Record<OcrTestResultCategory, string> = {
+  SUCCESS: 'OCR berhasil — data KTP terbaca',
+  EMPTY_READ: 'API sukses, tapi engine OCR tidak bisa baca gambar',
+  HTTP_ERROR: 'Hyundai mengembalikan HTTP error',
+  API_ERROR: 'Hyundai menolak request (StatusCode internal != 200)',
+  INVALID_JSON: 'Response Hyundai tidak bisa di-parse',
+  NETWORK_ERROR: 'Gagal mencapai server Hyundai',
+};
+
+const TONE_STYLES: Record<
+  Tone,
+  { header: string; iconWrap: string; httpBadgeOk: string; httpBadgeBad: string }
+> = {
+  success: {
+    header: 'bg-green-50 border-green-200 text-green-800',
+    iconWrap: 'bg-green-100 text-green-700',
+    httpBadgeOk: 'bg-green-100 text-green-700',
+    httpBadgeBad: 'bg-red-100 text-red-700',
+  },
+  warning: {
+    header: 'bg-amber-50 border-amber-200 text-amber-900',
+    iconWrap: 'bg-amber-100 text-amber-700',
+    httpBadgeOk: 'bg-amber-100 text-amber-800',
+    httpBadgeBad: 'bg-red-100 text-red-700',
+  },
+  error: {
+    header: 'bg-red-50 border-red-200 text-red-800',
+    iconWrap: 'bg-red-100 text-red-700',
+    httpBadgeOk: 'bg-green-100 text-green-700',
+    httpBadgeBad: 'bg-red-100 text-red-700',
+  },
+};
 
 const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -62,55 +110,82 @@ function ReadField({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+function getToneIcon(tone: Tone, size = 16) {
+  if (tone === 'success') return <IconCheck size={size} />;
+  if (tone === 'warning') return <IconScanEye size={size} />;
+  return <IconAlertTriangle size={size} />;
+}
+
+function EmptyReadHint() {
+  return (
+    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
+      <p className="text-xs font-semibold text-amber-900">
+        Kemungkinan penyebab gambar tidak terbaca:
+      </p>
+      <ul className="text-xs text-amber-900 list-disc pl-5 space-y-1">
+        <li>Resolusi terlalu rendah / blur / noise tinggi</li>
+        <li>Pencahayaan kurang, ada bayangan atau pantulan flash</li>
+        <li>KTP tidak masuk frame penuh (sebagian terpotong)</li>
+        <li>Gambar bukan KTP standar Indonesia (mis. SIM, Paspor, foto avatar)</li>
+        <li>KTP lama dengan layout yang berbeda</li>
+      </ul>
+      <p className="text-xs text-amber-900">
+        Untuk verifikasi ini bukan masalah engine OCR Hyundai (e.g. mereka down):
+        coba upload sample KTP yang Hyundai pakai di Postman collection mereka — kalau
+        sample mereka pun balik <code>Read: null</code>, masalah di sisi engine
+        mereka, bukan gambar Anda.
+      </p>
+    </div>
+  );
+}
+
 /**
- * Render hasil tes OCR (success / failed) dalam format ringkas.
- *
- * Single-responsibility: hanya menampilkan, tidak melakukan fetching.
+ * Render hasil tes OCR dengan 3 tone (sukses / warning / error) sesuai
+ * kategori dari analyzer. Single-responsibility: hanya tampilkan, tidak fetch.
  */
 export function OcrResultPanel({ result }: { result: OcrTestResult }) {
-  const isSuccess = result.status === 'SUCCESS';
-  const read = isSuccess ? result.read : null;
+  const tone = TONE_BY_CATEGORY[result.category];
+  const styles = TONE_STYLES[tone];
+  const title = TITLE_BY_CATEGORY[result.category];
+  const isSuccess = result.category === 'SUCCESS';
+  const read = result.read;
+
+  const httpBadgeClass =
+    typeof result.httpStatus === 'number' &&
+    result.httpStatus >= 200 &&
+    result.httpStatus < 300
+      ? styles.httpBadgeOk
+      : styles.httpBadgeBad;
 
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-      <div
-        className={`px-4 py-3 flex items-center gap-3 border-b ${
-          isSuccess
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}
-      >
-        <span
-          className={`inline-flex items-center justify-center w-7 h-7 rounded-full ${
-            isSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}
-        >
-          {isSuccess ? <IconCheck size={16} /> : <IconAlertTriangle size={16} />}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold">
-            {isSuccess ? 'OCR berhasil' : 'OCR gagal'}
-          </p>
-          {!isSuccess && (
-            <p className="text-xs mt-0.5 break-words">{result.errorMessage}</p>
-          )}
-        </div>
-        {typeof result.httpStatus === 'number' && (
+        <div className={`px-4 py-3 flex items-center gap-3 border-b ${styles.header}`}>
           <span
-            className={`text-[11px] font-mono px-2 py-0.5 rounded shrink-0 ${
-              result.httpStatus >= 200 && result.httpStatus < 300
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}
+            className={`inline-flex items-center justify-center w-7 h-7 rounded-full shrink-0 ${styles.iconWrap}`}
           >
-            HTTP {result.httpStatus}
+            {getToneIcon(tone)}
           </span>
-        )}
-        <span className="text-xs font-mono text-gray-600 shrink-0">
-          {result.durationMs} ms
-        </span>
-      </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">{title}</p>
+            <p className="text-xs mt-0.5 break-words opacity-90">{result.diagnosis}</p>
+            {result.errorMessage && (
+              <p className="text-xs mt-1 font-mono break-words">
+                {result.errorMessage}
+              </p>
+            )}
+          </div>
+          {typeof result.httpStatus === 'number' && (
+            <span
+              className={`text-[11px] font-mono px-2 py-0.5 rounded shrink-0 ${httpBadgeClass}`}
+            >
+              HTTP {result.httpStatus}
+            </span>
+          )}
+          <span className="text-xs font-mono text-gray-600 shrink-0">
+            {result.durationMs} ms
+          </span>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
         <div className="p-4 space-y-3">
@@ -163,10 +238,10 @@ export function OcrResultPanel({ result }: { result: OcrTestResult }) {
             </div>
           )}
 
-          {isSuccess && !read && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              Hyundai mengembalikan status sukses tapi field <code>Read</code> kosong.
-            </p>
+          {result.category === 'EMPTY_READ' && (
+            <div className="pt-3">
+              <EmptyReadHint />
+            </div>
           )}
         </div>
 
