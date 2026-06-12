@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
+import { JsonBlock } from '@/app/components/admin/lead-ocr/JsonBlock';
 
 type LeadSummary = {
   id: string;
@@ -40,15 +41,6 @@ type OcrRow = {
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
-
-function JsonBlock({ value }: { value: unknown }) {
-  if (value == null) return <span className="text-gray-400">—</span>;
-  return (
-    <pre className="text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto max-h-64">
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
-}
 
 export function LeadOcrTable() {
   const [rows, setRows] = useState<OcrRow[]>([]);

@@ -45,35 +45,63 @@ export class HyundaiOcrError extends Error {
   }
 }
 
-export async function getOcrKtpData(params: {
+export type OcrKtpRequestBody = {
+  trxNo: string;
+  fileName: string;
+  source: string;
+  byteBase64: string;
+};
+
+export type OcrKtpRequest = {
+  url: string;
+  method: 'POST';
+  headers: Record<string, string>;
+  body: OcrKtpRequestBody;
+};
+
+/**
+ * Susun semua bahan request OCR (URL, headers ber-token, body JSON) tanpa
+ * meng-execute fetch. Berguna untuk:
+ *   - getOcrKtpData (call & parse)
+ *   - tool diagnostik di /admin/lead-ocr (re-export ke Postman / cURL)
+ */
+export async function buildOcrKtpRequest(params: {
   trxNo: string;
   fileName: string;
   byteBase64: string;
   source?: string;
-}): Promise<OcrKtpResponse> {
+}): Promise<OcrKtpRequest> {
   const headers = await getHyundaiRequestHeaders();
-  const res = await fetch(`${API_BASE_URL}/v1/OCR/GetOCRKTPData`, {
+  return {
+    url: `${API_BASE_URL}/v1/OCR/GetOCRKTPData`,
     method: 'POST',
     headers,
-    body: JSON.stringify({
+    body: {
       trxNo: params.trxNo,
       fileName: params.fileName,
       source: params.source ?? 'Website',
       byteBase64: params.byteBase64,
-    }),
-  });
+    },
+  };
+}
 
-  const text = await res.text();
+/**
+ * Parse + validasi response Hyundai OCR. Throw HyundaiOcrError dengan raw
+ * response menempel kalau bermasalah (status code != 200, Read kosong, dll).
+ */
+export function parseOcrKtpResponse(rawText: string, httpOk: boolean, httpStatus: number): OcrKtpResponse {
   let data: OcrKtpResponse;
   try {
-    data = text ? JSON.parse(text) : {};
+    data = rawText ? JSON.parse(rawText) : {};
   } catch {
-    throw new HyundaiOcrError('Invalid OCR response from Hyundai API', { rawText: text.slice(0, 500) });
+    throw new HyundaiOcrError('Invalid OCR response from Hyundai API', {
+      rawText: rawText.slice(0, 500),
+    });
   }
 
-  if (!res.ok) {
+  if (!httpOk) {
     throw new HyundaiOcrError(
-      data.Message || text.slice(0, 300) || `OCR API error (${res.status})`,
+      data.Message || rawText.slice(0, 300) || `OCR API error (${httpStatus})`,
       data
     );
   }
@@ -88,6 +116,22 @@ export async function getOcrKtpData(params: {
   }
 
   return data;
+}
+
+export async function getOcrKtpData(params: {
+  trxNo: string;
+  fileName: string;
+  byteBase64: string;
+  source?: string;
+}): Promise<OcrKtpResponse> {
+  const req = await buildOcrKtpRequest(params);
+  const res = await fetch(req.url, {
+    method: req.method,
+    headers: req.headers,
+    body: JSON.stringify(req.body),
+  });
+  const text = await res.text();
+  return parseOcrKtpResponse(text, res.ok, res.status);
 }
 
 /** Normalize date to YYYY-MM-DD for Hyundai API */

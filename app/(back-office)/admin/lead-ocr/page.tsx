@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { LeadOcrTable } from '@/app/components/admin/lead-ocr/LeadOcrTable';
+import { OcrTestPanel } from '@/app/components/admin/lead-ocr/OcrTestPanel';
 
 async function assertView() {
   try {
@@ -30,15 +31,21 @@ export default async function LeadOcrPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="space-y-6">
+      <div>
         <h1 className="text-2xl font-bold text-gray-900">Hasil OCR KTP</h1>
         <p className="text-sm text-gray-500 mt-1">
           Data hasil pembacaan KTP dari Hyundai API saat lead di-SUBMIT ke LOS (otomatis, tanpa langkah
           tambahan).
         </p>
       </div>
-      <LeadOcrTable />
+
+      <OcrTestPanel defaultOpen={false} />
+
+      <div>
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Riwayat OCR dari Lead</h2>
+        <LeadOcrTable />
+      </div>
     </div>
   );
 }
