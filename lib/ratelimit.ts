@@ -80,11 +80,12 @@ export const adminMediaUploadLimiter = createLimiter(30, 60 * 1000);
 export const adminHyundaiCallLimiter = createLimiter(20, 60 * 1000);
 
 /**
- * Heavy admin sync jobs (e.g. vehicle model master sync) — 15 per hour.
- * Bumped from 5 to leave room for debugging / re-runs during the same
- * session. Each call costs 1 Confins request, so still cheap.
+ * Heavy admin sync jobs (e.g. vehicle model master sync) — 10 per hour.
+ * Balance between safety and operator UX: 5/hour was too tight during
+ * routine debug/re-runs in the same session, 15 felt loose. 10 leaves
+ * ~6 minute average spacing, still cheap for downstream Confins calls.
  */
-export const adminSyncLimiter = createLimiter(15, 60 * 60 * 1000);
+export const adminSyncLimiter = createLimiter(10, 60 * 60 * 1000);
 
 /** Password change — 5 attempts per 15 minutes per user (protects the *current* password). */
 export const passwordChangeLimiter = createLimiter(5, 15 * 60 * 1000);
