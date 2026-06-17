@@ -1,7 +1,7 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
  *
- * Flow lengkap (per Postman v1.1) — dijalankan saat admin klik "Submit" di
+ * Flow lengkap (per Postman v1.4) — dijalankan saat admin klik "Submit" di
  * /admin/leads (setelah isi kota, dealer, dan MOC):
  *
  *   Fase 1 — Lead Asset
@@ -61,6 +61,7 @@ import {
   validateCustomerZipcode,
   validateCustomerPhoneAndEmail,
 } from '@/lib/hyundai-customer-validation';
+import { resolveIsPartner } from '@/lib/hyundai-partner';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -108,6 +109,11 @@ export type LeadRecordForHyundai = {
   citizenType: string | null;
   notes: string | null;
   ktpUrl: string | null;
+  /**
+   * Nanti: true untuk lead dari perusahaan partner Hyundai (diskon khusus).
+   * Saat ini belum ada sumber di DB — default false via resolveIsPartner().
+   */
+  isPartner?: boolean | null;
 };
 
 function buildAddLeadAssetBody(
@@ -245,7 +251,12 @@ export async function submitLeadToHyundai(params: {
   vendor: Vendor;
   cmoEmpNo: string;
   cmoName: string;
+  /** Override flag partner (opsional); default dari `lead.isPartner`. */
+  isPartner?: boolean;
 }): Promise<{ leadNo: string }> {
+  const isPartner = resolveIsPartner({
+    isPartner: params.isPartner ?? params.lead.isPartner,
+  });
   const resolvedAsset = await resolveLeadAsset({
     dealerCode: params.vendor.VendorCode,
     vehicleSummary: params.lead.vehicleSummary,
@@ -291,6 +302,7 @@ export async function submitLeadToHyundai(params: {
     tenor: params.lead.tenor ?? 36,
     productName: params.lead.productName,
     leadId: params.lead.id,
+    isPartner,
   });
 
   let ocrRead: OcrKtpRead | null = null;

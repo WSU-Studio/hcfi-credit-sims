@@ -34,7 +34,8 @@ function buildNavItems(
   const fixed: NavItem[] = [
     { label: t("creditSimulation"), href: "/credit-simulation" },
     { label: t("promo"), href: "/promo" },
-    { label: t("information"), href: "/informasi" },
+    { label: t("products"), href: "/products" },
+    { label: t("information"), href: "/information" },
   ];
   const menuPages = pages
     .filter((p) => p.showInMenu)
