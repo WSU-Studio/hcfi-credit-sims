@@ -52,6 +52,9 @@ type SimulateFinancialResponse = {
 
 const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
 
+/** Postman v1.4 — flag partner di product rule APIs; website non-partner pakai false. */
+const DEFAULT_IS_PARTNER = false;
+
 function pickSimulateRowForTenor(
   rows: SimulateFinancialRow[],
   tenor: number
@@ -149,32 +152,82 @@ function productFromSimulationFallback(params: {
   };
 }
 
+function countProducts(res: ProductsByLeadResponse): number {
+  return (
+    (res.ListDefaultStandardProductObj?.length ?? 0) +
+    (res.ListDefaultPromotionProductObj?.length ?? 0)
+  );
+}
+
 async function fetchDefaultProductsByName(
   leadNo: string,
-  tenor: number
+  tenor: number,
+  options?: { mrChannelCode?: string; isPartner?: boolean }
 ): Promise<ProductsByLeadResponse> {
-  const data = await hyundaiPost<ProductNameByLeadResponse>(
-    '/v1/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
-    { LeadNo: leadNo }
-  );
+  const channelCode = options?.mrChannelCode ?? HYUNDAI_CHANNEL_CODE;
+  const isPartner = options?.isPartner ?? DEFAULT_IS_PARTNER;
 
+  const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
+    {
+      path: '/v2/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
+      body: {
+        LeadNo: leadNo,
+        MrChannelCode: channelCode,
+        IsPartner: isPartner,
+      },
+    },
+    {
+      path: '/v1/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
+      body: { LeadNo: leadNo },
+    },
+  ];
+
+  let lastError: unknown;
+  for (const { path, body } of attempts) {
+    try {
+      const data = await hyundaiPost<ProductNameByLeadResponse>(path, body);
+      const mapped: ProductsByLeadResponse = {
+        ListDefaultStandardProductObj: mapNameRowsToProducts(
+          data.ListDefaultStandardProductObj ?? [],
+          tenor
+        ),
+        ListDefaultPromotionProductObj: mapNameRowsToProducts(
+          data.ListDefaultPromotionProductObj ?? [],
+          tenor
+        ),
+      };
+      if (countProducts(mapped) > 0) return mapped;
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableProductFetchError(error)) throw error;
+    }
+  }
+
+  if (lastError instanceof Error) throw lastError;
   return {
-    ListDefaultStandardProductObj: mapNameRowsToProducts(
-      data.ListDefaultStandardProductObj ?? [],
-      tenor
-    ),
-    ListDefaultPromotionProductObj: mapNameRowsToProducts(
-      data.ListDefaultPromotionProductObj ?? [],
-      tenor
-    ),
+    ListDefaultStandardProductObj: [],
+    ListDefaultPromotionProductObj: [],
   };
 }
 
 async function fetchDefaultProducts(
   leadNo: string,
-  tenor: number
+  tenor: number,
+  options?: { isPartner?: boolean }
 ): Promise<ProductsByLeadResponse> {
+  const isPartner = options?.isPartner ?? DEFAULT_IS_PARTNER;
+
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
+    // Postman v1.4 — v2 IntegrationWebsite + IsPartner (prioritas utama).
+    {
+      path: '/v2/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
+      body: integrationRequestBody({ leadNo, IsPartner: isPartner }),
+    },
+    {
+      path: '/v2/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
+      body: integrationRequestBody({ LeadNo: leadNo, IsPartner: isPartner }),
+    },
+    // Fallback lama — beberapa environment QA masih expose v2 LeadFinData / v1.
     {
       path: '/v2/LeadFinData/GetListDefaultProductFromRuleByLeadNo',
       body: { LeadNo: leadNo },
@@ -197,10 +250,7 @@ async function fetchDefaultProducts(
   for (const { path, body } of attempts) {
     try {
       const result = await hyundaiPost<ProductsByLeadResponse>(path, body);
-      const count =
-        (result.ListDefaultStandardProductObj?.length ?? 0) +
-        (result.ListDefaultPromotionProductObj?.length ?? 0);
-      if (count > 0) return result;
+      if (countProducts(result) > 0) return result;
     } catch (error) {
       lastError = error;
       if (!isRetryableProductFetchError(error)) throw error;
@@ -208,11 +258,10 @@ async function fetchDefaultProducts(
   }
 
   try {
-    const byName = await fetchDefaultProductsByName(leadNo, tenor);
-    const count =
-      (byName.ListDefaultStandardProductObj?.length ?? 0) +
-      (byName.ListDefaultPromotionProductObj?.length ?? 0);
-    if (count > 0) return byName;
+    const byName = await fetchDefaultProductsByName(leadNo, tenor, {
+      isPartner,
+    });
+    if (countProducts(byName) > 0) return byName;
   } catch (nameError) {
     lastError = nameError;
   }

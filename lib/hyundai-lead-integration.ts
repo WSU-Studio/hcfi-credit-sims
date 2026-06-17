@@ -1,7 +1,7 @@
 /**
  * Hyundai LOS integration for admin lead assignment (PIC @ HO → CMO).
  *
- * Flow lengkap (per Postman v1.1) — dijalankan saat admin klik "Submit" di
+ * Flow lengkap (per Postman v1.4) — dijalankan saat admin klik "Submit" di
  * /admin/leads (setelah isi kota, dealer, dan MOC):
  *
  *   Fase 1 — Lead Asset
