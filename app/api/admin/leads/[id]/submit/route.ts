@@ -31,10 +31,12 @@ export async function POST(
 
     await requirePermission('LEADS', 'edit');
     const body = await request.json();
-    const { vendorCode, cmoEmpNo, cmoName } = body as {
+    const { vendorCode, cmoEmpNo, cmoName, isPartner } = body as {
       vendorCode?: string;
       cmoEmpNo?: string;
       cmoName?: string;
+      /** Opsional — uji flow partner sebelum fitur resmi aktif. Default false. */
+      isPartner?: boolean;
     };
 
     if (!vendorCode || !cmoEmpNo) {
@@ -146,6 +148,7 @@ export async function POST(
       vendor,
       cmoEmpNo,
       cmoName: cmoName || cmoEmpNo,
+      isPartner,
     });
 
     const updated = await prisma.lead.update({
@@ -175,6 +178,7 @@ export async function POST(
         vendorCode: vendor.VendorCode,
         cmoEmpNo,
         cmoName,
+        isPartner: isPartner === true,
       },
       request,
     });

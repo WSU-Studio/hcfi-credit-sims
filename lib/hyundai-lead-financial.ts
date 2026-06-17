@@ -2,6 +2,7 @@ import { hyundaiPost } from '@/lib/hyundai-api-post';
 import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { resolveHyundaiProductFromSimulation } from '@/lib/hyundai-product-map';
+import { resolveIsPartner } from '@/lib/hyundai-partner';
 
 export type HyundaiDefaultProduct = {
   ProductCode: string;
@@ -51,9 +52,6 @@ type SimulateFinancialResponse = {
 };
 
 const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
-
-/** Postman v1.4 — flag partner di product rule APIs; website non-partner pakai false. */
-const DEFAULT_IS_PARTNER = false;
 
 function pickSimulateRowForTenor(
   rows: SimulateFinancialRow[],
@@ -165,7 +163,7 @@ async function fetchDefaultProductsByName(
   options?: { mrChannelCode?: string; isPartner?: boolean }
 ): Promise<ProductsByLeadResponse> {
   const channelCode = options?.mrChannelCode ?? HYUNDAI_CHANNEL_CODE;
-  const isPartner = options?.isPartner ?? DEFAULT_IS_PARTNER;
+  const isPartner = resolveIsPartner({ isPartner: options?.isPartner });
 
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
     {
@@ -178,7 +176,11 @@ async function fetchDefaultProductsByName(
     },
     {
       path: '/v1/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
-      body: { LeadNo: leadNo },
+      body: {
+        LeadNo: leadNo,
+        MrChannelCode: channelCode,
+        IsPartner: isPartner,
+      },
     },
   ];
 
@@ -215,7 +217,7 @@ async function fetchDefaultProducts(
   tenor: number,
   options?: { isPartner?: boolean }
 ): Promise<ProductsByLeadResponse> {
-  const isPartner = options?.isPartner ?? DEFAULT_IS_PARTNER;
+  const isPartner = resolveIsPartner({ isPartner: options?.isPartner });
 
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
     // Postman v1.4 — v2 IntegrationWebsite + IsPartner (prioritas utama).
@@ -230,19 +232,19 @@ async function fetchDefaultProducts(
     // Fallback lama — beberapa environment QA masih expose v2 LeadFinData / v1.
     {
       path: '/v2/LeadFinData/GetListDefaultProductFromRuleByLeadNo',
-      body: { LeadNo: leadNo },
+      body: { LeadNo: leadNo, IsPartner: isPartner },
     },
     {
       path: '/v1/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
-      body: { LeadNo: leadNo },
+      body: { LeadNo: leadNo, IsPartner: isPartner },
     },
     {
       path: '/v1/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
-      body: integrationRequestBody({ LeadNo: leadNo }),
+      body: integrationRequestBody({ LeadNo: leadNo, IsPartner: isPartner }),
     },
     {
       path: '/v1/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
-      body: integrationRequestBody({ leadNo }),
+      body: integrationRequestBody({ leadNo, IsPartner: isPartner }),
     },
   ];
 
@@ -303,13 +305,21 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   isPromotion?: boolean;
   mrChannelCode?: string;
   /**
+   * Postman v1.4 — `IsPartner` di product-rule APIs.
+   * Default false (non-partner). Nanti diisi dari flag lead/user partner.
+   */
+  isPartner?: boolean;
+  /**
    * Optional Lead.id dari DB lokal — dipakai untuk relate baris log Hyundai
    * ke Lead untuk audit trail. Boleh null kalau dipanggil di context lain.
    */
   leadId?: string | null;
 }): Promise<void> {
   const logMeta = { leadId: params.leadId ?? null, hyundaiLeadNo: params.leadNo };
-  const productsRes = await fetchDefaultProducts(params.leadNo, params.tenor);
+  const isPartner = resolveIsPartner({ isPartner: params.isPartner });
+  const productsRes = await fetchDefaultProducts(params.leadNo, params.tenor, {
+    isPartner,
+  });
 
   const products = [
     ...(productsRes.ListDefaultStandardProductObj ?? []),
