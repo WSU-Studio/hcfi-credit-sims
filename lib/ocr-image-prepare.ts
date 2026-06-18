@@ -1,16 +1,19 @@
 import sharp from 'sharp';
+import { validateImageFile } from '@/lib/image-utils';
 
 /**
- * Normalisasi gambar sebelum dikirim ke endpoint OCR Hyundai.
+ * Normalisasi gambar sebelum dikirim ke endpoint OCR Hyundai / IdFile AddLeadCust.
  *
- * Hyundai (Adins) OCR engine hanya bisa decode JPEG/PNG. Kalau dikirim WebP /
- * GIF, request balik HTTP 200 tapi field `Read` null → kita anggap FAILED.
- * Helper ini wrap proses re-encode supaya satu sumber kebenaran dipakai baik
- * oleh flow leads (S3) maupun tool test OCR (file upload langsung).
+ * Hyundai (Adins) OCR engine hanya bisa decode JPEG/PNG. AddLeadCust lebih ketat
+ * lagi — menolak WebP / file corrupt dengan "not a valid Base64 string" walau
+ * string base64-nya syntactically valid.
  */
 const OCR_SAFE_MIME = 'image/jpeg';
-const OCR_SAFE_EXT = 'jpg';
-const OCR_JPEG_QUALITY = 90;
+const OCR_SAFE_EXT = 'jpeg';
+const OCR_JPEG_QUALITY = 85;
+/** Batas aman ukuran binary sebelum base64 (~2MB file → ~2.7MB base64 di JSON). */
+const MAX_HYUNDAI_IMAGE_BYTES = 2 * 1024 * 1024;
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff]);
 
 function replaceExtension(fileName: string, newExt: string): string {
   const dot = fileName.lastIndexOf('.');
@@ -34,36 +37,49 @@ export async function prepareImageForOcr(input: {
   sourceContentType: string;
   sourceFileName: string;
 }): Promise<OcrPreparedImage> {
-  let buffer = input.buffer;
-  let reEncoded = false;
+  const validation = validateImageFile(input.buffer);
+  if (!validation.ok) {
+    throw new Error(validation.error || 'Format KTP tidak didukung');
+  }
 
-  // Selalu re-encode ke JPEG — jangan andalkan Content-Type S3 saja.
-  // Kasus umum: object WebP di S3 tapi header `image/jpeg`, atau file corrupt
-  // yang bikin AddLeadCust menolak dengan "not a valid Base64 string".
+  let buffer: Buffer;
   try {
     buffer = await sharp(input.buffer)
       .rotate() // honor EXIF orientation
+      .resize({
+        width: 2048,
+        height: 2048,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
       .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
       .toBuffer();
-    reEncoded = true;
   } catch (convertErr) {
-    console.warn(
-      '[ocr-image-prepare] gagal konversi ke JPEG, fallback kirim original:',
-      convertErr instanceof Error ? convertErr.message : convertErr
+    throw new Error(
+      `KTP tidak bisa dikonversi ke JPEG untuk Hyundai: ${
+        convertErr instanceof Error ? convertErr.message : String(convertErr)
+      }`
     );
   }
 
-  const contentType = reEncoded ? OCR_SAFE_MIME : input.sourceContentType;
-  const fileName = reEncoded
-    ? replaceExtension(input.sourceFileName, OCR_SAFE_EXT)
-    : input.sourceFileName;
+  if (buffer.length > MAX_HYUNDAI_IMAGE_BYTES) {
+    buffer = await sharp(buffer)
+      .jpeg({ quality: 70, mozjpeg: true })
+      .toBuffer();
+  }
+
+  if (!buffer.subarray(0, 3).equals(JPEG_MAGIC)) {
+    throw new Error('KTP gagal dikonversi ke JPEG yang valid');
+  }
+
+  const fileName = replaceExtension(input.sourceFileName, OCR_SAFE_EXT);
 
   return {
     buffer,
-    contentType,
+    contentType: OCR_SAFE_MIME,
     fileName,
     base64: buffer.toString('base64'),
-    reEncoded,
+    reEncoded: true,
     sourceContentType: input.sourceContentType,
     sourceFileName: input.sourceFileName,
   };

@@ -63,8 +63,8 @@ import {
 } from '@/lib/hyundai-customer-validation';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
 import {
-  normalizeHyundaiFileName,
-  sanitizeBase64ForHyundai,
+  buildHyundaiIdFilePayload,
+  isHyundaiIdFileContentError,
 } from '@/lib/hyundai-file-content';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
@@ -163,7 +163,7 @@ function buildAddLeadCustBody(
   leadNo: string,
   ocr: OcrKtpRead | null,
   location: HyundaiCustomerLocation,
-  ktpFile?: { fileName: string; base64: string }
+  ktpFile?: { fileName: string; base64: string; buffer: Buffer }
 ): Record<string, unknown> {
   const nationality =
     ocr?.mrNationalityCode ||
@@ -203,12 +203,11 @@ function buildAddLeadCustBody(
     NumOfDependent: '0',
   }) as Record<string, unknown>;
 
-  if (ktpFile?.base64) {
-    const content = sanitizeBase64ForHyundai(ktpFile.base64, 'KTP');
-    body.IdFile = {
-      FileName: normalizeHyundaiFileName(ktpFile.fileName),
-      Content: content,
-    };
+  if (ktpFile?.buffer?.length) {
+    body.IdFile = buildHyundaiIdFilePayload({
+      buffer: ktpFile.buffer,
+      fileName: ktpFile.fileName,
+    });
   }
 
   return body;
@@ -273,6 +272,19 @@ export async function submitLeadToHyundai(params: {
     throw new Error('Lead tidak memiliki harga OTR. Data simulasi tidak lengkap.');
   }
 
+  // Validasi & konversi KTP lebih awal — gagal cepat sebelum chain finansial (~15s).
+  let ktpFile: { fileName: string; base64: string; buffer: Buffer } | undefined;
+  if (params.lead.ktpUrl) {
+    try {
+      ktpFile = await fetchLeadKtpFromS3(params.lead.ktpUrl);
+    } catch (ktpErr) {
+      const detail = ktpErr instanceof Error ? ktpErr.message : String(ktpErr);
+      throw new Error(
+        `KTP lead tidak bisa diproses (${detail}). Minta customer upload ulang foto KTP (JPEG/PNG, jelas, tidak blur).`
+      );
+    }
+  }
+
   const oemAccessories = await resolveDefaultOemAccessories(resolvedAsset.modelCode);
 
   const assetPriceAmt = await resolveAssetPriceAmt({
@@ -311,11 +323,9 @@ export async function submitLeadToHyundai(params: {
   });
 
   let ocrRead: OcrKtpRead | null = null;
-  let ktpFile: { fileName: string; base64: string } | undefined;
 
-  if (params.lead.ktpUrl) {
+  if (ktpFile) {
     try {
-      ktpFile = await fetchLeadKtpFromS3(params.lead.ktpUrl);
       const ocrRes = await getOcrKtpData({
         trxNo: leadNo,
         fileName: ktpFile.fileName,
@@ -387,11 +397,29 @@ export async function submitLeadToHyundai(params: {
 
   // Endpoint terakhir & paling kritikal — full request/response dilog ke
   // HyundaiApiCallLog untuk audit + troubleshooting dengan tim Hyundai.
-  await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload, {
-    leadId: params.lead.id,
-    hyundaiLeadNo: leadNo,
-    endpoint: 'AddLeadCust',
-  });
+  try {
+    await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload, {
+      leadId: params.lead.id,
+      hyundaiLeadNo: leadNo,
+      endpoint: 'AddLeadCust',
+    });
+  } catch (addCustErr) {
+    const msg = addCustErr instanceof Error ? addCustErr.message : String(addCustErr);
+    if (isHyundaiIdFileContentError(msg) && addLeadCustPayload.IdFile) {
+      console.warn(
+        '[submitLeadToHyundai] AddLeadCust menolak IdFile.Content, retry tanpa lampiran KTP:',
+        msg
+      );
+      const { IdFile: _omitted, ...withoutIdFile } = addLeadCustPayload;
+      await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', withoutIdFile, {
+        leadId: params.lead.id,
+        hyundaiLeadNo: leadNo,
+        endpoint: 'AddLeadCust',
+      });
+    } else {
+      throw addCustErr;
+    }
+  }
 
   // Persist payload yang dikirim ke `AddLeadCust` untuk audit & troubleshooting.
   // Field `IdFile.Content` (base64 KTP) bisa sangat besar—ganti dengan marker

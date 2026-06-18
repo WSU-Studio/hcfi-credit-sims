@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
 import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { toUserFacingS3Error } from '@/lib/s3-error-message';
 import { getPublicS3Url, getS3Bucket, getS3Client, getS3Region } from '@/lib/s3-client';
 
 const FOLDER = 'hcfi_leads_ktp';
@@ -72,8 +73,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Upload gagal';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const raw = error instanceof Error ? error.message : 'Upload gagal';
+    console.error('[upload-ktp] S3 error:', raw);
+    return NextResponse.json({ error: toUserFacingS3Error(raw) }, { status: 500 });
   }
 }
 
