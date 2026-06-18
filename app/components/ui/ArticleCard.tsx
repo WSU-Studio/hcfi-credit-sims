@@ -9,7 +9,7 @@ type ArticleCardProps = Article & {
 
 export function ArticleCard({ title, image, className, slug }: ArticleCardProps) {
   const base =
-    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[5/2] md:aspect-[4/3]";
+    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[4/3]";
 
   const getImageUrl = (url: string) => {
     if (url.startsWith("http://") || url.startsWith("https://")) {

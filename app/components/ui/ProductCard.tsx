@@ -8,7 +8,7 @@ type ProductCardProps = Product & {
 
 export function ProductCard({ id, title, subtitle, image, className }: ProductCardProps) {
   const base =
-    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[5/2] md:aspect-[4/3]";
+    "relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40 aspect-[4/3]";
   const linkClass = `${base} block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-[var(--action)] focus:ring-offset-2`;
 
   // Add cache busting for local images - use URL hash to force reload when URL changes
