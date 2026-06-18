@@ -1,4 +1,5 @@
 import { API_BASE_URL, getHyundaiRequestHeaders } from '@/lib/hyundai-api-client';
+import { sanitizeBase64ForHyundai } from '@/lib/hyundai-file-content';
 
 export type OcrKtpRead = {
   agama?: string;
@@ -72,6 +73,7 @@ export async function buildOcrKtpRequest(params: {
   source?: string;
 }): Promise<OcrKtpRequest> {
   const headers = await getHyundaiRequestHeaders();
+  const byteBase64 = sanitizeBase64ForHyundai(params.byteBase64, 'KTP');
   return {
     url: `${API_BASE_URL}/v1/OCR/GetOCRKTPData`,
     method: 'POST',
@@ -80,7 +82,7 @@ export async function buildOcrKtpRequest(params: {
       trxNo: params.trxNo,
       fileName: params.fileName,
       source: params.source ?? 'Website',
-      byteBase64: params.byteBase64,
+      byteBase64,
     },
   };
 }

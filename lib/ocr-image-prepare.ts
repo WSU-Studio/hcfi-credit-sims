@@ -35,26 +35,28 @@ export async function prepareImageForOcr(input: {
   sourceFileName: string;
 }): Promise<OcrPreparedImage> {
   let buffer = input.buffer;
-  let contentType = input.sourceContentType;
-  let fileName = input.sourceFileName;
   let reEncoded = false;
 
-  if (input.sourceContentType !== OCR_SAFE_MIME) {
-    try {
-      buffer = await sharp(input.buffer)
-        .rotate() // honor EXIF orientation
-        .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
-        .toBuffer();
-      contentType = OCR_SAFE_MIME;
-      fileName = replaceExtension(input.sourceFileName, OCR_SAFE_EXT);
-      reEncoded = true;
-    } catch (convertErr) {
-      console.warn(
-        '[ocr-image-prepare] gagal konversi ke JPEG, fallback kirim original:',
-        convertErr instanceof Error ? convertErr.message : convertErr
-      );
-    }
+  // Selalu re-encode ke JPEG — jangan andalkan Content-Type S3 saja.
+  // Kasus umum: object WebP di S3 tapi header `image/jpeg`, atau file corrupt
+  // yang bikin AddLeadCust menolak dengan "not a valid Base64 string".
+  try {
+    buffer = await sharp(input.buffer)
+      .rotate() // honor EXIF orientation
+      .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
+      .toBuffer();
+    reEncoded = true;
+  } catch (convertErr) {
+    console.warn(
+      '[ocr-image-prepare] gagal konversi ke JPEG, fallback kirim original:',
+      convertErr instanceof Error ? convertErr.message : convertErr
+    );
   }
+
+  const contentType = reEncoded ? OCR_SAFE_MIME : input.sourceContentType;
+  const fileName = reEncoded
+    ? replaceExtension(input.sourceFileName, OCR_SAFE_EXT)
+    : input.sourceFileName;
 
   return {
     buffer,

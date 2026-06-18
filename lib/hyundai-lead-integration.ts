@@ -62,6 +62,10 @@ import {
   validateCustomerPhoneAndEmail,
 } from '@/lib/hyundai-customer-validation';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
+import {
+  normalizeHyundaiFileName,
+  sanitizeBase64ForHyundai,
+} from '@/lib/hyundai-file-content';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 
@@ -200,9 +204,10 @@ function buildAddLeadCustBody(
   }) as Record<string, unknown>;
 
   if (ktpFile?.base64) {
+    const content = sanitizeBase64ForHyundai(ktpFile.base64, 'KTP');
     body.IdFile = {
-      FileName: ktpFile.fileName,
-      Content: ktpFile.base64,
+      FileName: normalizeHyundaiFileName(ktpFile.fileName),
+      Content: content,
     };
   }
 
