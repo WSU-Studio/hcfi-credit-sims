@@ -235,7 +235,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         <button
           type="button"
           onClick={() => setTab('Standard')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
             tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -244,7 +244,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
         <button
           type="button"
           onClick={() => setTab('Promotion')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
             tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
           }`}
         >
@@ -263,7 +263,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               setDpPercent(p.DPPrcnt);
               setTableRows([]);
             }}
-            className={`p-4 rounded-xl border-2 text-left transition flex flex-col justify-start ${
+            className={`p-4 rounded-xl border-2 text-left transition flex flex-col justify-start cursor-pointer ${
               selectedProduct?.ProductName === p.ProductName
                 ? 'border-[#002c5f] bg-[#002c5f]/10'
                 : 'border-gray-200 hover:border-[#002c5f]/50'
@@ -299,7 +299,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
                   key={pct}
                   type="button"
                   onClick={() => setDpPercent(pct)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
                     dpPercent === pct ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]'
                   }`}
                 >
@@ -333,7 +333,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               <button
                 type="button"
                 onClick={() => setFirstInstallment('ADDM')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
                   firstInstallment === 'ADDM' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
                 }`}
               >
@@ -342,7 +342,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
               <button
                 type="button"
                 onClick={() => setFirstInstallment('ADDB')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
                   firstInstallment === 'ADDB' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
                 }`}
               >
@@ -410,7 +410,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
                             name="tenor"
                             checked={r.Tenor === selectedTenor}
                             onChange={() => setSelectedTenor(r.Tenor)}
-                            className="text-[#002c5f]"
+                            className="text-[#002c5f] cursor-pointer"
                           />
                         </td>
                         <td className="py-2 px-3">{r.Tenor} {t('months')}</td>

@@ -82,7 +82,7 @@ export function LeadOcrTable() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 cursor-pointer"
         >
           <option value="">Semua status</option>
           <option value="SUCCESS">SUCCESS</option>
@@ -91,7 +91,7 @@ export function LeadOcrTable() {
         <button
           type="button"
           onClick={fetchRows}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
         >
           Muat ulang
         </button>
@@ -162,7 +162,7 @@ export function LeadOcrTable() {
                         <button
                           type="button"
                           onClick={() => setExpandedId(expanded ? null : row.id)}
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 cursor-pointer"
                         >
                           {expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
                           Detail

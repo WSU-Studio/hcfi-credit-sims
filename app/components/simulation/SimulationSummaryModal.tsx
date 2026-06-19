@@ -246,7 +246,7 @@ export function SimulationSummaryModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
+            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition cursor-pointer"
             aria-label="Tutup"
           >
             <IconX size={22} />
@@ -375,7 +375,7 @@ export function SimulationSummaryModal({
           <button
             type="button"
             onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#002c5f] text-[#002c5f] rounded-lg font-medium hover:bg-[#002c5f]/5 transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#002c5f] text-[#002c5f] rounded-lg font-medium hover:bg-[#002c5f]/5 transition cursor-pointer"
           >
             <IconDownload size={18} />
             Download PDF
@@ -383,7 +383,7 @@ export function SimulationSummaryModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition"
+            className="px-5 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition cursor-pointer"
           >
             Tutup
           </button>
