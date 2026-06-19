@@ -134,7 +134,9 @@ export function LeadOcrTable() {
                           Lihat di Leads
                         </Link>
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs">{row.hyundaiLeadNo || '—'}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-900">
+                        {row.hyundaiLeadNo || '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
@@ -169,37 +171,37 @@ export function LeadOcrTable() {
                     </tr>
                     {expanded && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-4 bg-gray-50">
+                        <td colSpan={7} className="px-4 py-4 bg-gray-50 text-gray-900">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
                                 Data terparse
                               </h4>
-                              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-900">
                                 <dt className="text-gray-500">Tempat / Tgl lahir</dt>
-                                <dd>
+                                <dd className="text-gray-900">
                                   {[row.tempatLahir, row.tanggalLahir].filter(Boolean).join(', ') ||
                                     '—'}
                                 </dd>
                                 <dt className="text-gray-500">JK / Kawin</dt>
-                                <dd>
+                                <dd className="text-gray-900">
                                   {[row.jenisKelamin, row.statusPerkawinan].filter(Boolean).join(' / ') ||
                                     '—'}
                                 </dd>
                                 <dt className="text-gray-500">Kota / Kec / Kel</dt>
-                                <dd>
+                                <dd className="text-gray-900">
                                   {[row.kotaKabupaten, row.kecamatan, row.kelurahanDesa]
                                     .filter(Boolean)
                                     .join(' · ') || '—'}
                                 </dd>
                                 <dt className="text-gray-500">Kode pos / Agama</dt>
-                                <dd>
+                                <dd className="text-gray-900">
                                   {[row.zipCode, row.agama].filter(Boolean).join(' · ') || '—'}
                                 </dd>
                                 <dt className="text-gray-500">Kewarganegaraan</dt>
-                                <dd>{row.mrNationalityCode || '—'}</dd>
+                                <dd className="text-gray-900">{row.mrNationalityCode || '—'}</dd>
                                 <dt className="text-gray-500">File KTP</dt>
-                                <dd>{row.ktpFileName || '—'}</dd>
+                                <dd className="text-gray-900">{row.ktpFileName || '—'}</dd>
                               </dl>
                             </div>
                             <div className="space-y-3">

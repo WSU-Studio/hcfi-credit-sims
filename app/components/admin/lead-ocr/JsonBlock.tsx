@@ -11,7 +11,7 @@ export function JsonBlock({ value, maxHeightClass = 'max-h-64' }: JsonBlockProps
   if (value == null) return <span className="text-gray-400">—</span>;
   return (
     <pre
-      className={`text-xs bg-gray-50 border border-gray-200 rounded p-3 overflow-auto ${maxHeightClass}`}
+      className={`text-xs text-gray-900 bg-white border border-gray-200 rounded p-3 overflow-auto ${maxHeightClass}`}
     >
       {JSON.stringify(value, null, 2)}
     </pre>
