@@ -43,6 +43,7 @@ import {
   mapGender,
   mapMarital,
   normalizeBirthDate,
+  normalizeRtRw,
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
@@ -184,8 +185,8 @@ function buildAddLeadCustBody(
     MrNationalityCode: nationality,
     NationalityCountryCode: 'ID',
     Addr: ocr?.alamat || '-',
-    AreaCode4: ocr?.Rt || '001',
-    AreaCode3: ocr?.Rw || '001',
+    AreaCode4: normalizeRtRw(ocr?.Rt),
+    AreaCode3: normalizeRtRw(ocr?.Rw),
     ZipCode: location.zipCode,
     AreaCode1: location.areaCode1,
     AreaCode2: location.areaCode2,

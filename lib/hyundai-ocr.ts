@@ -248,3 +248,14 @@ export function mapMarital(code?: string): string {
   if (u.includes('MARRIED') || u.includes('KAWIN')) return 'MARRIED';
   return 'SINGLE';
 }
+
+/** RT/RW wajib 3 digit di AddLeadCust. OCR sering mengembalikan "-" jika tidak terbaca. */
+export function normalizeRtRw(raw?: string | null): string {
+  if (!raw) return '001';
+  const trimmed = raw.trim();
+  if (!trimmed || /^-+$/.test(trimmed)) return '001';
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits) return '001';
+  if (digits.length >= 3) return digits.slice(-3);
+  return digits.padStart(3, '0');
+}
