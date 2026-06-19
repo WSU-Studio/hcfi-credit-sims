@@ -14,7 +14,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { hyundaiPost, HyundaiApiError, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
 import { API_BASE_URL } from '@/lib/hyundai-api-client';
 
 export const LOGGED_ENDPOINTS = [
@@ -127,11 +127,17 @@ export async function hyundaiPostLogged<T = HyundaiApiEnvelope>(
     return data;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const apiErr = err instanceof HyundaiApiError ? err : null;
+    const envelope = apiErr?.response;
     await persistLog({
       ...meta,
       url,
       status: 'FAILED',
+      httpStatus: apiErr?.statusCode ? Number(apiErr.statusCode) || null : null,
+      hyundaiStatus: envelope?.StatusCode ?? envelope?.HeaderObj?.StatusCode ?? apiErr?.statusCode ?? null,
+      hyundaiMessage: envelope?.Message ?? envelope?.HeaderObj?.Message ?? null,
       requestBody: body,
+      responseBody: envelope ?? null,
       errorMessage: message,
       durationMs: Date.now() - startMs,
     });
