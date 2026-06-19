@@ -4,10 +4,12 @@ import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
 import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import { isLocalKtpStorageEnabled } from '@/lib/ktp-storage-mode';
+import { buildLocalKtpPublicUrl, KTP_OBJECT_PREFIX, resolveKtpUploadOrigin } from '@/lib/ktp-url';
+import { saveLocalKtpFile } from '@/lib/local-ktp-storage';
 import { toUserFacingS3Error } from '@/lib/s3-error-message';
 import { getPublicS3Url, getS3Bucket, getS3Client, getS3Region } from '@/lib/s3-client';
 
-const FOLDER = 'hcfi_leads_ktp';
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB — keep in sync with image-utils
 
 export async function POST(request: NextRequest) {
@@ -20,7 +22,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Reject oversized payloads before buffering them into memory.
   const declaredLength = Number(request.headers.get('content-length') ?? '0');
   if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES + 1024) {
     return NextResponse.json({ error: 'Ukuran file maksimal 10MB' }, { status: 413 });
@@ -32,9 +33,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const bucket = getS3Bucket();
-    const region = getS3Region();
-
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     if (!file || !(file instanceof File)) {
@@ -57,8 +55,16 @@ export async function POST(request: NextRequest) {
       .webp({ quality: 80 })
       .toBuffer();
 
-    const key = `${FOLDER}/${randomUUID()}-${Date.now()}.webp`;
+    const key = `${KTP_OBJECT_PREFIX}${randomUUID()}-${Date.now()}.webp`;
 
+    if (isLocalKtpStorageEnabled()) {
+      await saveLocalKtpFile(key, webpBuffer);
+      const url = buildLocalKtpPublicUrl(resolveKtpUploadOrigin(request), key);
+      return NextResponse.json({ url });
+    }
+
+    const bucket = getS3Bucket();
+    const region = getS3Region();
     const client = getS3Client();
     await client.send(
       new PutObjectCommand({
@@ -70,12 +76,13 @@ export async function POST(request: NextRequest) {
     );
 
     const url = getPublicS3Url(key, bucket, region);
-
     return NextResponse.json({ url });
   } catch (error: unknown) {
     const raw = error instanceof Error ? error.message : 'Upload gagal';
-    console.error('[upload-ktp] S3 error:', raw);
+    console.error('[upload-ktp] error:', raw);
+    if (isLocalKtpStorageEnabled()) {
+      return NextResponse.json({ error: 'Upload KTP gagal. Silakan coba lagi.' }, { status: 500 });
+    }
     return NextResponse.json({ error: toUserFacingS3Error(raw) }, { status: 500 });
   }
 }
-

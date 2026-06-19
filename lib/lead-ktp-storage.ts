@@ -1,6 +1,7 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getS3Bucket, getS3Client } from '@/lib/s3-client';
-import { extractBucketAndKeyFromS3Url, isLeadKtpS3Key } from '@/lib/s3-url';
+import { readLocalKtpFile } from '@/lib/local-ktp-storage';
+import { parseKtpStorageUrl } from '@/lib/ktp-url';
 import { prepareImageForOcr } from '@/lib/ocr-image-prepare';
 
 async function bodyToBuffer(body: unknown): Promise<Buffer> {
@@ -14,13 +15,45 @@ async function bodyToBuffer(body: unknown): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+async function readRawKtpObject(ktpUrl: string): Promise<{
+  buffer: Buffer;
+  contentType: string;
+  fileName: string;
+}> {
+  const ref = parseKtpStorageUrl(ktpUrl);
+  if (!ref) {
+    throw new Error('Invalid KTP URL');
+  }
+
+  if (ref.kind === 'local') {
+    const local = await readLocalKtpFile(ref.key);
+    return {
+      buffer: local.buffer,
+      contentType: local.contentType,
+      fileName: ref.key.split('/').pop() ?? 'ktp.webp',
+    };
+  }
+
+  const bucket = getS3Bucket();
+  if (ref.bucket !== bucket) {
+    throw new Error('Invalid KTP URL');
+  }
+
+  const client = getS3Client();
+  const out = await client.send(
+    new GetObjectCommand({ Bucket: ref.bucket, Key: ref.key })
+  );
+
+  return {
+    buffer: await bodyToBuffer(out.Body),
+    contentType: out.ContentType ?? 'image/webp',
+    fileName: ref.key.split('/').pop() ?? 'ktp.webp',
+  };
+}
+
 /**
- * Tarik object KTP dari S3 lalu normalisasi format supaya OCR Hyundai bisa
+ * Tarik KTP (S3 atau local dev) lalu normalisasi format supaya OCR Hyundai bisa
  * decode (lihat lib/ocr-image-prepare.ts untuk konteks WebP→JPEG).
- *
- * Kasus 2026-06-03 — LeadNo 13STGLD20260600008 (John Doe):
- *   ktpUrl = .../*.webp → OCR sukses HTTP 200 tapi `Read` null → IdNo masuk
- *   sebagai "0000000000000000" placeholder.
  */
 export async function fetchLeadKtpFromS3(ktpUrl: string): Promise<{
   buffer: Buffer;
@@ -28,26 +61,12 @@ export async function fetchLeadKtpFromS3(ktpUrl: string): Promise<{
   fileName: string;
   base64: string;
 }> {
-  const bucket = getS3Bucket();
-
-  const parsed = extractBucketAndKeyFromS3Url(ktpUrl.trim());
-  if (!parsed || parsed.bucket !== bucket || !isLeadKtpS3Key(parsed.key)) {
-    throw new Error('Invalid KTP URL');
-  }
-
-  const client = getS3Client();
-  const out = await client.send(
-    new GetObjectCommand({ Bucket: bucket, Key: parsed.key })
-  );
-
-  const rawBuffer = await bodyToBuffer(out.Body);
-  const sourceContentType = out.ContentType ?? 'image/webp';
-  const sourceFileName = parsed.key.split('/').pop() ?? 'ktp.webp';
+  const raw = await readRawKtpObject(ktpUrl);
 
   const prepared = await prepareImageForOcr({
-    buffer: rawBuffer,
-    sourceContentType,
-    sourceFileName,
+    buffer: raw.buffer,
+    sourceContentType: raw.contentType,
+    sourceFileName: raw.fileName,
   });
 
   return {
@@ -56,4 +75,13 @@ export async function fetchLeadKtpFromS3(ktpUrl: string): Promise<{
     fileName: prepared.fileName,
     base64: prepared.base64,
   };
+}
+
+/** Raw bytes untuk preview admin / dev proxy. */
+export async function readLeadKtpBytes(ktpUrl: string): Promise<{
+  buffer: Buffer;
+  contentType: string;
+}> {
+  const raw = await readRawKtpObject(ktpUrl);
+  return { buffer: raw.buffer, contentType: raw.contentType };
 }

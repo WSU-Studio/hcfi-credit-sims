@@ -40,6 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local KTP dev storage (KTP_STORAGE=local)
+/.data/
+
 /app/generated/prisma
 
 /ignored
