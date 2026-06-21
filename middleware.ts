@@ -112,6 +112,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  if (pathname.startsWith("/dealer")) {
+    const isLoginPage = pathname === "/dealer/login";
+    if (!isLoginPage) {
+      const session = await getSessionFromRequest(request);
+      if (!session?.authenticated) {
+        const loginUrl = new URL("/dealer/login", request.url);
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/admin")) {
     const session = await getSessionFromRequest(request);
     if (!session?.authenticated) {

@@ -1,12 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminLink } from '@/app/components/admin/AdminLink';
+import {
+  DealerAssignFields,
+  type DealerAssignValue,
+} from '@/app/components/admin/users/DealerAssignFields';
+import { ROLE_NAMES } from '@/lib/user-types';
 
 type Role = {
   id: string;
   name: string;
+};
+
+const EMPTY_DEALER: DealerAssignValue = {
+  vendorCode: '',
+  vendorName: '',
+  vendorCity: '',
+  oriOfficeCode: '',
+  oriOfficeName: '',
+  cmoEmpNo: '',
 };
 
 type UserFormProps = {
@@ -25,6 +39,12 @@ export function UserForm({ userId }: UserFormProps) {
   const [isActive, setIsActive] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(new Set());
+  const [dealerAssign, setDealerAssign] = useState<DealerAssignValue>(EMPTY_DEALER);
+
+  const selectedRoleNames = useMemo(
+    () => roles.filter((r) => selectedRoleIds.has(r.id)).map((r) => r.name),
+    [roles, selectedRoleIds]
+  );
 
   useEffect(() => {
     const loadRoles = () =>
@@ -47,6 +67,14 @@ export function UserForm({ userId }: UserFormProps) {
             setEmail(user.email ?? '');
             setIsActive(user.isActive !== false);
             setSelectedRoleIds(new Set((user.roleIds as string[]) || []));
+            setDealerAssign({
+              vendorCode: user.vendorCode ?? '',
+              vendorName: user.vendorName ?? '',
+              vendorCity: user.vendorCity ?? '',
+              oriOfficeCode: user.oriOfficeCode ?? '',
+              oriOfficeName: user.oriOfficeName ?? '',
+              cmoEmpNo: user.cmoEmpNo ?? '',
+            });
           } else setError('User not found');
           setLoading(false);
         })
@@ -78,6 +106,12 @@ export function UserForm({ userId }: UserFormProps) {
         email: email.trim().toLowerCase(),
         isActive: isActive,
         roleIds: Array.from(selectedRoleIds),
+        vendorCode: dealerAssign.vendorCode || null,
+        vendorName: dealerAssign.vendorName || null,
+        vendorCity: dealerAssign.vendorCity || null,
+        oriOfficeCode: dealerAssign.oriOfficeCode || null,
+        oriOfficeName: dealerAssign.oriOfficeName || null,
+        cmoEmpNo: dealerAssign.cmoEmpNo || null,
       };
       if (userId) {
         if (password.trim().length > 0) {
@@ -224,7 +258,13 @@ export function UserForm({ userId }: UserFormProps) {
                     onChange={() => toggleRole(role.id)}
                     className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
                   />
-                  <span className="text-sm text-gray-800">{role.name}</span>
+                  <span className="text-sm text-gray-800">
+                    {role.name}
+                    {(role.name === ROLE_NAMES.DEALER_ADMIN ||
+                      role.name === ROLE_NAMES.SALESMAN) && (
+                      <span className="ml-1 text-xs text-blue-600">(Dealer Portal)</span>
+                    )}
+                  </span>
                 </label>
               ))}
             </div>
@@ -233,6 +273,13 @@ export function UserForm({ userId }: UserFormProps) {
             )}
           </div>
         </div>
+
+        <DealerAssignFields
+          roleNames={selectedRoleNames}
+          value={dealerAssign}
+          onChange={setDealerAssign}
+          disabled={saving}
+        />
       </div>
 
       <hr className="my-4 border-gray-200" />

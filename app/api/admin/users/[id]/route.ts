@@ -4,6 +4,12 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
+import {
+  buildUserDealerData,
+  parseDealerProfileInput,
+  validateDealerProfile,
+} from '@/lib/user-dealer-fields';
+import { getRoleNamesByIds } from '@/lib/user-roles';
 
 export async function GET(
   _request: NextRequest,
@@ -102,15 +108,31 @@ export async function PUT(
       ? roleIds.filter((r: unknown) => typeof r === 'string')
       : [];
 
+    const roleNames = await getRoleNamesByIds(ids);
+    const dealerProfile = parseDealerProfileInput(body);
+    const dealerData = buildUserDealerData(roleNames, dealerProfile);
+    const dealerError = validateDealerProfile(dealerData.userType, dealerProfile);
+    if (dealerError) {
+      return NextResponse.json({ error: dealerError }, { status: 400 });
+    }
+
     const updateData: {
       name: string;
       email: string;
       isActive?: boolean;
       password?: string;
+      userType: string | null;
+      vendorCode: string | null;
+      vendorName: string | null;
+      vendorCity: string | null;
+      oriOfficeCode: string | null;
+      oriOfficeName: string | null;
+      cmoEmpNo: string | null;
     } = {
       name: name.trim(),
       email: emailTrimmed,
       isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
+      ...dealerData,
     };
 
     if (typeof password === 'string' && password.trim().length > 0) {

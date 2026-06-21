@@ -9,6 +9,9 @@ type User = {
   email: string;
   name: string;
   isActive: boolean;
+  userType?: string | null;
+  vendorName?: string | null;
+  vendorCity?: string | null;
   createdAt: string;
   lockedUntil?: string | null;
   failedLoginAttempts?: number;
@@ -18,6 +21,12 @@ type User = {
       name: string;
     };
   }>;
+};
+
+const USER_TYPE_LABELS: Record<string, string> = {
+  HCFI_ADMIN: 'HCFI Admin',
+  DEALER_ADMIN: 'Dealer Admin',
+  SALESMAN: 'Salesman',
 };
 
 const isLocked = (user: User): boolean =>
@@ -107,6 +116,9 @@ export function UsersTable() {
                 Roles
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dealer
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -124,7 +136,24 @@ export function UsersTable() {
                   {user.email}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
-                  {user.userRoles.map((ur) => ur.role.name).join(', ') || 'No roles'}
+                  <div>{user.userRoles.map((ur) => ur.role.name).join(', ') || 'No roles'}</div>
+                  {user.userType && (
+                    <span className="mt-1 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                      {USER_TYPE_LABELS[user.userType] ?? user.userType}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-xs text-gray-500 max-w-[12rem]">
+                  {user.vendorName ? (
+                    <div className="truncate" title={user.vendorName}>
+                      {user.vendorName}
+                      {user.vendorCity ? (
+                        <span className="block text-[10px] text-gray-400">{user.vendorCity}</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   <div className="flex flex-col gap-1">

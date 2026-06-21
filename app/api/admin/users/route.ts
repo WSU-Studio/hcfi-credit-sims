@@ -4,6 +4,12 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
+import {
+  buildUserDealerData,
+  parseDealerProfileInput,
+  validateDealerProfile,
+} from '@/lib/user-dealer-fields';
+import { getRoleNamesByIds } from '@/lib/user-roles';
 
 export async function GET() {
   try {
@@ -87,6 +93,14 @@ export async function POST(request: NextRequest) {
       ? roleIds.filter((r: unknown) => typeof r === 'string')
       : [];
 
+    const roleNames = await getRoleNamesByIds(ids);
+    const dealerProfile = parseDealerProfileInput(body);
+    const dealerData = buildUserDealerData(roleNames, dealerProfile);
+    const dealerError = validateDealerProfile(dealerData.userType, dealerProfile);
+    if (dealerError) {
+      return NextResponse.json({ error: dealerError }, { status: 400 });
+    }
+
     const hashed = await hashPassword(password.trim());
 
     const user = await prisma.user.create({
@@ -95,6 +109,7 @@ export async function POST(request: NextRequest) {
         email: emailTrimmed,
         password: hashed,
         isActive: isActive !== undefined ? Boolean(isActive) : true,
+        ...dealerData,
       },
     });
 
