@@ -77,11 +77,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const rememberMe =
           credentials.rememberMe === true || credentials.rememberMe === 'true';
 
+        const roleNames = user.userRoles.map((ur) => ur.role.name);
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           rememberMe,
+          userType: user.userType,
+          roleNames,
+          vendorCode: user.vendorCode,
+          vendorName: user.vendorName,
+          vendorCity: user.vendorCity,
+          oriOfficeCode: user.oriOfficeCode,
+          oriOfficeName: user.oriOfficeName,
+          cmoEmpNo: user.cmoEmpNo,
         };
       },
     }),
@@ -95,6 +105,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.userType = user.userType ?? null;
+        token.roleNames = user.roleNames ?? [];
+        token.vendorCode = user.vendorCode ?? null;
+        token.vendorName = user.vendorName ?? null;
+        token.vendorCity = user.vendorCity ?? null;
+        token.oriOfficeCode = user.oriOfficeCode ?? null;
+        token.oriOfficeName = user.oriOfficeName ?? null;
+        token.cmoEmpNo = user.cmoEmpNo ?? null;
         const rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
         const maxAgeSec = rememberMe ? 30 * 24 * 60 * 60 : 6 * 60 * 60; // 30 days or 6 hours
         token.exp = Math.floor(Date.now() / 1000) + maxAgeSec;
@@ -106,6 +124,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
+        session.user.userType = (token.userType as string | null) ?? null;
+        session.user.roleNames = (token.roleNames as string[]) ?? [];
+        session.user.vendorCode = (token.vendorCode as string | null) ?? null;
+        session.user.vendorName = (token.vendorName as string | null) ?? null;
+        session.user.vendorCity = (token.vendorCity as string | null) ?? null;
+        session.user.oriOfficeCode = (token.oriOfficeCode as string | null) ?? null;
+        session.user.oriOfficeName = (token.oriOfficeName as string | null) ?? null;
+        session.user.cmoEmpNo = (token.cmoEmpNo as string | null) ?? null;
       }
       return session;
     },

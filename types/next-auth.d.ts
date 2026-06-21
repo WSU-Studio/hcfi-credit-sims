@@ -6,6 +6,14 @@ declare module 'next-auth' {
       id: string;
       email: string;
       name: string;
+      userType?: string | null;
+      roleNames?: string[];
+      vendorCode?: string | null;
+      vendorName?: string | null;
+      vendorCity?: string | null;
+      oriOfficeCode?: string | null;
+      oriOfficeName?: string | null;
+      cmoEmpNo?: string | null;
     };
   }
 
@@ -13,6 +21,15 @@ declare module 'next-auth' {
     id: string;
     email: string;
     name: string;
+    userType?: string | null;
+    roleNames?: string[];
+    vendorCode?: string | null;
+    vendorName?: string | null;
+    vendorCity?: string | null;
+    oriOfficeCode?: string | null;
+    oriOfficeName?: string | null;
+    cmoEmpNo?: string | null;
+    rememberMe?: boolean;
   }
 }
 
@@ -21,7 +38,13 @@ declare module 'next-auth/jwt' {
     id: string;
     email: string;
     name: string;
+    userType?: string | null;
+    roleNames?: string[];
+    vendorCode?: string | null;
+    vendorName?: string | null;
+    vendorCity?: string | null;
+    oriOfficeCode?: string | null;
+    oriOfficeName?: string | null;
+    cmoEmpNo?: string | null;
   }
 }
-
-

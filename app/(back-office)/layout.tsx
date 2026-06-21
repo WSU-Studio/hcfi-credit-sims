@@ -3,17 +3,20 @@ import { Providers } from "../providers";
 import { AdminNavigationProvider } from "./AdminNavigationContext";
 import { AdminSidebar } from "../components/admin/AdminSidebar";
 import { AdminTopbar } from "../components/admin/AdminTopbar";
+import { requireCmsSession } from "@/lib/dealer-auth-server";
 
 export const metadata: Metadata = {
   title: "Admin - Hyundai Capital CMS",
   description: "Content Management System",
 };
 
-export default function BackOfficeLayout({
+export default async function BackOfficeLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await requireCmsSession();
+
   return (
     <Providers>
       <AdminNavigationProvider>
