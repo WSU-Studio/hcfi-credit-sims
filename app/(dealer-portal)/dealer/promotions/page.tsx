@@ -1,5 +1,5 @@
 import { requirePermission } from '@/lib/permissions';
-import { DealerComingSoon } from '@/app/components/dealer/DealerComingSoon';
+import { DealerPromotionsTable } from '@/app/components/dealer/promotions/DealerPromotionsTable';
 
 export default async function DealerPromotionsPage() {
   try {
@@ -19,13 +19,10 @@ export default async function DealerPromotionsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Sales Promotion</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Kelola diskon per model untuk dealer Anda
+          Kelola diskon per model — otomatis diterapkan saat salesman membuat quotation
         </p>
       </div>
-      <DealerComingSoon
-        title="Manajemen Promo Diskon"
-        description="Dealer Admin dapat mengatur diskon per model mobil yang akan otomatis diterapkan pada langkah harga saat salesman membuat quotation."
-      />
+      <DealerPromotionsTable />
     </div>
   );
 }

@@ -2,21 +2,49 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-
-const MAX_DISCOUNT_PERCENT = 0.25; // Maksimal diskon 25% dari harga OTR
+import { MAX_DISCOUNT_PERCENT } from '@/lib/dealer-promotion';
+import { useDealerPromotionLookup } from '@/app/hooks/useDealerPromotionLookup';
 
 interface PriceStepProps {
   modelName: string;
   suggestedPrice?: number;
+  assetCode?: string;
+  /** Prefill from dealer promotion (nominal) */
+  promotionDiscount?: number;
+  /** When true, discount field is read-only (dealer-sales mode) */
+  lockPromotionDiscount?: boolean;
   onComplete: (netPrice: number, discount: number) => void;
 }
 
-export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepProps) {
+export function PriceStep({
+  modelName,
+  suggestedPrice,
+  assetCode,
+  promotionDiscount: promotionDiscountProp,
+  lockPromotionDiscount = false,
+  onComplete,
+}: PriceStepProps) {
   const t = useTranslations('creditSimulation');
-  const [discount, setDiscount] = useState<number | ''>(0);
+  const [manualDiscount, setManualDiscount] = useState<number | ''>(0);
   const [error, setError] = useState<string | null>(null);
 
   const otrPrice = suggestedPrice ?? 0;
+  const lookupEnabled = promotionDiscountProp == null && !!assetCode;
+  const { loading: promoLoading, result: promoResult } = useDealerPromotionLookup(
+    assetCode,
+    otrPrice,
+    lookupEnabled
+  );
+
+  const effectiveDiscount =
+    promotionDiscountProp ??
+    promoResult?.discountAmount ??
+    (typeof manualDiscount === 'number' ? manualDiscount : 0);
+
+  const promoLabel =
+    promotionDiscountProp != null
+      ? 'Promo dealer diterapkan'
+      : promoResult?.label ?? null;
 
   const formatPrice = (value: number | '') => {
     if (value === '' || (typeof value === 'number' && isNaN(value))) return '';
@@ -28,9 +56,10 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (lockPromotionDiscount) return;
     setError(null);
     const value = e.target.value.replace(/[^\d]/g, '');
-    setDiscount(value === '' ? '' : Number(value));
+    setManualDiscount(value === '' ? '' : Number(value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,7 +70,7 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
       return;
     }
 
-    const discountVal = typeof discount === 'number' ? discount : 0;
+    const discountVal = effectiveDiscount;
     if (discountVal < 0) {
       setError(t('discountMinError'));
       return;
@@ -67,6 +96,10 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
     onComplete(netPrice, discountVal);
   };
 
+  const discountLocked = lockPromotionDiscount && effectiveDiscount > 0;
+  const showManualInput =
+    promotionDiscountProp == null && !promoResult?.discountAmount;
+
   return (
     <div className="space-y-6 text-gray-900">
       <div>
@@ -89,11 +122,6 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
           >
             {otrPrice > 0 ? formatPrice(otrPrice) : '-'}
           </div>
-          {/* {suggestedPrice && (
-            <p className="mt-1 text-xs text-gray-500">
-              {t('priceHint')}
-            </p>
-          )} */}
           {error && (
             <p id="otr-error" className="mt-2 text-sm text-red-600" role="alert">
               {error}
@@ -103,24 +131,45 @@ export function PriceStep({ modelName, suggestedPrice, onComplete }: PriceStepPr
 
         <div>
           <label htmlFor="discount" className="block text-sm font-medium mb-2">
-            {t('discountLabel')} <span className="text-gray-400 font-normal">(opsional)</span>
+            {t('discountLabel')}{' '}
+            {!discountLocked && showManualInput && (
+              <span className="text-gray-400 font-normal">(opsional)</span>
+            )}
           </label>
-          <input
-            type="text"
-            id="discount"
-            value={discount === '' || discount === 0 ? '' : formatPrice(discount)}
-            onChange={handleDiscountChange}
-            placeholder={t('discountPlaceholder')}
-            className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent"
-          />
-          {/* <p className="mt-1 text-xs text-gray-500">
-            {t('discountHint', { percent: Math.round(MAX_DISCOUNT_PERCENT * 100) })}
-          </p> */}
+          {promoLoading && (
+            <p className="mb-2 text-xs text-[#002c5f]">Memuat promo dealer...</p>
+          )}
+          {promoLabel && !promoLoading && effectiveDiscount > 0 && (
+            <p className="mb-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+              {promoLabel} — {formatPrice(effectiveDiscount)}
+            </p>
+          )}
+          {(showManualInput || effectiveDiscount > 0) && (
+            <input
+              type="text"
+              id="discount"
+              value={
+                effectiveDiscount === 0 && showManualInput
+                  ? manualDiscount === '' || manualDiscount === 0
+                    ? ''
+                    : formatPrice(manualDiscount)
+                  : formatPrice(effectiveDiscount)
+              }
+              onChange={handleDiscountChange}
+              readOnly={discountLocked || !showManualInput}
+              placeholder={t('discountPlaceholder')}
+              className={`w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-transparent ${
+                discountLocked || !showManualInput
+                  ? 'bg-gray-100 cursor-not-allowed'
+                  : 'bg-[var(--background)]'
+              }`}
+            />
+          )}
         </div>
 
         <button
           type="submit"
-          disabled={!otrPrice || otrPrice <= 0}
+          disabled={!otrPrice || otrPrice <= 0 || promoLoading}
           className="w-full px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
         >
           {t('submitPrice')}
