@@ -6,13 +6,22 @@ import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/aud
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    await requirePermission('LEADS', 'view');
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const source = searchParams.get('source');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const skip = (page - 1) * limit;
 
-    const where = status ? { status: status } : {};
+    const where: { status?: string; source?: string } = {};
+    if (status) where.status = status;
+    if (source) where.source = source;
 
     const [leads, total] = await Promise.all([
       prisma.lead.findMany({
@@ -20,6 +29,11 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        include: {
+          salesUser: {
+            select: { id: true, name: true, email: true },
+          },
+        },
       }),
       prisma.lead.count({ where }),
     ]);
@@ -35,6 +49,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('Error fetching leads:', error);
+    if (error instanceof Error && error.message.includes('Forbidden')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

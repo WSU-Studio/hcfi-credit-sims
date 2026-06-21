@@ -1,5 +1,5 @@
 import { requirePermission } from '@/lib/permissions';
-import { DealerComingSoon } from '@/app/components/dealer/DealerComingSoon';
+import { DealerLeadsTable } from '@/app/components/dealer/leads/DealerLeadsTable';
 
 export default async function DealerLeadsPage() {
   try {
@@ -22,10 +22,7 @@ export default async function DealerLeadsPage() {
           Data leads dari quotation dealer sales
         </p>
       </div>
-      <DealerComingSoon
-        title="Leads Dealer Sales"
-        description="Daftar leads dari simulasi salesman akan ditampilkan di sini dengan filter per dealer dan per sales. Data juga tersedia di admin HCFI dengan source DEALER_SALES."
-      />
+      <DealerLeadsTable />
     </div>
   );
 }

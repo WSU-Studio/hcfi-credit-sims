@@ -7,6 +7,7 @@ import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconM
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
+import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
 
 type Lead = {
   id: string;
@@ -35,6 +36,7 @@ type Lead = {
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
   source?: string | null;
+  salesUser?: { id: string; name: string; email: string } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -57,6 +59,7 @@ export function LeadsTable() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sourceFilter, setSourceFilter] = useState<string>('');
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
@@ -66,7 +69,7 @@ export function LeadsTable() {
 
   useEffect(() => {
     fetchLeads();
-  }, [statusFilter]);
+  }, [statusFilter, sourceFilter]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setKtpPreviewLeadId(null);
@@ -106,7 +109,11 @@ export function LeadsTable() {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const url = statusFilter ? `/api/admin/leads?status=${statusFilter}` : '/api/admin/leads';
+      const params = new URLSearchParams();
+      if (statusFilter) params.set('status', statusFilter);
+      if (sourceFilter) params.set('source', sourceFilter);
+      const qs = params.toString();
+      const url = qs ? `/api/admin/leads?${qs}` : '/api/admin/leads';
       const res = await fetch(url);
       const data = await res.json();
       setLeads(data.leads || []);
@@ -214,6 +221,15 @@ export function LeadsTable() {
             </button>
           )}
           <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          >
+            <option value="">Semua Sumber</option>
+            <option value={LEAD_SOURCES.WEBSITE}>{LEAD_SOURCE_LABELS.WEBSITE}</option>
+            <option value={LEAD_SOURCES.DEALER_SALES}>{LEAD_SOURCE_LABELS.DEALER_SALES}</option>
+          </select>
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -265,6 +281,9 @@ export function LeadsTable() {
                 Dealer
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Sales
+              </th>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 CMO
               </th>
               <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -275,7 +294,7 @@ export function LeadsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {leads.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-3 py-4 text-center text-gray-500">
+                <td colSpan={10} className="px-3 py-4 text-center text-gray-500">
                   Tidak ada data leads
                 </td>
               </tr>
@@ -459,6 +478,18 @@ export function LeadsTable() {
                         <span className="text-xs text-gray-400">No follow up access</span>
                       )}
                     </td> */}
+                    <td className="px-3 py-2 align-top text-xs text-gray-700">
+                      {lead.source === LEAD_SOURCES.DEALER_SALES ? (
+                        <>
+                          <div>{lead.salesUser?.name ?? '-'}</div>
+                          {lead.salesUser?.email && (
+                            <div className="text-[10px] text-gray-500">{lead.salesUser.email}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
                     <LeadAssignRow
                       lead={lead}
                       vendors={vendors}
