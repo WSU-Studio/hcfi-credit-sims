@@ -121,6 +121,8 @@ const optionalHttpUrl = z
   .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
   .transform((v) => (v == null || v === '' ? null : v));
 
+import { LEAD_SOURCES } from '@/lib/lead-source';
+
 export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER'] as const;
 
 /**
@@ -188,6 +190,11 @@ export const leadCreateSchema = z
 
     latitude: latitudeSchema,
     longitude: longitudeSchema,
+
+    source: z
+      .enum([LEAD_SOURCES.WEBSITE, LEAD_SOURCES.DEALER_SALES])
+      .optional()
+      .default(LEAD_SOURCES.WEBSITE),
 
     // Honeypot — must be empty for legit submissions.
     [HONEYPOT_FIELD]: z.string().optional(),

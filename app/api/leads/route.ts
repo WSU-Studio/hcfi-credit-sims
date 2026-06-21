@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth-server';
+import { isDealerPortalUser } from '@/lib/dealer-portal';
+import { LEAD_SOURCES } from '@/lib/lead-source';
 import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { leadCreateSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
@@ -128,6 +131,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const source = data.source ?? LEAD_SOURCES.WEBSITE;
+    let salesUserId: string | null = null;
+
+    if (source === LEAD_SOURCES.DEALER_SALES) {
+      const session = await auth();
+      if (!session?.user?.id || !isDealerPortalUser(session.user.userType)) {
+        return NextResponse.json(
+          { error: 'Unauthorized', message: 'Sesi dealer tidak valid.' },
+          { status: 401 }
+        );
+      }
+      salesUserId = session.user.id;
+    }
+
     const leadPayload = {
       name: data.name,
       phone: data.phone,
@@ -153,6 +170,8 @@ export async function POST(request: NextRequest) {
       consentAccepted: Boolean(data.consentAccepted),
       simulationLeadNo: data.simulationLeadNo,
       status: 'NEW',
+      source,
+      salesUserId,
     };
 
     // Server-derived IP only. We intentionally do NOT trust any client-supplied
