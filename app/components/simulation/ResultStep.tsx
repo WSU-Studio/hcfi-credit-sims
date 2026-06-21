@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProductCalculation, Vendor } from '@/app/types/credit-simulation';
+import type { LeadSource } from '@/lib/lead-source';
+import { LEAD_SOURCES } from '@/lib/lead-source';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import { IconBrandWhatsapp, IconFileDescription, IconSend } from '@tabler/icons-react';
 import {
@@ -23,10 +25,21 @@ interface ResultStepProps {
   assetSnapshot?: LeadAssetSnapshot | null;
   dealer?: Vendor | null;
   userLocation?: UserLocation;
+  leadSource?: LeadSource;
   onSelectProduct?: (product: ProductCalculation) => void;
 }
 
-export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnapshot, dealer, userLocation, onSelectProduct }: ResultStepProps) {
+export function ResultStep({
+  leadNo,
+  otrPrice,
+  discount = 0,
+  vehicle,
+  assetSnapshot,
+  dealer,
+  userLocation,
+  leadSource = LEAD_SOURCES.WEBSITE,
+  onSelectProduct,
+}: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
@@ -492,6 +505,7 @@ export function ResultStep({ leadNo, otrPrice, discount = 0, vehicle, assetSnaps
                 leadNo={leadNo}
                 dealer={dealer}
                 userLocation={userLocation}
+                leadSource={leadSource}
                 productName={
                   highlightedRow
                     ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan`

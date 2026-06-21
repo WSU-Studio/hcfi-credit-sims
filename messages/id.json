@@ -83,7 +83,7 @@
     "stepPrice": "Harga",
     "stepResult": "Hasil",
     "back": "Kembali",
-    "stepOf": "Langkah {current} dari 5",
+    "stepOf": "Langkah {current} dari {total}",
     "changeModel": "Ganti Model",
     "selectCreditProduct": "Pilih Produk Kredit",
     "selectProductSubtitle": "Pilih tipe produk, DP %, ADDM/ADDB, lalu hitung simulasi",

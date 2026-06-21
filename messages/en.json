@@ -83,7 +83,7 @@
     "stepPrice": "Price",
     "stepResult": "Result",
     "back": "Back",
-    "stepOf": "Step {current} of 5",
+    "stepOf": "Step {current} of {total}",
     "changeModel": "Change Model",
     "selectCreditProduct": "Select Credit Product",
     "selectProductSubtitle": "Choose product type, DP %, ADDM/ADDB, then run simulation",

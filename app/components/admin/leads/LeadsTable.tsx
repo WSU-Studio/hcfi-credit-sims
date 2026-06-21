@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
-import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
+import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
 
 type Lead = {
   id: string;
@@ -34,6 +34,7 @@ type Lead = {
   hyundaiLeadNo?: string | null;
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
+  source?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -345,6 +346,11 @@ export function LeadsTable() {
                             </button>
                           ) : null}
                           <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                          {lead.source === LEAD_SOURCES.DEALER_SALES && (
+                            <span className="mt-1 inline-flex rounded bg-[#002c5f]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#002c5f]">
+                              {LEAD_SOURCE_LABELS.DEALER_SALES}
+                            </span>
+                          )}
                         </div>
                         <div className="text-sm text-gray-900">{lead.phone}</div>
                         <div className="text-xs text-gray-500">{lead.email}</div>
