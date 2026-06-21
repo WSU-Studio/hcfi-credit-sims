@@ -40,6 +40,7 @@ model User {
 
   userRoles UserRole[]
   articles  Article[]
+  dealerPromotions DealerPromotion[]
 
   @@index([userType])
   @@index([vendorCode])
@@ -337,6 +338,33 @@ model VehicleModelImage {
   @@index([normalizedAssetName])
   @@index([isActive, updatedAt])
   @@map("vehicle_model_images")
+}
+
+// ============================================
+// Dealer Sales Promotions (discount per model)
+// ============================================
+
+model DealerPromotion {
+  id            String    @id @default(uuid())
+  vendorCode    String
+  vendorName    String?
+  assetCode     String
+  assetName     String?
+  discountType  String    // FIXED | PERCENT
+  discountValue Float
+  maxDiscount   Float?
+  validFrom     DateTime?
+  validTo       DateTime?
+  isActive      Boolean   @default(true)
+  notes         String?   @db.Text
+  createdById   String?
+  createdBy     User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([vendorCode, assetCode])
+  @@index([vendorCode, isActive])
+  @@map("dealer_promotions")
 }
 
 // ============================================
