@@ -1,0 +1,6 @@
+[
+  { "code": "DEALER_DASHBOARD",  "name": "Dashboard",         "path": "/dealer/dashboard",  "order": 1 },
+  { "code": "DEALER_PROMOTIONS", "name": "Sales Promotion",   "path": "/dealer/promotions", "order": 2 },
+  { "code": "DEALER_QUOTATION",  "name": "Quotation",         "path": "/dealer/quotation",  "order": 3 },
+  { "code": "DEALER_LEADS",      "name": "Leads",             "path": "/dealer/leads",      "order": 4 }
+]

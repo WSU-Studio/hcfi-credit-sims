@@ -31,6 +31,15 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password');
       } else {
+        const meRes = await fetch('/api/dealer/me');
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.isDealerPortalUser) {
+            router.push('/dealer/dashboard');
+            router.refresh();
+            return;
+          }
+        }
         router.push(callbackUrl);
         router.refresh();
       }
