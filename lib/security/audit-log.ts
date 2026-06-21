@@ -39,6 +39,11 @@ export const AUDIT_ACTIONS = {
 
   // Settings / system
   SETTINGS_UPDATE: 'settings.update',
+
+  // Dealer promotions
+  DEALER_PROMOTION_CREATE: 'dealerPromotion.create',
+  DEALER_PROMOTION_UPDATE: 'dealerPromotion.update',
+  DEALER_PROMOTION_DELETE: 'dealerPromotion.delete',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

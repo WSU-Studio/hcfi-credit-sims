@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // API admin routes require authentication (defense-in-depth)
-  if (pathname.startsWith("/api/admin")) {
+  if (pathname.startsWith("/api/admin") || pathname.startsWith("/api/dealer")) {
     const session = await getSessionFromRequest(request);
     if (!session?.authenticated) {
       return withCors(
