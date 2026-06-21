@@ -21,6 +21,15 @@ model User {
   password  String
   name      String
   isActive  Boolean  @default(true)
+  /// HCFI_ADMIN | DEALER_ADMIN | SALESMAN — derived from assigned roles
+  userType        String?
+  /// Hyundai vendor/dealer assignment (required for DEALER_ADMIN & SALESMAN)
+  vendorCode      String?
+  vendorName      String?
+  vendorCity      String?
+  oriOfficeCode   String?
+  oriOfficeName   String?
+  cmoEmpNo        String?
   // Account lockout / login hardening
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
@@ -32,6 +41,8 @@ model User {
   userRoles UserRole[]
   articles  Article[]
 
+  @@index([userType])
+  @@index([vendorCode])
   @@map("users")
 }
 

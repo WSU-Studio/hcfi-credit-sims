@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../lib/auth';
 import { ADMIN_MENUS } from '../lib/admin-menus';
+import { DEALER_MENUS } from '../lib/dealer-menus';
+import { ROLE_NAMES } from '../lib/user-types';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in environment variables');
@@ -9,12 +11,16 @@ if (!process.env.DATABASE_URL) {
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('Seeding database...');
+type PermissionFlags = {
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
 
-  const menus = ADMIN_MENUS;
-
-  for (const menu of menus) {
+async function syncMenus() {
+  const allMenus = [...ADMIN_MENUS, ...DEALER_MENUS];
+  for (const menu of allMenus) {
     await prisma.menu.upsert({
       where: { code: menu.code },
       update: { name: menu.name, path: menu.path, order: menu.order },
@@ -22,10 +28,7 @@ async function main() {
     });
   }
 
-  console.log(`Menus synced (${menus.length})`);
-
-  // Create Permissions for each menu (default: all false)
-  for (const menu of menus) {
+  for (const menu of allMenus) {
     await prisma.permission.upsert({
       where: { menuCode: menu.code },
       update: {},
@@ -39,72 +42,120 @@ async function main() {
     });
   }
 
-  console.log('Permissions created');
+  console.log(`Menus synced (${allMenus.length})`);
+}
 
-  // Create Super Admin Role
+async function grantRolePermissions(
+  roleId: string,
+  grants: Record<string, PermissionFlags>
+) {
+  for (const [menuCode, flags] of Object.entries(grants)) {
+    const permission = await prisma.permission.findUnique({
+      where: { menuCode },
+    });
+    if (!permission) continue;
+
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId,
+        permissionId: permission.id,
+      },
+    });
+
+    await prisma.permission.update({
+      where: { id: permission.id },
+      data: flags,
+    });
+  }
+}
+
+async function main() {
+  console.log('Seeding database...');
+
+  await syncMenus();
+
   const superAdminRole = await prisma.role.upsert({
-    where: { name: 'Super Admin' },
+    where: { name: ROLE_NAMES.SUPER_ADMIN },
     update: {},
     create: {
-      name: 'Super Admin',
+      name: ROLE_NAMES.SUPER_ADMIN,
       description: 'Full access to all features',
     },
   });
 
-  console.log('Super Admin role created');
+  const dealerAdminRole = await prisma.role.upsert({
+    where: { name: ROLE_NAMES.DEALER_ADMIN },
+    update: {
+      description: 'Kelola promo diskon dan leads dealer',
+    },
+    create: {
+      name: ROLE_NAMES.DEALER_ADMIN,
+      description: 'Kelola promo diskon dan leads dealer',
+    },
+  });
 
-  // Grant all permissions to Super Admin
-  for (const menu of menus) {
-    const permission = await prisma.permission.findUnique({
-      where: { menuCode: menu.code },
-    });
+  const salesmanRole = await prisma.role.upsert({
+    where: { name: ROLE_NAMES.SALESMAN },
+    update: {
+      description: 'Buat quotation/simulasi kredit untuk dealer',
+    },
+    create: {
+      name: ROLE_NAMES.SALESMAN,
+      description: 'Buat quotation/simulasi kredit untuk dealer',
+    },
+  });
 
-    if (permission) {
-      await prisma.rolePermission.upsert({
-        where: {
-          roleId_permissionId: {
-            roleId: superAdminRole.id,
-            permissionId: permission.id,
-          },
-        },
-        update: {},
-        create: {
-          roleId: superAdminRole.id,
-          permissionId: permission.id,
-        },
-      });
+  console.log('Roles synced');
 
-      // Update permission to allow all actions for Super Admin
-      await prisma.permission.update({
-        where: { id: permission.id },
-        data: {
-          canView: true,
-          canCreate: true,
-          canEdit: true,
-          canDelete: true,
-        },
-      });
-    }
-  }
+  const allAdminGrants: Record<string, PermissionFlags> = Object.fromEntries(
+    ADMIN_MENUS.map((menu) => [
+      menu.code,
+      { canView: true, canCreate: true, canEdit: true, canDelete: true },
+    ])
+  );
 
-  console.log('Super Admin permissions granted');
+  await grantRolePermissions(superAdminRole.id, {
+    ...allAdminGrants,
+    DEALER_DASHBOARD: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+    DEALER_PROMOTIONS: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+    DEALER_QUOTATION: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+    DEALER_LEADS: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+  });
 
-  // Create default Super Admin user
+  await grantRolePermissions(dealerAdminRole.id, {
+    DEALER_DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    DEALER_PROMOTIONS: { canView: true, canCreate: true, canEdit: true, canDelete: true },
+    DEALER_LEADS: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  });
+
+  await grantRolePermissions(salesmanRole.id, {
+    DEALER_DASHBOARD: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+    DEALER_QUOTATION: { canView: true, canCreate: true, canEdit: false, canDelete: false },
+    DEALER_LEADS: { canView: true, canCreate: false, canEdit: false, canDelete: false },
+  });
+
+  console.log('Role permissions granted');
+
   const hashedPassword = await hashPassword('admin123');
   const superAdminUser = await prisma.user.upsert({
     where: { email: 'admin@hcfi.com' },
-    update: {},
+    update: { userType: 'HCFI_ADMIN' },
     create: {
       email: 'admin@hcfi.com',
       password: hashedPassword,
       name: 'Super Admin',
       isActive: true,
+      userType: 'HCFI_ADMIN',
     },
   });
 
-  console.log('Super Admin user created');
-
-  // Assign Super Admin role to user
   await prisma.userRole.upsert({
     where: {
       userId_roleId: {
@@ -118,6 +169,8 @@ async function main() {
       roleId: superAdminRole.id,
     },
   });
+
+  console.log('Super Admin user synced');
 }
 
 main()
@@ -128,5 +181,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-
