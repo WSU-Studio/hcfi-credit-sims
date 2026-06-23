@@ -21,6 +21,7 @@ interface ResultStepProps {
   leadNo?: string;
   otrPrice?: number;
   discount?: number;
+  partnerCode?: string | null;
   vehicle?: VehicleSummaryInfo;
   assetSnapshot?: LeadAssetSnapshot | null;
   dealer?: Vendor | null;
@@ -33,6 +34,7 @@ export function ResultStep({
   leadNo,
   otrPrice,
   discount = 0,
+  partnerCode = null,
   vehicle,
   assetSnapshot,
   dealer,
@@ -87,7 +89,7 @@ export function ResultStep({
     if (!otrPrice && !leadNo) return;
     fetchList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otrPrice, leadNo]);
+  }, [otrPrice, leadNo, partnerCode]);
 
   useEffect(() => {
     if (selectedProduct) setDpPercent(selectedProduct.DPPrcnt);
@@ -125,7 +127,12 @@ export function ResultStep({
       const res = await fetch('/api/simulation/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadNo, LeadNo: leadNo, otrPrice: otrPrice ?? 0 }),
+        body: JSON.stringify({
+          leadNo,
+          LeadNo: leadNo,
+          otrPrice: otrPrice ?? 0,
+          partnerCode,
+        }),
       });
       const data = await res.json();
       if (generation !== fetchListGeneration.current) return;
@@ -175,6 +182,7 @@ export function ResultStep({
           productName: selectedProduct.ProductName,
           firstInstallment,
           isPromotion: tab === 'Promotion',
+          partnerCode,
         }),
         signal: controller.signal,
       });

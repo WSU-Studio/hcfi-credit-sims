@@ -12,6 +12,7 @@ import {
   extractHyundaiErrorId,
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
+import { applyPartnerFields } from '@/lib/hyundai-partner';
 
 /**
  * Hyundai Fase 2 — kalkulasi cicilan per tenor untuk satu produk yang user pilih.
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
       productName,
       firstInstallment,
       isPromotion,
+      partnerCode,
     } = body;
     const leadNo: string | undefined = body.leadNo || body.LeadNo;
 
@@ -107,16 +109,21 @@ export async function POST(request: NextRequest) {
         {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            requestDateTime: new Date().toISOString(),
-            rowVersion: '',
-            LeadNo: leadNo,
-            DpPrcnt: Number(dpPrcnt),
-            DpAmt: Math.round(Number(otrPrice) * (Number(dpPrcnt) / 100)),
-            ProductCode: productCode,
-            ProductName: productName,
-            IsPromotion: Boolean(isPromotion),
-          }),
+          body: JSON.stringify(
+            applyPartnerFields(
+              {
+                requestDateTime: new Date().toISOString(),
+                rowVersion: '',
+                LeadNo: leadNo,
+                DpPrcnt: Number(dpPrcnt),
+                DpAmt: Math.round(Number(otrPrice) * (Number(dpPrcnt) / 100)),
+                ProductCode: productCode,
+                ProductName: productName,
+                IsPromotion: Boolean(isPromotion),
+              },
+              partnerCode
+            )
+          ),
         }
       );
 

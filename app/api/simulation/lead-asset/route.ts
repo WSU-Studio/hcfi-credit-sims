@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
   const snapshot = parseLeadAssetSnapshot(parsed.data.assetSnapshot);
   const otrPrice = parsed.data.otrPrice;
   const discount = parsed.data.discount ?? 0;
+  const partnerCode = parsed.data.partnerCode ?? null;
 
   if (!snapshot) {
     return NextResponse.json(
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
           interiorColorName: snapshot.interiorColorName,
           otrPrice,
           discount,
+          partnerCode,
           assetPriceAmt: otrPrice,
           oemAccessoryCodes: [],
           rawRequest: { mode: 'mock' },
@@ -208,6 +210,7 @@ export async function POST(request: NextRequest) {
           interiorColorName: resolvedAsset.interiorColorName,
           otrPrice,
           discount,
+          partnerCode,
           assetPriceAmt,
           oemAccessoryCodes: oem.codes,
           rawRequest: requestBody as object,
@@ -250,6 +253,7 @@ export async function POST(request: NextRequest) {
         interiorColorName: snapshot.interiorColorName,
         otrPrice,
         discount,
+        partnerCode,
         rawResponse: { error: rawMessage, errorId },
         ipAddress: ip,
         userAgent,

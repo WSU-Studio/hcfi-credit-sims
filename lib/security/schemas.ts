@@ -218,6 +218,12 @@ export const leadAssetDraftSchema = z
     assetSnapshot: z.record(z.string(), z.unknown()),
     otrPrice: z.coerce.number().positive(),
     discount: z.coerce.number().nonnegative().optional().default(0),
+    partnerCode: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => {
+        if (v == null || v === '') return null;
+        return String(v).trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || null;
+      }),
     [HONEYPOT_FIELD]: z.string().optional(),
   })
   .strip();

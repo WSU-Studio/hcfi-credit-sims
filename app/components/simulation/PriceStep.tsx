@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { MAX_DISCOUNT_PERCENT } from '@/lib/dealer-promotion';
+import { normalizePartnerCode } from '@/lib/hyundai-partner';
 import { useDealerPromotionLookup } from '@/app/hooks/useDealerPromotionLookup';
 
 interface PriceStepProps {
@@ -13,7 +14,11 @@ interface PriceStepProps {
   promotionDiscount?: number;
   /** When true, discount field is read-only (dealer-sales mode) */
   lockPromotionDiscount?: boolean;
-  onComplete: (netPrice: number, discount: number) => void;
+  onComplete: (
+    netPrice: number,
+    discount: number,
+    partnerCode: string | null
+  ) => void;
 }
 
 export function PriceStep({
@@ -26,6 +31,7 @@ export function PriceStep({
 }: PriceStepProps) {
   const t = useTranslations('creditSimulation');
   const [manualDiscount, setManualDiscount] = useState<number | ''>(0);
+  const [partnerCode, setPartnerCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const otrPrice = suggestedPrice ?? 0;
@@ -93,7 +99,7 @@ export function PriceStep({
       return;
     }
 
-    onComplete(netPrice, discountVal);
+    onComplete(netPrice, discountVal, normalizePartnerCode(partnerCode) || null);
   };
 
   const discountLocked = lockPromotionDiscount && effectiveDiscount > 0;
@@ -144,6 +150,7 @@ export function PriceStep({
               {promoLabel} — {formatPrice(effectiveDiscount)}
             </p>
           )}
+
           {(showManualInput || effectiveDiscount > 0) && (
             <input
               type="text"
@@ -165,6 +172,27 @@ export function PriceStep({
               }`}
             />
           )}
+        </div>
+
+        <div>
+          <label htmlFor="partnerCode" className="block text-sm font-medium mb-2">
+            {t('partnerCodeLabel')}{' '}
+            <span className="text-gray-400 font-normal">(opsional)</span>
+          </label>
+          <input
+            type="text"
+            id="partnerCode"
+            value={partnerCode}
+            onChange={(e) => {
+              setError(null);
+              setPartnerCode(normalizePartnerCode(e.target.value));
+            }}
+            placeholder={t('partnerCodePlaceholder')}
+            maxLength={32}
+            autoComplete="off"
+            className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent uppercase tracking-wide"
+          />
+          <p className="mt-1 text-xs text-gray-500">{t('partnerCodeHint')}</p>
         </div>
 
         <button

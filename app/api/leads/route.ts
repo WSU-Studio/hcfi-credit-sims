@@ -94,7 +94,14 @@ export async function POST(request: NextRequest) {
   // membedakan "field missing" vs "leadNo invalid" vs "leadNo expired".
   const draft = await prisma.leadAssetDraft.findUnique({
     where: { hyundaiLeadNo: data.simulationLeadNo },
-    select: { id: true, convertedLeadId: true, status: true },
+    select: {
+      id: true,
+      convertedLeadId: true,
+      status: true,
+      partnerCode: true,
+      discount: true,
+      otrPrice: true,
+    },
   });
   if (!draft) {
     console.warn(
@@ -160,7 +167,9 @@ export async function POST(request: NextRequest) {
       vendorCity: data.vendorCity,
       oriOfficeCode: data.oriOfficeCode,
       oriOfficeName: data.oriOfficeName,
-      otrPrice: data.otrPrice,
+      otrPrice: data.otrPrice ?? draft.otrPrice,
+      discount: draft.discount ?? null,
+      partnerCode: draft.partnerCode ?? null,
       dpPercent: data.dpPercent,
       tenor: data.tenor != null ? Math.trunc(data.tenor) : null,
       ktpUrl: data.ktpUrl,

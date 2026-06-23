@@ -76,6 +76,7 @@ export function SimulationWizard({
   }>({});
   const [otrPrice, setOtrPrice] = useState<number | null>(null);
   const [discount, setDiscount] = useState<number>(0);
+  const [partnerCode, setPartnerCode] = useState<string | null>(null);
   const [leadNo, setLeadNo] = useState<string | null>(null);
   const [leadNoLoading, setLeadNoLoading] = useState(false);
   const [leadNoError, setLeadNoError] = useState<string | null>(null);
@@ -113,6 +114,7 @@ export function SimulationWizard({
     if (fromIdx <= steps.indexOf('price')) {
       setOtrPrice(null);
       setDiscount(0);
+      setPartnerCode(null);
     }
     if (fromIdx <= steps.indexOf('result')) {
       setLeadNo(null);
@@ -173,7 +175,11 @@ export function SimulationWizard({
   );
 
   const requestLeadAsset = useCallback(
-    async (params: { netPrice: number; discountAmount: number }) => {
+    async (params: {
+      netPrice: number;
+      discountAmount: number;
+      partnerCode: string | null;
+    }) => {
       if (!selectedDealer || !selectedAsset) return;
       const snapshot = buildLeadAssetSnapshot(selectedAsset, specs);
       if (!snapshot) {
@@ -193,6 +199,7 @@ export function SimulationWizard({
             assetSnapshot: snapshot,
             otrPrice: params.netPrice,
             discount: params.discountAmount,
+            partnerCode: params.partnerCode,
           }),
         });
         const data = await res.json();
@@ -212,18 +219,31 @@ export function SimulationWizard({
     [selectedDealer, selectedAsset, specs, buildLeadAssetSnapshot, labels.leadAssetError]
   );
 
-  const handlePriceComplete = async (netPrice: number, discountAmount: number) => {
+  const handlePriceComplete = async (
+    netPrice: number,
+    discountAmount: number,
+    submittedPartnerCode: string | null
+  ) => {
     setOtrPrice(netPrice);
     setDiscount(discountAmount);
+    setPartnerCode(submittedPartnerCode);
     setCurrentStepKey('result');
     setLeadNo(null);
-    await requestLeadAsset({ netPrice, discountAmount });
+    await requestLeadAsset({
+      netPrice,
+      discountAmount,
+      partnerCode: submittedPartnerCode,
+    });
   };
 
   const handleRetryLeadAsset = useCallback(() => {
     if (otrPrice == null) return;
-    void requestLeadAsset({ netPrice: otrPrice, discountAmount: discount });
-  }, [otrPrice, discount, requestLeadAsset]);
+    void requestLeadAsset({
+      netPrice: otrPrice,
+      discountAmount: discount,
+      partnerCode,
+    });
+  }, [otrPrice, discount, partnerCode, requestLeadAsset]);
 
   const leadAssetSnapshot: LeadAssetSnapshot | null = selectedAsset
     ? buildLeadAssetSnapshot(selectedAsset, specs)
@@ -414,6 +434,7 @@ export function SimulationWizard({
                   leadNo={leadNo}
                   otrPrice={otrPrice ?? undefined}
                   discount={discount}
+                  partnerCode={partnerCode}
                   dealer={selectedDealer}
                   userLocation={userLocation}
                   leadSource={leadSource}

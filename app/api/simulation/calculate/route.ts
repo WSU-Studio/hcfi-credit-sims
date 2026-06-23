@@ -13,6 +13,7 @@ import {
   extractHyundaiErrorId,
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
+import { applyPartnerFields } from '@/lib/hyundai-partner';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const leadNo: string | undefined = body.LeadNo || body.leadNo;
     const otrPrice: number | undefined = body.otrPrice;
+    const partnerCode: string | null | undefined = body.partnerCode;
 
     if (!leadNo && !otrPrice) {
       return NextResponse.json(
@@ -95,12 +97,17 @@ export async function POST(request: NextRequest) {
         {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            requestDateTime: new Date().toISOString(),
-            rowVersion: '',
-            leadNo,
-            LeadNo: leadNo,
-          }),
+          body: JSON.stringify(
+            applyPartnerFields(
+              {
+                requestDateTime: new Date().toISOString(),
+                rowVersion: '',
+                leadNo,
+                LeadNo: leadNo,
+              },
+              partnerCode
+            )
+          ),
           signal: controller.signal,
           dispatcher: hyundaiAgent,
         }

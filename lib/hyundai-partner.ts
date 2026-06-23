@@ -12,9 +12,31 @@ export const DEFAULT_IS_PARTNER = false;
 export type HyundaiPartnerContext = {
   /** true = lead/user dari perusahaan partner Hyundai (diskon khusus). */
   isPartner?: boolean | null;
+  partnerCode?: string | null;
 };
+
+export function normalizePartnerCode(value: string): string {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
+}
 
 /** Resolve flag partner untuk payload Hyundai (`IsPartner`). */
 export function resolveIsPartner(ctx?: HyundaiPartnerContext): boolean {
-  return ctx?.isPartner === true;
+  if (ctx?.isPartner === true) return true;
+  return !!normalizePartnerCode(ctx?.partnerCode ?? '');
+}
+
+/** Partner fields untuk request body Hyundai (Postman v1.4). */
+export function applyPartnerFields(
+  fields: Record<string, unknown>,
+  partnerCode?: string | null
+): Record<string, unknown> {
+  const code = normalizePartnerCode(partnerCode ?? '');
+  if (!code) {
+    return { ...fields, IsPartner: false };
+  }
+  return {
+    ...fields,
+    IsPartner: true,
+    PartnerCode: code,
+  };
 }
