@@ -38,7 +38,7 @@ export function DealerSidebar() {
   }, [permissions, loading]);
 
   return (
-    <aside className="w-64 bg-[#002c5f] text-white min-h-screen">
+    <aside className="w-64 bg-blue-950 text-white min-h-screen">
       <div className="fixed flex flex-col h-full w-64">
         <div className="p-6 border-b border-white/10">
           <h1 className="text-xl font-bold">Dealer Portal</h1>
@@ -72,7 +72,7 @@ export function DealerSidebar() {
           )}
         </nav>
 
-        <div className="absolute bottom-0 w-64 p-4 border-t border-white/10 bg-[#002c5f]">
+        <div className="absolute bottom-0 w-64 p-4 border-t border-white/10 bg-blue-950">
           <DealerLink
             href="/auth/logout"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"

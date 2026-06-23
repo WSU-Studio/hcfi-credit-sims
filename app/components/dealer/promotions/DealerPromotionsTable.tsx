@@ -80,7 +80,7 @@ export function DealerPromotionsTable() {
         </div>
         <DealerLink
           href="/dealer/promotions/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#002c5f] text-white rounded-lg hover:bg-[#001f45] transition-colors text-sm font-medium"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-950 text-white rounded-lg hover:bg-blue-950/90 transition-colors duration-300 text-sm font-medium"
         >
           <IconPlus size={18} />
           Tambah Promo

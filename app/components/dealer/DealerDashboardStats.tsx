@@ -74,7 +74,7 @@ export function DealerDashboardStats() {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               {card.label}
             </p>
-            <p className="mt-2 text-3xl font-bold text-[#002c5f]">{card.value}</p>
+            <p className="mt-2 text-3xl font-bold text-blue-950">{card.value}</p>
             <p className="mt-1 text-xs text-gray-400">{card.hint}</p>
           </div>
         ))}
@@ -82,7 +82,7 @@ export function DealerDashboardStats() {
       <div className="flex justify-end">
         <DealerLink
           href="/dealer/leads"
-          className="text-sm font-medium text-[#002c5f] hover:underline"
+          className="text-sm font-medium text-blue-950 hover:underline"
         >
           Lihat semua leads →
         </DealerLink>

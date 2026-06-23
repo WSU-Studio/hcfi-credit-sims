@@ -173,7 +173,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
           value={assetCode}
           onChange={(e) => setAssetCode(e.target.value)}
           disabled={assetsLoading || !!promotionId}
-          className="w-full px-3 h-11 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] disabled:bg-gray-50"
+          className="w-full px-3 h-11 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-950 focus:border-blue-950 disabled:bg-gray-50"
         >
           <option value="">{assetsLoading ? 'Memuat model...' : 'Pilih model'}</option>
           {assets.map((asset) => (
@@ -200,7 +200,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
               key={opt.value}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition ${
                 discountType === opt.value
-                  ? 'border-[#002c5f] bg-[#002c5f]/5'
+                  ? 'border-blue-950 bg-blue-950/5'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
@@ -210,7 +210,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
                 value={opt.value}
                 checked={discountType === opt.value}
                 onChange={() => setDiscountType(opt.value)}
-                className="text-[#002c5f] focus:ring-[#002c5f]"
+                className="text-blue-950 focus:ring-blue-950"
               />
               <span className="text-sm font-medium">{opt.label}</span>
             </label>
@@ -234,7 +234,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
             value={discountValue}
             onChange={(e) => setDiscountValue(e.target.value)}
             placeholder={discountType === DISCOUNT_TYPES.PERCENT ? 'mis. 5' : 'mis. 5000000'}
-            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f]"
+            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-950"
           />
           {discountType === DISCOUNT_TYPES.PERCENT && (
             <p className="mt-1 text-xs text-gray-500">
@@ -257,7 +257,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
               value={maxDiscount}
               onChange={(e) => setMaxDiscount(e.target.value)}
               placeholder="Batas atas nominal diskon"
-              className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f]"
+              className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-950"
             />
           </div>
         )}
@@ -281,7 +281,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
             type="datetime-local"
             value={validFrom}
             onChange={(e) => setValidFrom(e.target.value)}
-            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f]"
+            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-950"
           />
         </div>
         <div>
@@ -293,7 +293,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
             type="datetime-local"
             value={validTo}
             onChange={(e) => setValidTo(e.target.value)}
-            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f]"
+            className="w-full px-3 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-950"
           />
         </div>
       </div>
@@ -308,7 +308,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Keterangan internal promo"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f]"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-950"
         />
       </div>
 
@@ -317,7 +317,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
           type="checkbox"
           checked={isActive}
           onChange={(e) => setIsActive(e.target.checked)}
-          className="w-4 h-4 text-[#002c5f] border-gray-300 rounded focus:ring-[#002c5f]"
+          className="w-4 h-4 text-blue-950 border-gray-300 rounded focus:ring-blue-950"
         />
         <span className="text-sm font-medium text-gray-700">Promo aktif</span>
       </label>
@@ -334,7 +334,7 @@ export function DealerPromotionForm({ promotionId }: DealerPromotionFormProps) {
         <button
           type="submit"
           disabled={saving || !assetCode}
-          className="px-5 py-2 bg-[#002c5f] text-white rounded-lg hover:bg-[#001f45] disabled:opacity-50 font-medium"
+          className="px-5 py-2 bg-blue-950 text-white rounded-lg hover:bg-blue-950/90 disabled:opacity-50 font-medium"
         >
           {saving ? 'Menyimpan...' : promotionId ? 'Simpan Perubahan' : 'Buat Promo'}
         </button>

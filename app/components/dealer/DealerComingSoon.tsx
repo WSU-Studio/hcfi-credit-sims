@@ -6,7 +6,7 @@ type DealerComingSoonProps = {
 export function DealerComingSoon({ title, description }: DealerComingSoonProps) {
   return (
     <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#002c5f]/10 text-[#002c5f] text-2xl font-bold">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10 text-blue-950 text-2xl font-bold">
         …
       </div>
       <h2 className="text-xl font-semibold text-gray-900">{title}</h2>

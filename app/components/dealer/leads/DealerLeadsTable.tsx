@@ -61,24 +61,35 @@ export function DealerLeadsTable() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
 
-  const fetchLeads = () => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
     const params = new URLSearchParams();
     if (statusFilter) params.set('status', statusFilter);
 
     fetch(`/api/dealer/leads?${params}`)
       .then((res) => res.json())
       .then((data) => {
+        if (cancelled) return;
         setLeads(data.leads || []);
         setScope(data.scope || null);
       })
-      .catch(() => setLeads([]))
-      .finally(() => setLoading(false));
-  };
+      .catch(() => {
+        if (cancelled) return;
+        setLeads([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  useEffect(() => {
-    fetchLeads();
+    return () => {
+      cancelled = true;
+    };
   }, [statusFilter]);
+
+  const handleStatusFilterChange = (value: string) => {
+    setLoading(true);
+    setStatusFilter(value);
+  };
 
   if (loading) {
     return (
@@ -99,8 +110,8 @@ export function DealerLeadsTable() {
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 h-9 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-[#002c5f]"
+          onChange={(e) => handleStatusFilterChange(e.target.value)}
+          className="px-3 h-9 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:ring-2 focus:ring-blue-950"
         >
           <option value="">Semua Status</option>
           {STATUS_OPTIONS.map((opt) => (
