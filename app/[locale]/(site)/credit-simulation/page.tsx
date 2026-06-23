@@ -19,7 +19,7 @@ export default function SimulasiKreditPage() {
       stepPrice: t('stepPrice'),
       stepResult: t('stepResult'),
       back: t('back'),
-      stepOf: t('stepOf'),
+      stepOf: t('stepOf', { current: '{current}', total: '{total}' }),
       changeModel: t('changeModel'),
       leadAssetLoading: t('leadAssetLoading'),
       leadAssetError: t('leadAssetError'),
