@@ -104,6 +104,8 @@
     "whatsapp": "Online Consultation",
     "contact": "Submit Application",
     "viewSummary": "Get Quotation",
+    "dealerSubmitLead": "Submit Lead",
+    "dealerViewSummary": "View Summary",
     "loadingProducts": "Loading credit products...",
     "errorLoadProducts": "Failed to load products",
     "errorCalculate": "Failed to calculate",

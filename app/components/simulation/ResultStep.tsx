@@ -43,6 +43,7 @@ export function ResultStep({
   onSelectProduct,
 }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
+  const isDealerSales = leadSource === LEAD_SOURCES.DEALER_SALES;
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
   const [listPromo, setListPromo] = useState<ProductCalculation[]>([]);
@@ -469,24 +470,26 @@ export function ResultStep({
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                <a
-                  href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
-                    `Halo, saya tertarik simulasi:\n${selectedProduct.ProductName}\nDP ${dpPercent}%\nTenor ${highlightedRow.Tenor} bln\nAngsuran ${formatCurrency(highlightedRow.InstallmentAmt)}/bln`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer transition-colors duration-300"
-                >
-                  <IconBrandWhatsapp size={20} className="text-gray-100" />
-                  <span className="text-gray-100">{t('whatsapp')}</span>
-                </a>
+                {!isDealerSales && (
+                  <a
+                    href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
+                      `Halo, saya tertarik simulasi:\n${selectedProduct.ProductName}\nDP ${dpPercent}%\nTenor ${highlightedRow.Tenor} bln\nAngsuran ${formatCurrency(highlightedRow.InstallmentAmt)}/bln`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer transition-colors duration-300"
+                  >
+                    <IconBrandWhatsapp size={20} className="text-gray-100" />
+                    <span className="text-gray-100">{t('whatsapp')}</span>
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={() => setContactOpen(true)}
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconSend size={20} />
-                  {t('contact')}
+                  {isDealerSales ? t('dealerSubmitLead') : t('contact')}
                 </button>
                 <button
                   type="button"
@@ -494,7 +497,7 @@ export function ResultStep({
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconFileDescription size={20} />
-                  {t('viewSummary')}
+                  {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
                 </button>
               </div>
               <SimulationSummaryModal
