@@ -38,6 +38,7 @@ export function UserForm({ userId }: UserFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [rolesError, setRolesError] = useState('');
   const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(new Set());
   const [dealerAssign, setDealerAssign] = useState<DealerAssignValue>(EMPTY_DEALER);
 
@@ -47,10 +48,23 @@ export function UserForm({ userId }: UserFormProps) {
   );
 
   useEffect(() => {
-    const loadRoles = () =>
-      fetch('/api/admin/roles')
-        .then((res) => res.json())
-        .then((data) => setRoles(data.roles || []));
+    const loadRoles = () => {
+      setRolesError('');
+      return fetch('/api/admin/users/roles')
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Failed to load roles');
+          }
+          setRoles(data.roles || []);
+        })
+        .catch((err) => {
+          const message =
+            err instanceof Error ? err.message : 'Gagal memuat daftar role.';
+          setRolesError(message);
+          setRoles([]);
+        });
+    };
 
     if (userId) {
       Promise.all([
@@ -83,7 +97,7 @@ export function UserForm({ userId }: UserFormProps) {
           setLoading(false);
         });
     } else {
-      loadRoles().then(() => setLoading(false));
+      loadRoles().finally(() => setLoading(false));
     }
   }, [userId]);
 
@@ -268,8 +282,18 @@ export function UserForm({ userId }: UserFormProps) {
                 </label>
               ))}
             </div>
-            {roles.length === 0 && (
+            {roles.length === 0 && !rolesError && (
               <p className="text-sm text-gray-500">Tidak ada role. Buat role dulu.</p>
+            )}
+            {rolesError && (
+              <p className="text-sm text-red-600">
+                {rolesError}
+                {rolesError.toLowerCase().includes('forbidden') && (
+                  <span className="block mt-1 text-gray-600">
+                    Gunakan akun Super Admin atau minta akses User Management.
+                  </span>
+                )}
+              </p>
             )}
           </div>
         </div>
