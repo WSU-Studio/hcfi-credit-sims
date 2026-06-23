@@ -39,7 +39,7 @@ export function DealerSidebar() {
 
   return (
     <aside className="w-64 bg-[#002c5f] text-white min-h-screen">
-      <div className="fixed flex flex-col h-full">
+      <div className="fixed flex flex-col h-full w-64">
         <div className="p-6 border-b border-white/10">
           <h1 className="text-xl font-bold">Dealer Portal</h1>
           <p className="text-sm text-white/70 mt-1">Hyundai Capital</p>
