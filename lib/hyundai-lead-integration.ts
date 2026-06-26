@@ -47,6 +47,7 @@ import {
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { FOU_API_BASE_URL } from '@/lib/hyundai-api-client';
 import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
 import { resolveAssetPriceAmt, verifyLeadAssetExists } from '@/lib/hyundai-asset-price';
@@ -69,8 +70,43 @@ import {
 } from '@/lib/hyundai-file-content';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
+import {
+  mapOfficeMemberCmoToKeyValue,
+  resolveCmoAssignFields,
+  type HyundaiKeyValue,
+  type OfficeMemberCmo,
+} from '@/lib/hyundai-cmo-assign';
 
-export type HyundaiKeyValue = { Key: string; Value: string };
+export type { HyundaiKeyValue, OfficeMemberCmo } from '@/lib/hyundai-cmo-assign';
+export { resolveCmoAssignFields } from '@/lib/hyundai-cmo-assign';
+
+export async function fetchOfficeMemberCmo(
+  dealerCode: string,
+  options?: { oriOfficeCode?: string; cmoCode?: string }
+): Promise<OfficeMemberCmo[]> {
+  const data = await hyundaiPost<{ ReturnObject?: OfficeMemberCmo[] }>(
+    '/v1/VendorEmpX/GetOfficeMemberCmo',
+    {
+      DealerCode: dealerCode,
+      OfficeMemberCode: options?.oriOfficeCode ?? '',
+      CMOCode: options?.cmoCode ?? '',
+      IsCMOActive: true,
+    },
+    { baseUrl: FOU_API_BASE_URL }
+  );
+  return data.ReturnObject ?? [];
+}
+
+/** CMO list for admin lead assignment dropdown (Postman v1.7). */
+export async function fetchSalesPersonsByVendor(
+  dealerCode: string,
+  options?: { oriOfficeCode?: string }
+): Promise<HyundaiKeyValue[]> {
+  const rows = await fetchOfficeMemberCmo(dealerCode, {
+    oriOfficeCode: options?.oriOfficeCode,
+  });
+  return mapOfficeMemberCmoToKeyValue(rows, options?.oriOfficeCode);
+}
 
 const HOME_OWNERSHIP_MAP: Record<string, string> = {
   OWN: 'OWNED',
@@ -85,14 +121,6 @@ export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
   const data = await hyundaiPost<{ ReturnObject?: Vendor[] }>(
     '/Foundation/v1/VendorObX/GetListVendorAndVendorCity',
     { hasAvailableAssetOnly: true, hasCmoAssignedOnly: true }
-  );
-  return data.ReturnObject ?? [];
-}
-
-export async function fetchSalesPersonsByVendor(vendorCode: string): Promise<HyundaiKeyValue[]> {
-  const data = await hyundaiPost<{ ReturnObject?: HyundaiKeyValue[] }>(
-    '/v1/VendorEmp/GetListKeyValueActiveSalesPersonByVendorCode',
-    { Code: vendorCode }
   );
   return data.ReturnObject ?? [];
 }
@@ -164,6 +192,7 @@ function buildAddLeadCustBody(
   leadNo: string,
   ocr: OcrKtpRead | null,
   location: HyundaiCustomerLocation,
+  cmo: { CMOCode: string; CMOName: string },
   ktpFile?: { fileName: string; base64: string; buffer: Buffer }
 ): Record<string, unknown> {
   const nationality =
@@ -175,6 +204,8 @@ function buildAddLeadCustBody(
 
   const body: Record<string, unknown> = integrationRequestBody({
     LeadNo: leadNo,
+    CMOCode: cmo.CMOCode,
+    CMOName: cmo.CMOName,
     IdNo: ocr?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000',
     CustName: (ocr?.nama || lead.name).trim(),
     BirthPlace: ocr?.tempatLahir || '-',
@@ -393,6 +424,7 @@ export async function submitLeadToHyundai(params: {
     leadNo,
     ocrRead,
     customerLocation,
+    resolveCmoAssignFields(params.cmoEmpNo, params.cmoName),
     ktpFile
   );
 

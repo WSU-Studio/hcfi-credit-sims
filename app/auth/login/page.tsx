@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { resolveLoginErrorMessage } from '@/lib/auth-login-errors';
 
 function LoginForm() {
   const router = useRouter();
@@ -13,6 +14,22 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const urlError = searchParams.get('error');
+    const urlCode = searchParams.get('code');
+    const message = resolveLoginErrorMessage(urlError, urlCode);
+
+    if (!message) return;
+
+    setError(message);
+
+    const callbackUrl = searchParams.get('callbackUrl');
+    const cleanUrl = callbackUrl
+      ? `/auth/login?${new URLSearchParams({ callbackUrl }).toString()}`
+      : '/auth/login';
+    router.replace(cleanUrl);
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +46,10 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(
+          resolveLoginErrorMessage(result.error, result.code) ??
+            'Email atau password salah.'
+        );
       } else {
         const meRes = await fetch('/api/dealer/me');
         if (meRes.ok) {
@@ -44,7 +64,7 @@ function LoginForm() {
         router.refresh();
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError('Terjadi kesalahan. Silakan coba lagi.');
       console.error('Error logging in:', err);
     } finally {
       setLoading(false);
@@ -64,7 +84,10 @@ function LoginForm() {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div
+              role="alert"
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded"
+            >
               {error}
             </div>
           )}
@@ -146,13 +169,16 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full text-center text-gray-500">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full text-center text-gray-500">
+            Loading...
+          </div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
 }
-

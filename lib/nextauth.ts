@@ -1,6 +1,8 @@
+import { CredentialsSignin } from '@auth/core/errors';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { getUserByEmail, verifyPassword } from '@/lib/auth';
+import { LOGIN_ERROR_CODES } from '@/lib/auth-login-errors';
 import { loginEmailLimiter } from '@/lib/ratelimit';
 import {
   readLockState,
@@ -8,13 +10,11 @@ import {
   recordSuccessfulLogin,
 } from '@/lib/security/auth-lockout';
 
-/**
- * `authorize()` error messages are surfaced to the UI verbatim by next-auth.
- * Use generic "Invalid credentials" for missing/wrong password to avoid
- * leaking whether the email exists. Lockout messages are intentionally
- * specific so legit users know to wait / contact admin.
- */
-const GENERIC_INVALID = 'Invalid credentials';
+function rejectLogin(code: string): never {
+  const error = new CredentialsSignin();
+  error.code = code;
+  throw error;
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -28,7 +28,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
+          rejectLogin(LOGIN_ERROR_CODES.MISSING_FIELDS);
         }
 
         const email = String(credentials.email).toLowerCase().trim();
@@ -37,24 +37,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // even when each request comes from a different IP.
         const rl = loginEmailLimiter.limit(`email:${email}`);
         if (!rl.success) {
-          throw new Error(
-            `Akun di-lock sementara karena terlalu banyak percobaan. Coba lagi dalam ${rl.retryAfterSec} detik.`
-          );
+          rejectLogin(LOGIN_ERROR_CODES.RATE_LIMITED);
         }
 
         const user = await getUserByEmail(email);
 
         // Don't leak whether the email exists.
         if (!user || !user.isActive) {
-          throw new Error(GENERIC_INVALID);
+          return null;
         }
 
         // Layer 2: persistent DB lockout — survives restarts.
         const lockState = readLockState(user);
         if (lockState.locked) {
-          throw new Error(
-            `Akun terkunci. Coba lagi dalam ${Math.ceil(lockState.retryAfterSec / 60)} menit atau hubungi admin.`
-          );
+          rejectLogin(LOGIN_ERROR_CODES.ACCOUNT_LOCKED);
         }
 
         const isValid = await verifyPassword(
@@ -65,11 +61,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!isValid) {
           const next = await recordFailedLogin(user.id);
           if (next.locked) {
-            throw new Error(
-              'Akun terkunci karena terlalu banyak percobaan login. Hubungi admin untuk membuka kembali.'
-            );
+            rejectLogin(LOGIN_ERROR_CODES.ACCOUNT_LOCKED_ADMIN);
           }
-          throw new Error(GENERIC_INVALID);
+          return null;
         }
 
         await recordSuccessfulLogin(user.id);
@@ -98,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   pages: {
     signIn: '/auth/login',
+    error: '/auth/login',
   },
   callbacks: {
     async jwt({ token, user }) {

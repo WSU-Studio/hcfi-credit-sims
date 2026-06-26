@@ -76,10 +76,12 @@ function throwHyundaiError(
 
 export async function hyundaiPost<T = HyundaiApiEnvelope>(
   path: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  options?: { baseUrl?: string }
 ): Promise<T> {
   const headers = await getHyundaiRequestHeaders();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const baseUrl = options?.baseUrl ?? API_BASE_URL;
+  const res = await fetch(`${baseUrl}${path}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
