@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminLink } from '@/app/components/admin/AdminLink';
+import { DEALER_MENUS } from '@/lib/dealer-menus';
+
+const DEALER_MENU_CODES = new Set(DEALER_MENUS.map((menu) => menu.code));
 
 type Permission = {
   id: string;
@@ -38,6 +41,45 @@ type RoleFormProps = {
   roleId?: string;
 };
 
+type PermissionChecklistProps = {
+  permissions: Permission[];
+  selectedPermissionIds: Set<string>;
+  onToggle: (id: string) => void;
+  emptyMessage?: string;
+};
+
+function PermissionChecklist({
+  permissions,
+  selectedPermissionIds,
+  onToggle,
+  emptyMessage,
+}: PermissionChecklistProps) {
+  if (permissions.length === 0) {
+    return emptyMessage ? (
+      <p className="text-sm text-gray-500">{emptyMessage}</p>
+    ) : null;
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+      {permissions.map((perm) => (
+        <label
+          key={perm.id}
+          className="flex items-center gap-2 cursor-pointer hover:bg-white/60 rounded px-2 py-1.5"
+        >
+          <input
+            type="checkbox"
+            checked={selectedPermissionIds.has(perm.id)}
+            onChange={() => onToggle(perm.id)}
+            className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
+          />
+          <span className="text-sm text-gray-800">{perm.menu?.name ?? perm.menuCode}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export function RoleForm({ roleId }: RoleFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(!!roleId);
@@ -48,6 +90,21 @@ export function RoleForm({ roleId }: RoleFormProps) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
   const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set());
+
+  const { adminPermissions, dealerPermissions } = useMemo(() => {
+    const admin: Permission[] = [];
+    const dealer: Permission[] = [];
+
+    for (const perm of permissions) {
+      if (DEALER_MENU_CODES.has(perm.menuCode)) {
+        dealer.push(perm);
+      } else {
+        admin.push(perm);
+      }
+    }
+
+    return { adminPermissions: admin, dealerPermissions: dealer };
+  }, [permissions]);
 
   useEffect(() => {
     const loadPermissions = () =>
@@ -180,30 +237,32 @@ export function RoleForm({ roleId }: RoleFormProps) {
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Permissions</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Menu CMS</h3>
           <p className="text-xs text-gray-500 mb-3">
-            Centang menu yang boleh diakses oleh role ini.
+            Centang menu back-office yang boleh diakses oleh role ini.
           </p>
           <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 max-h-80 overflow-y-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {permissions.map((perm) => (
-                <label
-                  key={perm.id}
-                  className="flex items-center gap-2 cursor-pointer hover:bg-white/60 rounded px-2 py-1.5"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedPermissionIds.has(perm.id)}
-                    onChange={() => togglePermission(perm.id)}
-                    className="w-4 h-4 text-[#008AEC] border-gray-300 rounded focus:ring-[#008AEC]"
-                  />
-                  <span className="text-sm text-gray-800">{perm.menu?.name ?? perm.menuCode}</span>
-                </label>
-              ))}
-            </div>
-            {permissions.length === 0 && (
-              <p className="text-sm text-gray-500">Tidak ada permission. Jalankan seed.</p>
-            )}
+            <PermissionChecklist
+              permissions={adminPermissions}
+              selectedPermissionIds={selectedPermissionIds}
+              onToggle={togglePermission}
+              emptyMessage="Tidak ada permission. Jalankan seed."
+            />
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Menu Dealer</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Centang menu dealer portal yang boleh diakses oleh role ini.
+          </p>
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/50 max-h-80 overflow-y-auto">
+            <PermissionChecklist
+              permissions={dealerPermissions}
+              selectedPermissionIds={selectedPermissionIds}
+              onToggle={togglePermission}
+              emptyMessage="Tidak ada menu dealer. Pastikan dealer-menus.data.json sudah di-seed."
+            />
           </div>
         </div>
 
