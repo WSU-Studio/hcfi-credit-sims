@@ -70,41 +70,15 @@ import {
 } from '@/lib/hyundai-file-content';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
+import {
+  mapOfficeMemberCmoToKeyValue,
+  resolveCmoAssignFields,
+  type HyundaiKeyValue,
+  type OfficeMemberCmo,
+} from '@/lib/hyundai-cmo-assign';
 
-export type HyundaiKeyValue = { Key: string; Value: string };
-
-export type OfficeMemberCmo = {
-  OfficeMemberName: string;
-  OfficeMemberCode: string;
-  CMOName: string;
-  CMOCode: string;
-  IsActive: boolean;
-};
-
-function mapOfficeMemberCmoToKeyValue(
-  rows: OfficeMemberCmo[],
-  oriOfficeCode?: string
-): HyundaiKeyValue[] {
-  const filtered = oriOfficeCode
-    ? rows.filter((row) => row.OfficeMemberCode === oriOfficeCode)
-    : rows;
-
-  const seen = new Set<string>();
-  const options: HyundaiKeyValue[] = [];
-
-  for (const row of filtered) {
-    if (row.IsActive === false) continue;
-    const dedupeKey = `${row.CMOCode}:${row.OfficeMemberCode}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-    options.push({
-      Key: row.CMOCode,
-      Value: `${row.CMOName} — ${row.OfficeMemberName}`,
-    });
-  }
-
-  return options.sort((a, b) => a.Value.localeCompare(b.Value));
-}
+export type { HyundaiKeyValue, OfficeMemberCmo } from '@/lib/hyundai-cmo-assign';
+export { resolveCmoAssignFields } from '@/lib/hyundai-cmo-assign';
 
 export async function fetchOfficeMemberCmo(
   dealerCode: string,
@@ -218,6 +192,7 @@ function buildAddLeadCustBody(
   leadNo: string,
   ocr: OcrKtpRead | null,
   location: HyundaiCustomerLocation,
+  cmo: { CMOCode: string; CMOName: string },
   ktpFile?: { fileName: string; base64: string; buffer: Buffer }
 ): Record<string, unknown> {
   const nationality =
@@ -229,6 +204,8 @@ function buildAddLeadCustBody(
 
   const body: Record<string, unknown> = integrationRequestBody({
     LeadNo: leadNo,
+    CMOCode: cmo.CMOCode,
+    CMOName: cmo.CMOName,
     IdNo: ocr?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000',
     CustName: (ocr?.nama || lead.name).trim(),
     BirthPlace: ocr?.tempatLahir || '-',
@@ -447,6 +424,7 @@ export async function submitLeadToHyundai(params: {
     leadNo,
     ocrRead,
     customerLocation,
+    resolveCmoAssignFields(params.cmoEmpNo, params.cmoName),
     ktpFile
   );
 

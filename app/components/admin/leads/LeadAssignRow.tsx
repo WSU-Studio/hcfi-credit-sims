@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Vendor } from '@/app/types/credit-simulation';
-import type { HyundaiKeyValue } from '@/lib/hyundai-lead-integration';
+import {
+  resolveCmoAssignFields,
+  type HyundaiKeyValue,
+} from '@/lib/hyundai-cmo-assign';
 
 type LeadAssignState = {
   vendorCode: string;
@@ -85,10 +88,12 @@ export function LeadAssignRow({
         const list: HyundaiKeyValue[] = data.salesPersons ?? [];
         setSalesPersons(list);
         if (!selection.cmoEmpNo && list.length > 0) {
+          const first = list[0];
+          const { CMOCode, CMOName } = resolveCmoAssignFields(first.Key, first.Value);
           setSelection((prev) => ({
             ...prev,
-            cmoEmpNo: list[0].Key,
-            cmoName: list[0].Value,
+            cmoEmpNo: CMOCode,
+            cmoName: CMOName,
           }));
         }
       })
@@ -266,10 +271,14 @@ export function LeadAssignRow({
           value={selection.cmoEmpNo}
           onChange={(e) => {
             const sp = salesPersons.find((s) => s.Key === e.target.value);
+            const { CMOCode, CMOName } = resolveCmoAssignFields(
+              e.target.value,
+              sp?.Value ?? ''
+            );
             setSelection({
               ...selection,
-              cmoEmpNo: e.target.value,
-              cmoName: sp?.Value ?? '',
+              cmoEmpNo: CMOCode,
+              cmoName: CMOName,
             });
           }}
           disabled={!canSubmit || submitting || !selection.vendorCode || cmoLoading}
