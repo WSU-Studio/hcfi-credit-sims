@@ -86,7 +86,11 @@ export function LeadAssignRow({
 
     let cancelled = false;
     setCmoLoading(true);
-    fetch(`/api/admin/leads/sales-persons?vendorCode=${encodeURIComponent(selection.vendorCode)}`)
+    const vendor = vendors.find((v) => v.VendorCode === selection.vendorCode);
+    const params = new URLSearchParams({ vendorCode: selection.vendorCode });
+    if (vendor?.OriOfficeCode) params.set('oriOfficeCode', vendor.OriOfficeCode);
+
+    fetch(`/api/admin/leads/sales-persons?${params}`)
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
@@ -115,7 +119,7 @@ export function LeadAssignRow({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection.vendorCode, isSubmitted]);
+  }, [selection.vendorCode, isSubmitted, vendors]);
 
   const handleCityChange = (city: string) => {
     setSelectedCity(city);

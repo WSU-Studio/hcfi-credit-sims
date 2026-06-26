@@ -8,6 +8,12 @@ const API_BASE_URL =
   process.env.CREDIT_SIMULATION_API_URL ||
   'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
 
+/** Foundation / VendorEmpX APIs (Postman v1.7 — Customer Data Fase 3). */
+export const FOU_API_BASE_URL =
+  process.env.HYUNDAI_FOU_API_URL ||
+  process.env.CREDIT_SIMULATION_API_URL?.replace(/\/api\/mobileloan\/?$/, '/api/fou') ||
+  'https://qaapigwconfins.hyundaicapital.co.id/api/fou';
+
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
 const TOKEN_TTL_MS = 50 * 60 * 1000; // 50 minutes
