@@ -31,7 +31,10 @@ interface LeadAssignRowProps {
 }
 
 const selectClass =
-  'w-full min-w-[9rem] px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer';
+  'w-full min-w-[9rem] px-2 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer bg-white hover:bg-blue-100/20 transition duration-200';
+
+const readonlyInputClass =
+  'w-full min-w-[9rem] px-2 py-1.5 border border-gray-400 rounded-lg text-xs text-gray-700 bg-gray-50 cursor-not-allowed';
 
 export function LeadAssignRow({
   lead,
@@ -53,30 +56,14 @@ export function LeadAssignRow({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(lead.hyundaiAssignError ?? null);
 
-  const cities = useMemo(
-    () => Array.from(new Set(vendors.map((v) => v.City).filter(Boolean))).sort(),
-    [vendors]
+  const assignedVendor = useMemo(
+    () => vendors.find((v) => v.VendorCode === (lead.vendorCode ?? selection.vendorCode)) ?? null,
+    [vendors, lead.vendorCode, selection.vendorCode]
   );
 
-  const [selectedCity, setSelectedCity] = useState('');
-
-  useEffect(() => {
-    if (lead.vendorCity) {
-      setSelectedCity(lead.vendorCity);
-      return;
-    }
-    if (lead.vendorCode && vendors.length > 0) {
-      const vendor = vendors.find((v) => v.VendorCode === lead.vendorCode);
-      if (vendor?.City) setSelectedCity(vendor.City);
-    }
-  }, [lead.vendorCode, lead.vendorCity, vendors]);
-
-  const dealersInCity = useMemo(() => {
-    if (!selectedCity) return [];
-    return vendors
-      .filter((v) => v.City === selectedCity)
-      .sort((a, b) => a.VendorName.localeCompare(b.VendorName));
-  }, [vendors, selectedCity]);
+  const displayCity = lead.vendorCity?.trim() || assignedVendor?.City || '-';
+  const displayDealer =
+    lead.vendorName?.trim() || assignedVendor?.VendorName || lead.vendorCode || '-';
 
   useEffect(() => {
     if (!selection.vendorCode || isSubmitted) {
@@ -121,6 +108,20 @@ export function LeadAssignRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection.vendorCode, isSubmitted, vendors]);
 
+  /*
+  // Re-enable if Hyundai requests editable city/dealer assignment again.
+  const cities = useMemo(
+    () => Array.from(new Set(vendors.map((v) => v.City).filter(Boolean))).sort(),
+    [vendors]
+  );
+  const [selectedCity, setSelectedCity] = useState('');
+  const dealersInCity = useMemo(() => {
+    if (!selectedCity) return [];
+    return vendors
+      .filter((v) => v.City === selectedCity)
+      .sort((a, b) => a.VendorName.localeCompare(b.VendorName));
+  }, [vendors, selectedCity]);
+  
   const handleCityChange = (city: string) => {
     setSelectedCity(city);
     const inCity = vendors.filter((v) => v.City === city);
@@ -128,13 +129,13 @@ export function LeadAssignRow({
     setSelection({ vendorCode: first?.VendorCode ?? '', cmoEmpNo: '', cmoName: '' });
     setError(null);
   };
-
   const handleDealerChange = (vendorCode: string) => {
     const vendor = vendors.find((v) => v.VendorCode === vendorCode);
     setSelection({ vendorCode, cmoEmpNo: '', cmoName: '' });
     if (vendor?.City) setSelectedCity(vendor.City);
     setError(null);
   };
+  */
 
   const handleSubmit = async () => {
     if (!selection.vendorCode || !selection.cmoEmpNo) {
@@ -210,6 +211,23 @@ export function LeadAssignRow({
             <div className="h-8 bg-gray-100 rounded animate-pulse" />
           ) : (
             <>
+              <input
+                type="text"
+                readOnly
+                value={displayCity}
+                className={readonlyInputClass}
+                aria-label="Kota dari simulasi"
+                title="Kota dari simulasi kredit (tidak dapat diubah)"
+              />
+              <input
+                type="text"
+                readOnly
+                value={displayDealer}
+                className={readonlyInputClass}
+                aria-label="Dealer dari simulasi"
+                title="Dealer dari simulasi kredit (tidak dapat diubah)"
+              />
+              {/*
               <select
                 value={selectedCity}
                 onChange={(e) => handleCityChange(e.target.value)}
@@ -238,6 +256,7 @@ export function LeadAssignRow({
                   </option>
                 ))}
               </select>
+              */}
             </>
           )}
         </div>
