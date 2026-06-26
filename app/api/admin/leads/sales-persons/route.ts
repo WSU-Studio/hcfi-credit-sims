@@ -12,11 +12,14 @@ export async function GET(request: NextRequest) {
     await requirePermission('LEADS', 'view');
 
     const vendorCode = new URL(request.url).searchParams.get('vendorCode');
+    const oriOfficeCode = new URL(request.url).searchParams.get('oriOfficeCode');
     if (!vendorCode) {
       return NextResponse.json({ error: 'vendorCode is required' }, { status: 400 });
     }
 
-    const salesPersons = await fetchSalesPersonsByVendor(vendorCode);
+    const salesPersons = await fetchSalesPersonsByVendor(vendorCode, {
+      oriOfficeCode: oriOfficeCode || undefined,
+    });
     return NextResponse.json({ salesPersons });
   } catch (error: unknown) {
     console.error('[admin/leads/sales-persons]', error);

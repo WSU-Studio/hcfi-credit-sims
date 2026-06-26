@@ -47,6 +47,7 @@ import {
   type OcrKtpRead,
 } from '@/lib/hyundai-ocr';
 import { hyundaiPost, type HyundaiApiEnvelope } from '@/lib/hyundai-api-post';
+import { FOU_API_BASE_URL } from '@/lib/hyundai-api-client';
 import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { resolveLeadAsset, type ResolvedLeadAsset } from '@/lib/hyundai-asset-resolve';
 import { resolveAssetPriceAmt, verifyLeadAssetExists } from '@/lib/hyundai-asset-price';
@@ -72,6 +73,67 @@ import type { Vendor } from '@/app/types/credit-simulation';
 
 export type HyundaiKeyValue = { Key: string; Value: string };
 
+export type OfficeMemberCmo = {
+  OfficeMemberName: string;
+  OfficeMemberCode: string;
+  CMOName: string;
+  CMOCode: string;
+  IsActive: boolean;
+};
+
+function mapOfficeMemberCmoToKeyValue(
+  rows: OfficeMemberCmo[],
+  oriOfficeCode?: string
+): HyundaiKeyValue[] {
+  const filtered = oriOfficeCode
+    ? rows.filter((row) => row.OfficeMemberCode === oriOfficeCode)
+    : rows;
+
+  const seen = new Set<string>();
+  const options: HyundaiKeyValue[] = [];
+
+  for (const row of filtered) {
+    if (row.IsActive === false) continue;
+    const dedupeKey = `${row.CMOCode}:${row.OfficeMemberCode}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    options.push({
+      Key: row.CMOCode,
+      Value: `${row.CMOName} — ${row.OfficeMemberName}`,
+    });
+  }
+
+  return options.sort((a, b) => a.Value.localeCompare(b.Value));
+}
+
+export async function fetchOfficeMemberCmo(
+  dealerCode: string,
+  options?: { oriOfficeCode?: string; cmoCode?: string }
+): Promise<OfficeMemberCmo[]> {
+  const data = await hyundaiPost<{ ReturnObject?: OfficeMemberCmo[] }>(
+    '/v1/VendorEmpX/GetOfficeMemberCmo',
+    {
+      DealerCode: dealerCode,
+      OfficeMemberCode: options?.oriOfficeCode ?? '',
+      CMOCode: options?.cmoCode ?? '',
+      IsCMOActive: true,
+    },
+    { baseUrl: FOU_API_BASE_URL }
+  );
+  return data.ReturnObject ?? [];
+}
+
+/** CMO list for admin lead assignment dropdown (Postman v1.7). */
+export async function fetchSalesPersonsByVendor(
+  dealerCode: string,
+  options?: { oriOfficeCode?: string }
+): Promise<HyundaiKeyValue[]> {
+  const rows = await fetchOfficeMemberCmo(dealerCode, {
+    oriOfficeCode: options?.oriOfficeCode,
+  });
+  return mapOfficeMemberCmoToKeyValue(rows, options?.oriOfficeCode);
+}
+
 const HOME_OWNERSHIP_MAP: Record<string, string> = {
   OWN: 'OWNED',
   OWNED: 'OWNED',
@@ -85,14 +147,6 @@ export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
   const data = await hyundaiPost<{ ReturnObject?: Vendor[] }>(
     '/Foundation/v1/VendorObX/GetListVendorAndVendorCity',
     { hasAvailableAssetOnly: true, hasCmoAssignedOnly: true }
-  );
-  return data.ReturnObject ?? [];
-}
-
-export async function fetchSalesPersonsByVendor(vendorCode: string): Promise<HyundaiKeyValue[]> {
-  const data = await hyundaiPost<{ ReturnObject?: HyundaiKeyValue[] }>(
-    '/v1/VendorEmp/GetListKeyValueActiveSalesPersonByVendorCode',
-    { Code: vendorCode }
   );
   return data.ReturnObject ?? [];
 }
