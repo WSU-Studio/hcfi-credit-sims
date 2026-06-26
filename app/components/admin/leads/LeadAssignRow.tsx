@@ -6,6 +6,7 @@ import {
   resolveCmoAssignFields,
   type HyundaiKeyValue,
 } from '@/lib/hyundai-cmo-assign';
+import { BlockingProcessOverlay } from '@/app/components/ui/BlockingProcessOverlay';
 
 type LeadAssignState = {
   vendorCode: string;
@@ -210,6 +211,12 @@ export function LeadAssignRow({
 
   return (
     <>
+      <BlockingProcessOverlay
+        open={submitting}
+        title="Sedang mengirim lead"
+        message="Beberapa langkah integrasi sedang dijalankan."
+        warning="Mohon jangan tutup tab atau browser ini sampai proses selesai."
+      />
       <td className="px-3 py-2 align-top">
         <div className="space-y-1.5">
           {vendorsLoading ? (
