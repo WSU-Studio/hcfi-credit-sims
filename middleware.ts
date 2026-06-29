@@ -8,6 +8,22 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+/** Collapse `//dealer/login` → `/dealer/login` so portal route guards match. */
+function normalizePathname(pathname: string): string {
+  const collapsed = pathname.replace(/\/{2,}/g, "/");
+  if (collapsed.length > 1 && collapsed.endsWith("/")) {
+    return collapsed.slice(0, -1);
+  }
+  return collapsed || "/";
+}
+
+/** Dealer portal lives outside `[locale]`; undo mistaken `/id/dealer/*` prefixes. */
+function stripLocaleFromDealerPath(pathname: string): string {
+  const match = pathname.match(/^\/(id|en)\/dealer(\/.*)?$/);
+  if (!match) return pathname;
+  return `/dealer${match[2] ?? ""}`;
+}
+
 /**
  * Endpoints that intentionally accept third-party-initiated requests
  * (e.g. NextAuth has its own CSRF token + state handling, and ELB health
@@ -48,7 +64,14 @@ function withCors(response: NextResponse, request: NextRequest): NextResponse {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const rawPathname = request.nextUrl.pathname;
+  const pathname = stripLocaleFromDealerPath(normalizePathname(rawPathname));
+
+  if (pathname !== rawPathname) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    return NextResponse.redirect(url);
+  }
 
   // ELB/ALB health check often hits GET / and expects 200.
   // Root redirects to locale (307), which ELB treats as unhealthy.
