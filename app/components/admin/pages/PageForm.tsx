@@ -189,7 +189,6 @@ export function PageForm({ pageId }: PageFormProps) {
               onChange={(e) => setSlug(e.target.value)}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-slate-100/80"
               placeholder="url-friendly-slug"
-              readOnly
             />
             <p className="mt-1 text-xs text-gray-500">URL: /[slug] (e.g. /informasi, /privacy-policy)</p>
           </div>

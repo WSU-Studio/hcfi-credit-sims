@@ -31,14 +31,17 @@ function buildNavItems(
   t: (key: string) => string,
   locale: Locale
 ): NavItem[] {
+  const informationPage = pages.find((p) => p.slug === "informasi");
+  const informationHref = informationPage ? `/${informationPage.slug}` : "/informasi";
+
   const fixed: NavItem[] = [
     { label: t("creditSimulation"), href: "/credit-simulation" },
     { label: t("promo"), href: "/promo" },
     { label: t("products"), href: "/products" },
-    { label: t("information"), href: "/information" },
+    { label: t("information"), href: informationHref },
   ];
   const menuPages = pages
-    .filter((p) => p.showInMenu)
+    .filter((p) => p.showInMenu && p.slug !== informationPage?.slug)
     .map((p) => ({
       label: pickLocaleString(p.title, p.titleEn ?? undefined, locale),
       href: `/${p.slug}`,
