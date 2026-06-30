@@ -61,8 +61,10 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Asset: dealer harus punya stok unit untuk simulasi.
+          // CMO: false agar semua kota/dealer tampil (CMO dipilih saat admin assign lead).
           hasAvailableAssetOnly: true,
-          hasCmoAssignedOnly: true,
+          hasCmoAssignedOnly: false,
         }),
       });
 
