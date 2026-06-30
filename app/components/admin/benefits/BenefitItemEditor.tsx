@@ -81,6 +81,48 @@ export function BenefitItemEditor({
           />
         </div>
       </div>
+
+      <div className="mt-4 space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={item.isClickable}
+            onChange={(e) =>
+              onChange(index, {
+                isClickable: e.target.checked,
+                ...(e.target.checked ? {} : { linkUrl: '', openInNewTab: false }),
+              })
+            }
+            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+          />
+          Card dapat diklik (sebagai tombol/link)
+        </label>
+
+        {item.isClickable && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">URL Tujuan</label>
+              <input
+                type="text"
+                value={item.linkUrl}
+                onChange={(e) => onChange(index, { linkUrl: e.target.value })}
+                placeholder="/credit-simulation atau https://..."
+                className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={item.openInNewTab}
+                onChange={(e) => onChange(index, { openInNewTab: e.target.checked })}
+                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              Buka di tab baru
+            </label>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

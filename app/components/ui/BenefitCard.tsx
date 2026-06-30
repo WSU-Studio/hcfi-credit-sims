@@ -1,18 +1,65 @@
 import type { Benefit } from "@/app/types";
+import { Link } from "@/i18n/navigation";
+import { isInternalUrl } from "@/app/components/page-builder/ctaSettings";
 
 type BenefitCardProps = Benefit & {
   className?: string;
 };
 
-export function BenefitCard({ title, description, className }: BenefitCardProps) {
-  const base =
-    "rounded-xl bg-white text-[var(--foreground)] shadow-md border border-[#002c5f]/20 px-4 py-3 hover:border-[#002c5f]/40 hover:shadow-lg transition-all";
-
+function BenefitCardContent({ title, description }: Pick<Benefit, "title" | "description">) {
   return (
-    <div className={className ? `${base} ${className}` : base}>
+    <>
       <p className="text-base font-semibold leading-snug text-[#002c5f] mb-2">{title}</p>
       <p className="text-sm text-[var(--foreground)] leading-relaxed">{description}</p>
-    </div>
+    </>
   );
 }
 
+export function BenefitCard({
+  title,
+  description,
+  isClickable,
+  linkUrl,
+  openInNewTab,
+  className,
+}: BenefitCardProps) {
+  const clickable = isClickable === true && typeof linkUrl === "string" && linkUrl.trim() !== "";
+  const base =
+    "block rounded-xl bg-white text-[var(--foreground)] shadow-md border border-[#002c5f]/20 px-4 py-3 transition-all";
+  const interactive =
+    "cursor-pointer hover:border-[#002c5f]/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#002c5f]/30";
+  const staticCard = "hover:border-[#002c5f]/40 hover:shadow-lg";
+  const cardClassName = className
+    ? `${base} ${clickable ? interactive : staticCard} ${className}`
+    : `${base} ${clickable ? interactive : staticCard}`;
+
+  if (!clickable) {
+    return (
+      <div className={cardClassName}>
+        <BenefitCardContent title={title} description={description} />
+      </div>
+    );
+  }
+
+  const url = linkUrl!.trim();
+  const external = !isInternalUrl(url) || openInNewTab === true;
+
+  if (external) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cardClassName}
+      >
+        <BenefitCardContent title={title} description={description} />
+      </a>
+    );
+  }
+
+  return (
+    <Link href={url} className={cardClassName}>
+      <BenefitCardContent title={title} description={description} />
+    </Link>
+  );
+}

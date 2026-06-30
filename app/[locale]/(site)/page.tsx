@@ -114,6 +114,9 @@ async function getBenefits(locale: Locale) {
     return benefits.map((benefit) => ({
       title: pickLocaleString(benefit.title, benefit.titleEn ?? undefined, locale),
       description: pickLocaleString(benefit.description, benefit.descriptionEn ?? undefined, locale),
+      isClickable: benefit.isClickable,
+      linkUrl: benefit.linkUrl ?? undefined,
+      openInNewTab: benefit.openInNewTab,
     })) as Benefit[];
   } catch (error) {
     console.error('Error fetching benefits:', error);

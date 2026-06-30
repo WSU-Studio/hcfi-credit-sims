@@ -11,6 +11,9 @@ type ApiBenefit = {
   titleEn: string | null;
   description: string;
   descriptionEn: string | null;
+  isClickable: boolean;
+  linkUrl: string | null;
+  openInNewTab: boolean;
   order: number;
 };
 
@@ -20,6 +23,9 @@ const emptyBenefit = (): BenefitFormItem => ({
   titleEn: '',
   description: '',
   descriptionEn: '',
+  isClickable: false,
+  linkUrl: '',
+  openInNewTab: false,
   order: 0,
 });
 
@@ -44,6 +50,9 @@ export function BenefitsSettings() {
           titleEn: benefit.titleEn ?? '',
           description: benefit.description ?? '',
           descriptionEn: benefit.descriptionEn ?? '',
+          isClickable: benefit.isClickable === true,
+          linkUrl: benefit.linkUrl ?? '',
+          openInNewTab: benefit.openInNewTab === true,
           order: Number.isFinite(benefit.order) ? benefit.order : index,
         }));
         setItems(mappedItems);
@@ -77,11 +86,20 @@ export function BenefitsSettings() {
       titleEn: item.titleEn.trim(),
       description: item.description.trim(),
       descriptionEn: item.descriptionEn.trim(),
+      isClickable: item.isClickable,
+      linkUrl: item.isClickable ? item.linkUrl.trim() : '',
+      openInNewTab: item.isClickable ? item.openInNewTab : false,
       order: index,
     }));
 
     if (payload.some((item) => item.title === '' || item.description === '')) {
       setMessage({ type: 'error', text: 'Judul dan deskripsi (ID) wajib diisi untuk setiap benefit.' });
+      setSaving(false);
+      return;
+    }
+
+    if (payload.some((item) => item.isClickable && item.linkUrl === '')) {
+      setMessage({ type: 'error', text: 'URL wajib diisi untuk benefit yang dapat diklik.' });
       setSaving(false);
       return;
     }
@@ -105,6 +123,9 @@ export function BenefitsSettings() {
             titleEn: benefit.titleEn ?? '',
             description: benefit.description ?? '',
             descriptionEn: benefit.descriptionEn ?? '',
+            isClickable: benefit.isClickable === true,
+            linkUrl: benefit.linkUrl ?? '',
+            openInNewTab: benefit.openInNewTab === true,
             order: Number.isFinite(benefit.order) ? benefit.order : index,
           }))
         : items;
