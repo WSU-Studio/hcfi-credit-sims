@@ -151,6 +151,9 @@ model Benefit {
   titleEn       String?
   description   String
   descriptionEn String?
+  isClickable   Boolean  @default(false)
+  linkUrl       String?
+  openInNewTab  Boolean  @default(false)
   order         Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
