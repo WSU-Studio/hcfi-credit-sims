@@ -2,8 +2,9 @@
 
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { TextSettingsFields } from '@/app/components/admin/pages/TextSettingsFields';
-import type { PageLayout, LayoutCell } from '@/app/types';
+import type { PageLayout, LayoutCell, WidgetType } from '@/app/types';
 import { createEmptyCell, createEmptyRow } from '@/lib/layout-builder-utils';
+import RichTextEditor from '@/app/components/ui/RichTextEditor';
 
 type LayoutBuilderFieldsProps = {
   layout: PageLayout;
@@ -56,7 +57,7 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
     onChange({ ...layout, rows });
   };
 
-  const setCellWidget = (rowIndex: number, cellIndex: number, widgetType: 'text' | 'text_image') => {
+  const setCellWidget = (rowIndex: number, cellIndex: number, widgetType: WidgetType) => {
     const rows = [...layout.rows];
     const row = rows[rowIndex];
     if (!row) return;
@@ -164,11 +165,12 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                 <select
                   value={cell.widgetType}
                   onChange={(e) =>
-                    setCellWidget(rowIndex, cellIndex, e.target.value as 'text' | 'text_image')
+                    setCellWidget(rowIndex, cellIndex, e.target.value as WidgetType)
                   }
                   className="w-full mb-3 px-2 py-1.5 border border-gray-300 rounded text-sm"
                 >
                   <option value="text">Text</option>
+                  <option value="rich_text">Rich Text</option>
                   <option value="text_image">Text + Image</option>
                 </select>
                 {cell.widgetType === 'text' && (
@@ -198,6 +200,51 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                       rows={3}
                       className="w-full px-2 py-1.5 border border-gray-300 rounded-b-lg text-sm"
                       placeholder="HTML or plain text (EN)"
+                    />
+                    <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
+                      <p className="text-xs font-medium text-gray-600">Pengaturan teks</p>
+                      <TextSettingsFields
+                        value={{
+                          textColor: cell.payload?.textColor as string | undefined,
+                          textAlign: cell.payload?.textAlign as 'left' | 'center' | 'right' | 'justify' | undefined,
+                          textSize: cell.payload?.textSize as '12' | '16' | '20' | '24' | '32' | '40' | '48' | '56' | '64' | undefined,
+                          textWeight: cell.payload?.textWeight as 'light' | 'normal' | 'medium' | 'bold' | undefined,
+                        }}
+                        onChange={(patch) =>
+                          setCellPayload(rowIndex, cellIndex, {
+                            ...cell.payload,
+                            ...patch,
+                          })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+                {cell.widgetType === 'rich_text' && (
+                  <>
+                    <p className="text-xs text-gray-500 mb-1">Content (ID)</p>
+                    <RichTextEditor
+                      value={(cell.payload?.content as string) ?? ''}
+                      onChange={(html) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          content: html,
+                        })
+                      }
+                      placeholder="Write content (ID)..."
+                      className="mb-3"
+                    />
+                    <p className="text-xs text-gray-500 mb-1">Content (EN)</p>
+                    <RichTextEditor
+                      value={(cell.payload?.contentEn as string) ?? ''}
+                      onChange={(html) =>
+                        setCellPayload(rowIndex, cellIndex, {
+                          ...cell.payload,
+                          contentEn: html,
+                        })
+                      }
+                      placeholder="Write content (EN)..."
+                      className="mb-3"
                     />
                     <div className="mt-3 space-y-2 border-t border-gray-200 pt-3">
                       <p className="text-xs font-medium text-gray-600">Pengaturan teks</p>
