@@ -6,6 +6,9 @@ export type NavItem = {
 export type Benefit = {
   title: string;
   description: string;
+  isClickable?: boolean;
+  linkUrl?: string;
+  openInNewTab?: boolean;
 };
 
 export type Product = {

@@ -4,6 +4,9 @@ export type BenefitFormItem = {
   titleEn: string;
   description: string;
   descriptionEn: string;
+  isClickable: boolean;
+  linkUrl: string;
+  openInNewTab: boolean;
   order: number;
 };
 

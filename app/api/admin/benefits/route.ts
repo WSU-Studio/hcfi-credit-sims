@@ -10,6 +10,9 @@ type IncomingBenefit = {
   titleEn?: string;
   description?: string;
   descriptionEn?: string;
+  isClickable?: boolean;
+  linkUrl?: string;
+  openInNewTab?: boolean;
   order?: number;
 };
 
@@ -63,12 +66,25 @@ export async function POST(request: NextRequest) {
         typeof item.descriptionEn === 'string' && item.descriptionEn.trim() !== ''
           ? item.descriptionEn.trim()
           : null,
+      isClickable: item.isClickable === true,
+      linkUrl:
+        item.isClickable === true && typeof item.linkUrl === 'string' && item.linkUrl.trim() !== ''
+          ? item.linkUrl.trim()
+          : null,
+      openInNewTab: item.isClickable === true && item.openInNewTab === true,
       order: Number.isFinite(item.order) ? Number(item.order) : index,
     }));
 
     if (sanitized.some((item) => item.title === '' || item.description === '')) {
       return NextResponse.json(
         { error: 'Each benefit must include title and description.' },
+        { status: 400 }
+      );
+    }
+
+    if (sanitized.some((item) => item.isClickable && !item.linkUrl)) {
+      return NextResponse.json(
+        { error: 'Clickable benefits must include a link URL.' },
         { status: 400 }
       );
     }
@@ -93,6 +109,9 @@ export async function POST(request: NextRequest) {
               titleEn: item.titleEn,
               description: item.description,
               descriptionEn: item.descriptionEn,
+              isClickable: item.isClickable,
+              linkUrl: item.linkUrl,
+              openInNewTab: item.openInNewTab,
               order: item.order,
             },
           });
@@ -103,6 +122,9 @@ export async function POST(request: NextRequest) {
               titleEn: item.titleEn,
               description: item.description,
               descriptionEn: item.descriptionEn,
+              isClickable: item.isClickable,
+              linkUrl: item.linkUrl,
+              openInNewTab: item.openInNewTab,
               order: item.order,
             },
           });
