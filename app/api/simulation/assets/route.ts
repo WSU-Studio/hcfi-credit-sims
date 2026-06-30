@@ -9,6 +9,10 @@ import {
 } from '@/lib/mock-api';
 import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import {
+  HYUNDAI_VENDOR_LIST_PATH,
+  buildHyundaiVendorListBody,
+} from '@/lib/hyundai-vendor-list';
 import type { AssetMaster, Vendor } from '@/app/types/credit-simulation';
 
 const CONNECT_TIMEOUT_MS = 30_000;
@@ -74,14 +78,16 @@ async function fetchGlobalAssets(headers: Record<string, string>, getLatestAsset
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const vendorsResponse = await undiciFetch(
-      `${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`,
+      `${API_BASE_URL}${HYUNDAI_VENDOR_LIST_PATH}`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          hasAvailableAssetOnly: true,
-          hasCmoAssignedOnly: true,
-        }),
+        body: JSON.stringify(
+          buildHyundaiVendorListBody({
+            hasAvailableAssetOnly: true,
+            hasCmoAssignedOnly: true,
+          })
+        ),
         signal: controller.signal,
         dispatcher: hyundaiAgent,
       }

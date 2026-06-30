@@ -65,6 +65,10 @@ import {
 } from '@/lib/hyundai-customer-validation';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
 import {
+  HYUNDAI_VENDOR_LIST_PATH,
+  buildHyundaiVendorListBody,
+} from '@/lib/hyundai-vendor-list';
+import {
   buildHyundaiIdFilePayload,
   isHyundaiIdFileContentError,
 } from '@/lib/hyundai-file-content';
@@ -119,8 +123,11 @@ const HOME_OWNERSHIP_MAP: Record<string, string> = {
 
 export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
   const data = await hyundaiPost<{ ReturnObject?: Vendor[] }>(
-    '/Foundation/v1/VendorObX/GetListVendorAndVendorCity',
-    { hasAvailableAssetOnly: true, hasCmoAssignedOnly: true }
+    HYUNDAI_VENDOR_LIST_PATH,
+    buildHyundaiVendorListBody({
+      hasAvailableAssetOnly: true,
+      hasCmoAssignedOnly: true,
+    })
   );
   return data.ReturnObject ?? [];
 }

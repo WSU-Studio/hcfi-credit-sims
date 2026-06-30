@@ -9,6 +9,10 @@ import {
 } from '@/lib/mock-api';
 import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import {
+  HYUNDAI_VENDOR_LIST_PATH,
+  buildHyundaiVendorListBody,
+} from '@/lib/hyundai-vendor-list';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -46,14 +50,17 @@ export async function POST(request: NextRequest) {
     timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     const response = await undiciFetch(
-      `${API_BASE_URL}/Foundation/v1/VendorObX/GetListVendorAndVendorCity`,
+      `${API_BASE_URL}${HYUNDAI_VENDOR_LIST_PATH}`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,
-          hasCmoAssignedOnly: body.hasCmoAssignedOnly ?? true,
-        }),
+        body: JSON.stringify(
+          buildHyundaiVendorListBody({
+            hasAvailableAssetOnly: body.hasAvailableAssetOnly,
+            hasCmoAssignedOnly: body.hasCmoAssignedOnly,
+            supplierBrandCode: body.supplierBrandCode,
+          })
+        ),
         signal: controller.signal,
         dispatcher: hyundaiAgent,
       }
