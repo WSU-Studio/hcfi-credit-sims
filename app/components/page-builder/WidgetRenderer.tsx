@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { LayoutCell } from '@/app/types';
 import type { Locale } from '@/lib/pick-locale';
+import { RichTextWidget } from './RichTextWidget';
 import { TextWidget } from './TextWidget';
 import { TextImageWidget } from './TextImageWidget';
 
@@ -15,6 +16,7 @@ type WidgetComponentProps = WidgetRendererProps;
 const WIDGET_MAP: Record<string, ComponentType<WidgetComponentProps>> = {
   text: TextWidget,
   text_image: TextImageWidget,
+  rich_text: RichTextWidget,
 };
 
 export function WidgetRenderer({ cell, fullWidth, locale = 'id' }: WidgetRendererProps) {

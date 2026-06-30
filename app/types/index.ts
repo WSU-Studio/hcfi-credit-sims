@@ -54,9 +54,11 @@ export type CompanyInfo = {
 };
 
 // Static page layout (widget-based)
+export type WidgetType = 'text' | 'text_image' | 'rich_text';
+
 export type LayoutCell = {
   id: string;
-  widgetType: 'text' | 'text_image';
+  widgetType: WidgetType;
   payload: Record<string, unknown>;
 };
 
@@ -86,6 +88,12 @@ export type SharedTextSettings = {
 
 export type TextWidgetPayload = SharedTextSettings & {
   content: string;
+  contentEn?: string;
+};
+
+export type RichTextWidgetPayload = SharedTextSettings & {
+  content: string;
+  contentEn?: string;
 };
 
 export type TextImageWidgetPayload = SharedTextSettings & {

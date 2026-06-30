@@ -2,25 +2,28 @@
  * Utilitas bersama untuk page builder layout (Static Pages & Promos).
  */
 
-import type { LayoutCell, LayoutRow } from '@/app/types';
+import type { LayoutCell, LayoutRow, WidgetType } from '@/app/types';
 
 export function generateId(): string {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function createEmptyCell(widgetType: 'text' | 'text_image' = 'text'): LayoutCell {
+const DEFAULT_TEXT_PAYLOAD = {
+  content: '',
+  contentEn: '',
+  textColor: '#0f172a',
+  textAlign: 'left' as const,
+  textSize: '16' as const,
+  textWeight: 'normal' as const,
+};
+
+export function createEmptyCell(widgetType: WidgetType = 'text'): LayoutCell {
   const id = generateId();
-  if (widgetType === 'text') {
+  if (widgetType === 'text' || widgetType === 'rich_text') {
     return {
       id,
-      widgetType: 'text',
-      payload: {
-        content: '',
-        textColor: '#0f172a',
-        textAlign: 'left',
-        textSize: '16',
-        textWeight: 'normal',
-      },
+      widgetType,
+      payload: { ...DEFAULT_TEXT_PAYLOAD },
     };
   }
   return {
