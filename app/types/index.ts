@@ -54,7 +54,7 @@ export type CompanyInfo = {
 };
 
 // Static page layout (widget-based)
-export type WidgetType = 'text' | 'text_image' | 'rich_text';
+export type WidgetType = 'text' | 'text_image' | 'rich_text' | 'cta';
 
 export type LayoutCell = {
   id: string;
@@ -104,6 +104,27 @@ export type TextImageWidgetPayload = SharedTextSettings & {
   imageRatio?: 'default' | '1:1' | '4:3' | '16:9' | '3:1' | '4:1' | '5:1';
   /** Teks di dalam gambar (overlay) atau di luar gambar (default: outside) */
   textPlacement?: 'inside' | 'outside';
+};
+
+export type CtaButtonItem = {
+  id: string;
+  label: string;
+  labelEn?: string;
+  url: string;
+  openInNewTab?: boolean;
+};
+
+export type CtaWidgetSettings = {
+  align?: 'left' | 'center' | 'right';
+  direction?: 'row' | 'column';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  gap?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+};
+
+export type CtaWidgetPayload = CtaWidgetSettings & {
+  buttons: CtaButtonItem[];
 };
 
 // Re-export credit simulation types

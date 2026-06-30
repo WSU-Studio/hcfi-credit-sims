@@ -17,6 +17,16 @@ const DEFAULT_TEXT_PAYLOAD = {
   textWeight: 'normal' as const,
 };
 
+function createEmptyCtaButton() {
+  return {
+    id: generateId(),
+    label: '',
+    labelEn: '',
+    url: '',
+    openInNewTab: false,
+  };
+}
+
 export function createEmptyCell(widgetType: WidgetType = 'text'): LayoutCell {
   const id = generateId();
   if (widgetType === 'text' || widgetType === 'rich_text') {
@@ -24,6 +34,21 @@ export function createEmptyCell(widgetType: WidgetType = 'text'): LayoutCell {
       id,
       widgetType,
       payload: { ...DEFAULT_TEXT_PAYLOAD },
+    };
+  }
+  if (widgetType === 'cta') {
+    return {
+      id,
+      widgetType: 'cta',
+      payload: {
+        buttons: [createEmptyCtaButton(), createEmptyCtaButton(), createEmptyCtaButton()],
+        align: 'left',
+        direction: 'row',
+        variant: 'primary',
+        size: 'md',
+        gap: 'md',
+        fullWidth: false,
+      },
     };
   }
   return {
