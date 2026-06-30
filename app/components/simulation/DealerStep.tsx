@@ -64,7 +64,7 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
           // Asset: dealer harus punya stok unit untuk simulasi.
           // CMO: false agar semua kota/dealer tampil (CMO dipilih saat admin assign lead).
           hasAvailableAssetOnly: true,
-          hasCmoAssignedOnly: false,
+          hasCmoAssignedOnly: true,
         }),
       });
 
