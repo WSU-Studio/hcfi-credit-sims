@@ -41,7 +41,7 @@ export function createEmptyCell(widgetType: WidgetType = 'text'): LayoutCell {
       id,
       widgetType: 'cta',
       payload: {
-        buttons: [createEmptyCtaButton(), createEmptyCtaButton(), createEmptyCtaButton()],
+        buttons: [createEmptyCtaButton()],
         align: 'left',
         direction: 'row',
         variant: 'primary',

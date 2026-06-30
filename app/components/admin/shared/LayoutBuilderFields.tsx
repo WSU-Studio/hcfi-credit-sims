@@ -171,9 +171,9 @@ export function LayoutBuilderFields({ layout, onChange }: LayoutBuilderFieldsPro
                   className="w-full mb-3 px-2 py-1.5 border border-gray-300 rounded text-sm"
                 >
                   <option value="text">Text</option>
+                  <option value="text_image">Text + Image</option>
                   <option value="rich_text">Rich Text</option>
                   <option value="cta">CTA Buttons</option>
-                  <option value="text_image">Text + Image</option>
                 </select>
                 {cell.widgetType === 'text' && (
                   <>
