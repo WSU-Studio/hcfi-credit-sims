@@ -18,7 +18,9 @@ export async function GET(request: NextRequest) {
     }
 
     const salesPersons = await fetchSalesPersonsByVendor(vendorCode, {
-      oriOfficeCode: oriOfficeCode || undefined,
+      // oriOfficeCode: oriOfficeCode || undefined,
+      // request Hyundai untuk kosongkan oriOfficeCode supaya tarik semua CMO
+      oriOfficeCode: '',
     });
     return NextResponse.json({ salesPersons });
   } catch (error: unknown) {
