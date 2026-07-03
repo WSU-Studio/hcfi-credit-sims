@@ -84,16 +84,16 @@ export function RolesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {roles.map((role) => (
               <tr key={role.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 align-top">
                   {role.name}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500 align-top">
                   {role.description || '-'}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500 align-top">
                   {role.rolePermissions.length} permission(s)
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/roles/${role.id}/edit`}

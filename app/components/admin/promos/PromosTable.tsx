@@ -78,13 +78,13 @@ export function PromosTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {promos.map((promo) => (
               <tr key={promo.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
                   {formatDate(promo.createdAt)}
                   <span className="text-xs text-gray-500 block">
                     Last updated at {formatDate(promo.updatedAt)}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 align-top">
                   <div className="text-sm font-medium text-gray-900">{promo.title}</div>
                   {promo.description && (
                     <div className="text-sm text-gray-500 truncate max-w-md">
@@ -92,7 +92,7 @@ export function PromosTable() {
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap align-top">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       promo.isActive
@@ -103,17 +103,17 @@ export function PromosTable() {
                     {promo.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap align-top">
                   {promo.isHighlight && (
                     <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                       Highlight
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
                   {promo.order}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/promos/${promo.id}/edit`}

@@ -90,13 +90,13 @@ export function BannersTable() {
             ) : (
               banners.map((banner) => (
                 <tr key={banner.id}>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                     {formatDate(banner.createdAt)}
                     <span className="text-xs text-gray-500 block">
                       Last updated at {formatDate(banner.updatedAt)}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap align-top">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100 flex items-center justify-center">
                     {imageErrors.has(banner.id) ? (
                       <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
@@ -128,13 +128,13 @@ export function BannersTable() {
                     )}
                   </div>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 align-top">
                     <div className="text-sm font-medium text-gray-900">{banner.title}</div>
                     {banner.highlight && (
                       <div className="text-sm text-gray-500">{banner.highlight}</div>
                     )}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap align-top">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         banner.isActive
@@ -145,10 +145,10 @@ export function BannersTable() {
                       {banner.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                     {banner.order}
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium align-top">
                     <div className="flex items-center gap-2">
                       <AdminLink
                         href={`/admin/banners/${banner.id}/edit`}

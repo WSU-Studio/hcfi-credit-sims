@@ -129,13 +129,13 @@ export function UsersTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 align-top">
                   {user.name}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 align-top">
                   {user.email}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 align-top">
                   <div>{user.userRoles.map((ur) => ur.role.name).join(', ') || 'No roles'}</div>
                   {user.userType && (
                     <span className="mt-1 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
@@ -143,7 +143,7 @@ export function UsersTable() {
                     </span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-500 max-w-[12rem]">
+                <td className="px-3 py-2 text-xs text-gray-500 max-w-[12rem] align-top">
                   {user.vendorName ? (
                     <div className="truncate" title={user.vendorName}>
                       {user.vendorName}
@@ -155,7 +155,7 @@ export function UsersTable() {
                     <span className="text-gray-300">—</span>
                   )}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap align-top">
                   <div className="flex flex-col gap-1">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full w-fit ${
@@ -182,7 +182,7 @@ export function UsersTable() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/users/${user.id}/edit`}

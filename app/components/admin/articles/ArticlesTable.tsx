@@ -109,13 +109,13 @@ export function ArticlesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {articles.map((article) => (
               <tr key={article.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {new Date(article.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {new Date(article.updatedAt).toLocaleDateString()}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap align-top">
                   <div className="w-20 h-12 relative rounded overflow-hidden bg-gray-100">
                     {article.imageUrl ? (
                       <Image
@@ -132,7 +132,7 @@ export function ArticlesTable() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 align-top">
                   <div className="flex flex-col">
                     <span className="text-gray-900 text-sm font-medium">{article.title}</span>
                     <span className="text-gray-500 text-xs italic">{article.titleEn}</span>
@@ -146,18 +146,18 @@ export function ArticlesTable() {
                 {/* <td className="px-3 py-4 text-sm text-gray-500 max-w-[200px] truncate">
                   {article.subtitle || '-'}
                 </td> */}
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {article.author?.name ?? '-'}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {article.category ?? '-'}
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-600 max-w-[180px]">
+                <td className="px-3 py-2 text-xs text-gray-600 max-w-[180px] align-top">
                   {article.tags?.length
                     ? article.tags.slice(0, 3).join(', ') + (article.tags.length > 3 ? '…' : '')
                     : '-'}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {article.readingTime != null ? `${article.readingTime} m` : '-'}
                 </td>
                 {/* <td className="px-3 py-4 whitespace-nowrap">
@@ -169,7 +169,7 @@ export function ArticlesTable() {
                     <span className="text-gray-400">-</span>
                   )}
                 </td> */}
-                <td className="px-3 py-2 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap align-top">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       article.isPublished
@@ -180,7 +180,7 @@ export function ArticlesTable() {
                     {article.isPublished ? 'Published' : 'Draft'}
                   </span>
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-sm font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/articles/${article.id}/edit`}

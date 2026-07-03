@@ -83,13 +83,13 @@ export function ProductsTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                   {formatDate(product.createdAt)}
                   <span className="text-xs text-gray-500 block">
                     Last updated at {formatDate(product.updatedAt)}
                   </span>
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap align-top">
                   <div className="w-20 h-12 relative rounded overflow-hidden">
                     <Image
                         src={product.imageUrl}
@@ -100,25 +100,25 @@ export function ProductsTable() {
                       />
                   </div>
                 </td>
-                <td className="px-3 py-2 text-xs font-medium text-gray-900">
+                <td className="px-3 py-2 text-xs font-medium text-gray-900 align-top">
                   <div className="flex flex-col">
                     <span className="text-gray-900">{product.title}</span>
                     <span className="text-gray-500 font-normal italic">{product.titleEn}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-xs text-gray-500">
+                <td className="px-3 py-2 text-xs text-gray-500 align-top">
                   <div className="flex flex-col">
                     <span className="text-gray-900">{product.subtitle}</span>
                     <span className="text-gray-500 font-normal italic">{product.subtitleEn}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 align-top">
                   {product.isFeatured ? 'Yes' : 'No'}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 align-top">
                   {product.order}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium">
+                <td className="px-3 py-2 whitespace-nowrap text-xs font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/products/${product.id}/edit`}

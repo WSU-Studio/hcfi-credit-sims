@@ -77,19 +77,19 @@ export function PagesTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {pages.map((page) => (
               <tr key={page.id}>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                   {formatDate(page.createdAt)}
                   <span className="text-xs text-gray-500 block">
                     Last updated at {formatDate(page.updatedAt)}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                <td className="px-3 py-2 text-sm font-medium text-gray-900 align-top">
                   <div className="flex flex-col">
                     <span className="text-gray-900">{page.title}</span>
                     <span className="text-gray-500 text-xs font-normal italic">{page.titleEn}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2 text-sm text-gray-500">
+                <td className="px-3 py-2 text-sm text-gray-500 align-top">
                   {page.slug}
                 </td>
                 {/* <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
@@ -101,11 +101,11 @@ export function PagesTable() {
                     <span className="text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                   {page.menuOrder}
                 </td> */}
                 
-                <td className="px-3 py-2 text-sm font-medium">
+                <td className="px-3 py-2 text-sm font-medium align-top">
                   <div className="flex items-center gap-2">
                     <AdminLink
                       href={`/admin/pages/${page.id}/edit`}
