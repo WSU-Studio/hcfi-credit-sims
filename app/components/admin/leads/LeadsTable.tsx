@@ -304,10 +304,12 @@ export function LeadsTable() {
                 const StatusIcon = statusOpt.icon;
                 return (
                   <tr key={lead.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(lead.createdAt)}
+                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
+                      <div className="flex flex-col gap-1.5">
+                        {formatDate(lead.createdAt)}
+                      </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap align-top">
                       <div className="flex flex-col gap-1.5">
                         {lead.simulationLeadNo && (
                           <div className="flex flex-col gap-0.5">
@@ -350,7 +352,7 @@ export function LeadsTable() {
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap align-top">
                       <div className="flex-col items-center gap-2">
                         <div className="flex items-center gap-1">
                           {lead.ktpUrl ? (
@@ -375,7 +377,7 @@ export function LeadsTable() {
                         <div className="text-xs text-gray-500">{lead.email}</div>
                       </div>
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 align-top">
                       <div className="text-sm text-gray-900">{lead.productName || '-'}</div>
                       {lead.vehicleSummary && (
                         <div className="mt-0.5 text-xs text-gray-500">
@@ -383,7 +385,7 @@ export function LeadsTable() {
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 align-top">
                       {lead.otrPrice || lead.dpPercent || lead.tenor ? (
                         <div className="text-xs text-gray-600 space-y-0.5">
                           {lead.otrPrice && <div>OTR: {formatCurrency(lead.otrPrice)}</div>}
@@ -394,7 +396,7 @@ export function LeadsTable() {
                         <span className="text-sm text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 min-w-20">
+                    <td className="px-3 py-2 min-w-20 align-top">
                       {lead.latitude != null && lead.longitude != null && (
                         <Link
                           href={`https://www.google.com/maps?q=${lead.latitude},${lead.longitude}`}
