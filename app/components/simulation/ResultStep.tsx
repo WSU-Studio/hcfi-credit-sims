@@ -13,6 +13,7 @@ import {
 } from '@/app/components/simulation/SimulationSummaryModal';
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
+import { filterPromotionByPartnerCode, normalizePartnerCode } from '@/lib/hyundai-partner';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -47,6 +48,7 @@ export function ResultStep({
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
   const [listPromo, setListPromo] = useState<ProductCalculation[]>([]);
+  const [partnerCodeUnmatched, setPartnerCodeUnmatched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +72,14 @@ export function ResultStep({
   const simulateGeneration = useRef(0);
   const simulateAbortRef = useRef<AbortController | null>(null);
 
+  const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
+
+  // Tab promotion hanya relevan saat ada produk promo yang cocok partner code.
+  // Kalau promo kosong (mis. partner code tidak cocok), balik ke tab Standard.
+  useEffect(() => {
+    if (!hasPromo && tab === 'Promotion') setTab('Standard');
+  }, [hasPromo, tab]);
 
   useEffect(() => {
     fetch('/api/public/site-settings')
@@ -141,8 +150,18 @@ export function ResultStep({
         if (data?.errorId) setListErrorId(String(data.errorId));
         throw new Error(data.error || t('errorLoadProducts'));
       }
+      const rawPromo: ProductCalculation[] = data.ListDefaultPromotionProductObj ?? [];
+      // Per tim Hyundai: produk promotion hanya ditampilkan jika PartnerCode-nya
+      // cocok dengan partner code yang diinput customer. Kalau tidak cocok,
+      // customer hanya melihat produk standard.
+      const matchedPromo = filterPromotionByPartnerCode(rawPromo, partnerCode);
       setListStandard(data.ListDefaultStandardProductObj ?? []);
-      setListPromo(data.ListDefaultPromotionProductObj ?? []);
+      setListPromo(matchedPromo);
+      setPartnerCodeUnmatched(
+        !!normalizePartnerCode(partnerCode ?? '') &&
+          rawPromo.length > 0 &&
+          matchedPromo.length === 0
+      );
       const first = data.ListDefaultStandardProductObj?.[0];
       if (first) {
         setSelectedProduct((prev) => prev ?? first);
@@ -252,31 +271,39 @@ export function ResultStep({
         <p className="text-gray-500">{t('selectProductSubtitle')}</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1 rounded-xl bg-gray-100 border border-gray-200">
-        <button
-          type="button"
-          onClick={() => setTab('Standard')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-            tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {t('standard')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('Promotion')}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-            tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          {t('promotion')}
-        </button>
-      </div>
+      {partnerCodeUnmatched && (
+        <p className="text-sm font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          {t('partnerCodeUnmatched')}
+        </p>
+      )}
+
+      {/* Tabs — tab Promotion hanya tampil saat ada produk promo yang cocok. */}
+      {hasPromo && (
+        <div className="flex gap-2 p-1 rounded-xl bg-gray-100 border border-gray-200">
+          <button
+            type="button"
+            onClick={() => setTab('Standard')}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+              tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {t('standard')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('Promotion')}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
+              tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {t('promotion')}
+          </button>
+        </div>
+      )}
 
       {/* Product cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {(tab === 'Promotion' && listPromo.length === 0 ? listStandard : products).map((p) => (
+        {products.map((p) => (
           <button
             key={`${p.ProductCode}-${p.ProductName}`}
             type="button"

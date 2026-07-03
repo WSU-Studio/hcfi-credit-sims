@@ -15,14 +15,60 @@ export type HyundaiPartnerContext = {
   partnerCode?: string | null;
 };
 
+/** Panjang maksimum partner code yang diterima/dikirim. */
+export const MAX_PARTNER_CODE_LENGTH = 64;
+
+/**
+ * Normalisasi partner code untuk pencocokan & payload Hyundai.
+ *
+ * Partner code bisa mengandung spasi dan karakter spesial (mis.
+ * "CPP SINARMAS #01"), jadi jangan buang karakter apa pun. Cukup rapikan
+ * whitespace (runtun jadi satu spasi + trim), uppercase supaya pencocokan
+ * case-insensitive, lalu batasi panjang.
+ */
 export function normalizePartnerCode(value: string): string {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32);
+  return value
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, MAX_PARTNER_CODE_LENGTH);
 }
 
 /** Resolve flag partner untuk payload Hyundai (`IsPartner`). */
 export function resolveIsPartner(ctx?: HyundaiPartnerContext): boolean {
   if (ctx?.isPartner === true) return true;
   return !!normalizePartnerCode(ctx?.partnerCode ?? '');
+}
+
+/**
+ * Cek apakah `PartnerCode` sebuah produk cocok dengan partner code yang diinput
+ * customer. Aturan (per tim Hyundai, WA 2026-07):
+ *   - Produk tanpa PartnerCode (null/kosong) = promo publik → selalu cocok.
+ *   - Produk dengan PartnerCode → cocok hanya jika sama (setelah normalisasi)
+ *     dengan partner code yang diinput. Kalau tidak cocok → produk di-drop
+ *     (customer cuma lihat standard).
+ */
+export function matchesPartnerCode(
+  productPartnerCode: string | null | undefined,
+  inputPartnerCode: string | null | undefined
+): boolean {
+  const product = normalizePartnerCode(productPartnerCode ?? '');
+  if (!product) return true;
+  return product === normalizePartnerCode(inputPartnerCode ?? '');
+}
+
+/**
+ * Saring daftar produk promosi berdasarkan pencocokan `PartnerCode`. Dipakai
+ * untuk menentukan produk promotion mana yang boleh tampil sesuai partner code
+ * yang diinput. Generic supaya reusable untuk tipe produk apa pun yang punya
+ * field `PartnerCode`.
+ */
+export function filterPromotionByPartnerCode<
+  T extends { PartnerCode?: string | null }
+>(products: T[], inputPartnerCode: string | null | undefined): T[] {
+  return products.filter((product) =>
+    matchesPartnerCode(product.PartnerCode, inputPartnerCode)
+  );
 }
 
 /** Partner fields untuk request body Hyundai (Postman v1.4). */

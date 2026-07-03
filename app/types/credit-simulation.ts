@@ -98,6 +98,13 @@ export interface ProductCalculation {
   FiduciaFeeAmt: number;
   FiduciaFeeCptlz: boolean;
   FiduciaFeeBhv: string;
+  /**
+   * Partner code yang di-attach Hyundai pada produk (promotion partner).
+   * Kosong/null = promo publik yang tidak di-gate partner code.
+   */
+  PartnerCode?: string | null;
+  /** Flag partner dari rule (bisa boolean atau string "true"/"false"). */
+  IsPartner?: boolean | string | null;
 }
 
 export interface DefaultProduct {

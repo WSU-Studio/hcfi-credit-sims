@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { MAX_DISCOUNT_PERCENT } from '@/lib/dealer-promotion';
-import { normalizePartnerCode } from '@/lib/hyundai-partner';
+import { normalizePartnerCode, MAX_PARTNER_CODE_LENGTH } from '@/lib/hyundai-partner';
 import { useDealerPromotionLookup } from '@/app/hooks/useDealerPromotionLookup';
 
 interface PriceStepProps {
@@ -185,10 +185,13 @@ export function PriceStep({
             value={partnerCode}
             onChange={(e) => {
               setError(null);
-              setPartnerCode(normalizePartnerCode(e.target.value));
+              // Simpan apa adanya — partner code bisa punya spasi & karakter
+              // spesial. Normalisasi (trim/uppercase) baru dilakukan saat submit
+              // via normalizePartnerCode() supaya user bebas mengetik.
+              setPartnerCode(e.target.value);
             }}
             placeholder={t('partnerCodePlaceholder')}
-            maxLength={32}
+            maxLength={MAX_PARTNER_CODE_LENGTH}
             autoComplete="off"
             className="w-full px-4 py-3 border border-[var(--border)] rounded-lg bg-[var(--background)] focus:ring-2 focus:ring-[#002c5f] focus:border-transparent uppercase tracking-wide"
           />
