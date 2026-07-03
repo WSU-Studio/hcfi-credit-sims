@@ -37,10 +37,14 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
     [vendors]
   );
 
-  const dealersInCity = useMemo(
-    () => (selectedCity ? sortDealers(vendors.filter((v) => v.City === selectedCity)) : []),
-    [vendors, selectedCity]
-  );
+  const dealersInCity = useMemo(() => {
+    if (!selectedCity) return [];
+    const inCity = vendors.filter((v) => v.City === selectedCity);
+    const uniqueByCode = Array.from(
+      new Map(inCity.map((v) => [v.VendorCode, v])).values()
+    );
+    return sortDealers(uniqueByCode);
+  }, [vendors, selectedCity]);
 
   const handleCityChange = (city: string) => {
     if (!city || city === selectedCity) return;
@@ -64,7 +68,7 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
           // Asset: dealer harus punya stok unit untuk simulasi.
           // CMO: false agar semua kota/dealer tampil (CMO dipilih saat admin assign lead).
           hasAvailableAssetOnly: true,
-          hasCmoAssignedOnly: true,
+          hasCmoAssignedOnly: false,
         }),
       });
 
@@ -120,20 +124,6 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
                 </option>
               ))}
             </select>
-            // {cities.map((city) => (
-            //   <button
-            //     key={city}
-            //     type="button"
-            //     onClick={() => handleCityClick(city)}
-            //     className={`px-5 py-3 rounded-lg border-2 font-medium transition-colors cursor-pointer ${
-            //       selectedCity === city
-            //         ? 'border-[#002c5f] bg-[#002c5f] text-white ring-2 ring-[#002c5f]/40 ring-offset-2'
-            //         : 'border-[var(--border)] hover:border-[#002c5f]/50 hover:bg-gray-50 text-gray-700'
-            //     }`}
-            //   >
-            //     {city}
-            //   </button>
-            // ))}
           )}
           {loading && (
             <p className="mt-1.5 text-sm text-[var(--muted)]">{t('loadingDealers')}</p>
