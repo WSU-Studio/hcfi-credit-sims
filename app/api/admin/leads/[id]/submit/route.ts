@@ -31,10 +31,11 @@ export async function POST(
 
     await requirePermission('LEADS', 'edit');
     const body = await request.json();
-    const { vendorCode, cmoEmpNo, cmoName, isPartner } = body as {
+    const { vendorCode, cmoEmpNo, cmoName, cmoOfficeCode, isPartner } = body as {
       vendorCode?: string;
       cmoEmpNo?: string;
       cmoName?: string;
+      cmoOfficeCode?: string;
       /** Opsional — uji flow partner sebelum fitur resmi aktif. Default false. */
       isPartner?: boolean;
     };
@@ -126,7 +127,7 @@ export async function POST(
       return NextResponse.json({ error: 'Dealer tidak ditemukan' }, { status: 400 });
     }
 
-    const { leadNo } = await submitLeadToHyundai({
+    const { leadNo, flow } = await submitLeadToHyundai({
       lead: {
         id: lead.id,
         name: lead.name,
@@ -144,10 +145,12 @@ export async function POST(
         citizenType: lead.citizenType,
         notes: lead.notes,
         ktpUrl: lead.ktpUrl,
+        simulationLeadNo: lead.simulationLeadNo,
       },
       vendor,
       cmoEmpNo,
       cmoName: cmoName || cmoEmpNo,
+      cmoOfficeCode,
       isPartner,
     });
 
@@ -175,15 +178,18 @@ export async function POST(
       resourceId: id,
       metadata: {
         hyundaiLeadNo: leadNo,
+        simulationLeadNo: lead.simulationLeadNo,
+        submitFlow: flow,
         vendorCode: vendor.VendorCode,
         cmoEmpNo,
         cmoName,
+        cmoOfficeCode: cmoOfficeCode ?? null,
         isPartner: isPartner === true,
       },
       request,
     });
 
-    return NextResponse.json({ success: true, lead: updated, hyundaiLeadNo: leadNo });
+    return NextResponse.json({ success: true, lead: updated, hyundaiLeadNo: leadNo, flow });
   } catch (error: unknown) {
     console.error('[admin/leads/submit]', error);
     const message = error instanceof Error ? error.message : 'Submit failed';

@@ -26,6 +26,10 @@
  * Catatan:
  *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
  *     AddLeadAsset.
+ *   - Branching office (Richard 2026-07): jika 2 digit awal `simulationLeadNo`
+ *     cocok dengan `OfficeMemberCode` CMO terpilih → reuse lead simulasi, hanya
+ *     jalankan Fase 3 (OCR + AddLeadCust). Jika beda cabang → AddLeadAsset baru
+ *     + chain finansial + AddLeadCust (`hyundaiLeadNo` baru).
  *   - Master Data dropdown lain (Gender / Marital / Religion / Nationality /
  *     Education / Country / Building Ownership) tidak dipanggil—kita pakai
  *     static mapping di lib/hyundai-ocr.ts. Endpoint dropdown Hyundai hanya
@@ -75,14 +79,15 @@ import {
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { Vendor } from '@/app/types/credit-simulation';
 import {
-  mapOfficeMemberCmoToKeyValue,
+  isCmoOfficeMatchLeadNo,
+  mapOfficeMemberCmoToSelectOptions,
   resolveCmoAssignFields,
-  type HyundaiKeyValue,
+  type CmoSelectOption,
   type OfficeMemberCmo,
 } from '@/lib/hyundai-cmo-assign';
 
-export type { HyundaiKeyValue, OfficeMemberCmo } from '@/lib/hyundai-cmo-assign';
-export { resolveCmoAssignFields } from '@/lib/hyundai-cmo-assign';
+export type { HyundaiKeyValue, OfficeMemberCmo, CmoSelectOption } from '@/lib/hyundai-cmo-assign';
+export { resolveCmoAssignFields, isCmoOfficeMatchLeadNo, extractLeadNoOfficePrefix } from '@/lib/hyundai-cmo-assign';
 
 export async function fetchOfficeMemberCmo(
   dealerCode: string,
@@ -105,11 +110,35 @@ export async function fetchOfficeMemberCmo(
 export async function fetchSalesPersonsByVendor(
   dealerCode: string,
   options?: { oriOfficeCode?: string }
-): Promise<HyundaiKeyValue[]> {
+): Promise<CmoSelectOption[]> {
   const rows = await fetchOfficeMemberCmo(dealerCode, {
     oriOfficeCode: options?.oriOfficeCode,
   });
-  return mapOfficeMemberCmoToKeyValue(rows, options?.oriOfficeCode);
+  return mapOfficeMemberCmoToSelectOptions(rows, options?.oriOfficeCode);
+}
+
+/** Resolve cabang CMO terpilih — wajib saat satu CMOCode ada di banyak cabang. */
+export async function resolveCmoOfficeForSubmit(
+  dealerCode: string,
+  cmoCode: string,
+  cmoOfficeCode?: string | null
+): Promise<OfficeMemberCmo> {
+  const rows = await fetchOfficeMemberCmo(dealerCode, { cmoCode });
+  const active = rows.filter((row) => row.IsActive !== false);
+  if (!active.length) {
+    throw new Error(`CMO ${cmoCode} tidak ditemukan untuk dealer ini.`);
+  }
+
+  if (cmoOfficeCode?.trim()) {
+    const match = active.find((row) => row.OfficeMemberCode === cmoOfficeCode.trim());
+    if (match) return match;
+  }
+
+  if (active.length === 1) return active[0];
+
+  throw new Error(
+    'CMO terdaftar di beberapa cabang. Pilih ulang CMO dari dropdown (pastikan cabang benar).'
+  );
 }
 
 const HOME_OWNERSHIP_MAP: Record<string, string> = {
@@ -149,6 +178,8 @@ export type LeadRecordForHyundai = {
   citizenType: string | null;
   notes: string | null;
   ktpUrl: string | null;
+  /** LeadNo dari simulasi Step 4 — dipakai untuk reuse saat office CMO cocok. */
+  simulationLeadNo?: string | null;
   /**
    * Nanti: true untuk lead dari perusahaan partner Hyundai (diskon khusus).
    * Saat ini belum ada sumber di DB — default false via resolveIsPartner().
@@ -161,7 +192,8 @@ function buildAddLeadAssetBody(
   cmoEmpNo: string,
   asset: ResolvedLeadAsset,
   oem: ResolvedOemAccessories,
-  assetPriceAmt: number
+  assetPriceAmt: number,
+  officeOverride?: { OriOfficeCode: string; OriOfficeName: string }
 ): Record<string, unknown> {
   return {
     SerialNo1: null,
@@ -173,8 +205,8 @@ function buildAddLeadAssetBody(
     AssetLv3Name: asset.trimName || asset.modelName,
     ManufacturingYear: String(asset.manufacturingYear),
     AssetPriceAmt: assetPriceAmt,
-    OriOfficeName: vendor.OriOfficeName,
-    OriOfficeCode: vendor.OriOfficeCode,
+    OriOfficeName: officeOverride?.OriOfficeName ?? vendor.OriOfficeName,
+    OriOfficeCode: officeOverride?.OriOfficeCode ?? vendor.OriOfficeCode,
     OriSupplierName: vendor.VendorName,
     OriSupplierCode: vendor.VendorCode,
     SupplierEmpNo: cmoEmpNo,
@@ -289,93 +321,31 @@ async function persistOcrResult(params: {
   });
 }
 
-export async function submitLeadToHyundai(params: {
+export type HyundaiSubmitFlow = 'same_office' | 'cross_office';
+
+async function finalizeLeadCustomerPhase(params: {
   lead: LeadRecordForHyundai;
+  leadNo: string;
   vendor: Vendor;
   cmoEmpNo: string;
   cmoName: string;
-  /** Override flag partner (opsional); default dari `lead.isPartner`. */
-  isPartner?: boolean;
-}): Promise<{ leadNo: string }> {
-  const isPartner = resolveIsPartner({
-    isPartner: params.isPartner ?? params.lead.isPartner,
-  });
-  const resolvedAsset = await resolveLeadAsset({
-    dealerCode: params.vendor.VendorCode,
-    vehicleSummary: params.lead.vehicleSummary,
-    snapshot: params.lead.assetSnapshot,
-    simulationVendorCode: params.lead.vendorCode,
-  });
-
-  if (!params.lead.otrPrice || params.lead.otrPrice <= 0) {
-    throw new Error('Lead tidak memiliki harga OTR. Data simulasi tidak lengkap.');
-  }
-
-  // Validasi & konversi KTP lebih awal — gagal cepat sebelum chain finansial (~15s).
-  let ktpFile: { fileName: string; base64: string; buffer: Buffer } | undefined;
-  if (params.lead.ktpUrl) {
-    try {
-      ktpFile = await fetchLeadKtpFromS3(params.lead.ktpUrl);
-    } catch (ktpErr) {
-      const detail = ktpErr instanceof Error ? ktpErr.message : String(ktpErr);
-      throw new Error(
-        `KTP lead tidak bisa diproses (${detail}). Minta customer upload ulang foto KTP (JPEG/PNG, jelas, tidak blur).`
-      );
-    }
-  }
-
-  const oemAccessories = await resolveDefaultOemAccessories(resolvedAsset.modelCode);
-
-  const assetPriceAmt = await resolveAssetPriceAmt({
-    asset: resolvedAsset,
-    dealerCode: params.vendor.VendorCode,
-    oem: oemAccessories,
-    fallbackOtr: params.lead.otrPrice,
-  });
-
-  const assetRes = await hyundaiPost<HyundaiApiEnvelope>(
-    '/v1/IntegrationWebsite/AddLeadAsset',
-    buildAddLeadAssetBody(
-      params.vendor,
-      params.cmoEmpNo,
-      resolvedAsset,
-      oemAccessories,
-      assetPriceAmt
-    )
-  );
-
-  const leadNo = assetRes.TrxNo;
-  if (!leadNo) {
-    throw new Error('AddLeadAsset did not return LeadNo (TrxNo)');
-  }
-
-  await verifyLeadAssetExists(leadNo);
-
-  await bootstrapLeadFinancialAndInsurance({
-    leadNo,
-    otrPrice: params.lead.otrPrice ?? 0,
-    dpPercent: params.lead.dpPercent ?? 10,
-    tenor: params.lead.tenor ?? 36,
-    productName: params.lead.productName,
-    leadId: params.lead.id,
-    isPartner,
-  });
-
+  ktpFile?: { fileName: string; base64: string; buffer: Buffer };
+}): Promise<void> {
   let ocrRead: OcrKtpRead | null = null;
 
-  if (ktpFile) {
+  if (params.ktpFile) {
     try {
       const ocrRes = await getOcrKtpData({
-        trxNo: leadNo,
-        fileName: ktpFile.fileName,
-        byteBase64: ktpFile.base64,
+        trxNo: params.leadNo,
+        fileName: params.ktpFile.fileName,
+        byteBase64: params.ktpFile.base64,
       });
       ocrRead = ocrRes.Read ?? null;
 
       await persistOcrResult({
         leadId: params.lead.id,
-        hyundaiLeadNo: leadNo,
-        ktpFileName: ktpFile.fileName,
+        hyundaiLeadNo: params.leadNo,
+        ktpFileName: params.ktpFile.fileName,
         status: 'SUCCESS',
         rawResponse: ocrRes,
         read: ocrRead,
@@ -386,8 +356,8 @@ export async function submitLeadToHyundai(params: {
         ocrErr instanceof HyundaiOcrError ? ocrErr.rawResponse : undefined;
       await persistOcrResult({
         leadId: params.lead.id,
-        hyundaiLeadNo: leadNo,
-        ktpFileName: ktpFile?.fileName,
+        hyundaiLeadNo: params.leadNo,
+        ktpFileName: params.ktpFile?.fileName,
         status: 'FAILED',
         errorMessage: msg,
         rawResponse,
@@ -402,15 +372,12 @@ export async function submitLeadToHyundai(params: {
 
   const idNo = ocrRead?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000';
   await syncLeadAssetInsurance({
-    leadNo,
+    leadNo: params.leadNo,
     location: customerLocation,
     idNo,
     vendorCity: params.vendor.City,
   });
 
-  // Fase 3 Validation — fail-fast sebelum AddLeadCust (per Postman v1.1).
-  // ZipCode sudah resolved via GetLocationDataByZipcode, tapi Hyundai tetap
-  // minta ValidateCustZipCode untuk konfirmasi kombinasi master + permission.
   await validateCustomerZipcode({
     zipCode: customerLocation.zipCode,
     city: customerLocation.city,
@@ -420,7 +387,7 @@ export async function submitLeadToHyundai(params: {
 
   const sanitizedPhoneForValidation = params.lead.phone.replace(/\D/g, '').slice(0, 15);
   await validateCustomerPhoneAndEmail({
-    leadNo,
+    leadNo: params.leadNo,
     email: params.lead.email,
     phoneNo: sanitizedPhoneForValidation,
     custType: 'CUSTOMER',
@@ -428,19 +395,17 @@ export async function submitLeadToHyundai(params: {
 
   const addLeadCustPayload = buildAddLeadCustBody(
     params.lead,
-    leadNo,
+    params.leadNo,
     ocrRead,
     customerLocation,
     resolveCmoAssignFields(params.cmoEmpNo, params.cmoName),
-    ktpFile
+    params.ktpFile
   );
 
-  // Endpoint terakhir & paling kritikal — full request/response dilog ke
-  // HyundaiApiCallLog untuk audit + troubleshooting dengan tim Hyundai.
   try {
     await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', addLeadCustPayload, {
       leadId: params.lead.id,
-      hyundaiLeadNo: leadNo,
+      hyundaiLeadNo: params.leadNo,
       endpoint: 'AddLeadCust',
     });
   } catch (addCustErr) {
@@ -453,7 +418,7 @@ export async function submitLeadToHyundai(params: {
       const { IdFile: _omitted, ...withoutIdFile } = addLeadCustPayload;
       await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', withoutIdFile, {
         leadId: params.lead.id,
-        hyundaiLeadNo: leadNo,
+        hyundaiLeadNo: params.leadNo,
         endpoint: 'AddLeadCust',
       });
     } else {
@@ -461,9 +426,6 @@ export async function submitLeadToHyundai(params: {
     }
   }
 
-  // Persist payload yang dikirim ke `AddLeadCust` untuk audit & troubleshooting.
-  // Field `IdFile.Content` (base64 KTP) bisa sangat besar—ganti dengan marker
-  // supaya record DB tidak membengkak; FileName tetap disimpan untuk traceability.
   const persistablePayload = {
     ...addLeadCustPayload,
     IdFile:
@@ -475,15 +437,10 @@ export async function submitLeadToHyundai(params: {
         : undefined,
   };
 
-  // Update untuk SEMUA status (SUCCESS / FAILED) — sebelumnya hanya SUCCESS.
-  // Kalau OCR sukses, akan ada 1 row LeadOcrResult di-update.
-  // Kalau OCR gagal tapi KTP ter-upload, juga ada 1 row FAILED yang di-update.
-  // Kalau lead tidak punya KTP, tidak ada row OCR sama sekali → buat satu sebagai
-  // marker NO_KTP supaya payload tetap ter-trace.
   const ocrUpdate = await prisma.leadOcrResult.updateMany({
     where: {
       leadId: params.lead.id,
-      hyundaiLeadNo: leadNo,
+      hyundaiLeadNo: params.leadNo,
     },
     data: { addLeadCustPayload: persistablePayload as object },
   });
@@ -491,12 +448,152 @@ export async function submitLeadToHyundai(params: {
   if (ocrUpdate.count === 0) {
     await persistOcrResult({
       leadId: params.lead.id,
-      hyundaiLeadNo: leadNo,
+      hyundaiLeadNo: params.leadNo,
       status: 'FAILED',
       errorMessage: 'KTP tidak di-upload — payload AddLeadCust pakai placeholder',
       addLeadCustPayload: persistablePayload,
     });
   }
+}
 
-  return { leadNo };
+export async function submitLeadToHyundai(params: {
+  lead: LeadRecordForHyundai;
+  vendor: Vendor;
+  cmoEmpNo: string;
+  cmoName: string;
+  /** OfficeMemberCode cabang CMO — untuk branching same/cross office. */
+  cmoOfficeCode?: string | null;
+  /** Override flag partner (opsional); default dari `lead.isPartner`. */
+  isPartner?: boolean;
+}): Promise<{ leadNo: string; flow: HyundaiSubmitFlow }> {
+  const isPartner = resolveIsPartner({
+    isPartner: params.isPartner ?? params.lead.isPartner,
+  });
+
+  const cmoRow = await resolveCmoOfficeForSubmit(
+    params.vendor.VendorCode,
+    params.cmoEmpNo,
+    params.cmoOfficeCode
+  );
+
+  const simulationLeadNo = params.lead.simulationLeadNo?.trim() || null;
+  const reuseSimulationLead =
+    simulationLeadNo != null &&
+    isCmoOfficeMatchLeadNo(simulationLeadNo, cmoRow.OfficeMemberCode);
+
+  if (!params.lead.otrPrice || params.lead.otrPrice <= 0) {
+    throw new Error('Lead tidak memiliki harga OTR. Data simulasi tidak lengkap.');
+  }
+
+  let ktpFile: { fileName: string; base64: string; buffer: Buffer } | undefined;
+  if (params.lead.ktpUrl) {
+    try {
+      ktpFile = await fetchLeadKtpFromS3(params.lead.ktpUrl);
+    } catch (ktpErr) {
+      const detail = ktpErr instanceof Error ? ktpErr.message : String(ktpErr);
+      throw new Error(
+        `KTP lead tidak bisa diproses (${detail}). Minta customer upload ulang foto KTP (JPEG/PNG, jelas, tidak blur).`
+      );
+    }
+  }
+
+  let leadNo: string;
+  let flow: HyundaiSubmitFlow;
+
+  if (reuseSimulationLead) {
+    leadNo = simulationLeadNo;
+    flow = 'same_office';
+    console.info(
+      '[submitLeadToHyundai] Same-office: reuse simulationLeadNo=%s (CMO office=%s)',
+      leadNo,
+      cmoRow.OfficeMemberCode
+    );
+    await verifyLeadAssetExists(leadNo);
+
+    // simulationLeadNo hanya menjalankan Fase 1 (AddLeadAsset) saat PriceStep;
+    // Fase 2 (financial + insurance) belum pernah dibuat. Tanpa ini AddLeadCust
+    // gagal dengan 404 "Lead Asset Insurance Not Found".
+    await bootstrapLeadFinancialAndInsurance({
+      leadNo,
+      otrPrice: params.lead.otrPrice ?? 0,
+      dpPercent: params.lead.dpPercent ?? 10,
+      tenor: params.lead.tenor ?? 36,
+      productName: params.lead.productName,
+      leadId: params.lead.id,
+      isPartner,
+    });
+  } else {
+    flow = 'cross_office';
+    console.info(
+      '[submitLeadToHyundai] Cross-office: AddLeadAsset baru (simulationLeadNo=%s, CMO office=%s)',
+      simulationLeadNo ?? 'none',
+      cmoRow.OfficeMemberCode
+    );
+
+    const resolvedAsset = await resolveLeadAsset({
+      dealerCode: params.vendor.VendorCode,
+      vehicleSummary: params.lead.vehicleSummary,
+      snapshot: params.lead.assetSnapshot,
+      simulationVendorCode: params.lead.vendorCode,
+    });
+
+    const oemAccessories = await resolveDefaultOemAccessories(resolvedAsset.modelCode);
+
+    const assetPriceAmt = await resolveAssetPriceAmt({
+      asset: resolvedAsset,
+      dealerCode: params.vendor.VendorCode,
+      oem: oemAccessories,
+      fallbackOtr: params.lead.otrPrice,
+    });
+
+    const officeOverride =
+      cmoRow.OfficeMemberCode !== params.vendor.OriOfficeCode ||
+      (simulationLeadNo != null &&
+        !isCmoOfficeMatchLeadNo(simulationLeadNo, cmoRow.OfficeMemberCode))
+        ? {
+            OriOfficeCode: cmoRow.OfficeMemberCode,
+            OriOfficeName: cmoRow.OfficeMemberName,
+          }
+        : undefined;
+
+    const assetRes = await hyundaiPost<HyundaiApiEnvelope>(
+      '/v1/IntegrationWebsite/AddLeadAsset',
+      buildAddLeadAssetBody(
+        params.vendor,
+        params.cmoEmpNo,
+        resolvedAsset,
+        oemAccessories,
+        assetPriceAmt,
+        officeOverride
+      )
+    );
+
+    leadNo = assetRes.TrxNo ?? '';
+    if (!leadNo) {
+      throw new Error('AddLeadAsset did not return LeadNo (TrxNo)');
+    }
+
+    await verifyLeadAssetExists(leadNo);
+
+    await bootstrapLeadFinancialAndInsurance({
+      leadNo,
+      otrPrice: params.lead.otrPrice ?? 0,
+      dpPercent: params.lead.dpPercent ?? 10,
+      tenor: params.lead.tenor ?? 36,
+      productName: params.lead.productName,
+      leadId: params.lead.id,
+      isPartner,
+    });
+  }
+
+  await finalizeLeadCustomerPhase({
+    lead: params.lead,
+    leadNo,
+    vendor: params.vendor,
+    cmoEmpNo: params.cmoEmpNo,
+    cmoName: params.cmoName,
+    ktpFile,
+  });
+
+  return { leadNo, flow };
 }

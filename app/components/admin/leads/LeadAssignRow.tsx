@@ -3,15 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Vendor } from '@/app/types/credit-simulation';
 import {
+  parseCmoSelectKey,
   resolveCmoAssignFields,
-  type HyundaiKeyValue,
+  type CmoSelectOption,
 } from '@/lib/hyundai-cmo-assign';
 import { BlockingProcessOverlay } from '@/app/components/ui/BlockingProcessOverlay';
 
 type LeadAssignState = {
   vendorCode: string;
-  cmoEmpNo: string;
+  cmoSelectKey: string;
   cmoName: string;
+  cmoOfficeCode: string;
 };
 
 export type LeadForAssign = {
@@ -52,10 +54,11 @@ export function LeadAssignRow({
 
   const [selection, setSelection] = useState<LeadAssignState>({
     vendorCode: lead.vendorCode ?? '',
-    cmoEmpNo: lead.cmoEmpNo ?? '',
+    cmoSelectKey: lead.cmoEmpNo ?? '',
     cmoName: lead.cmoName ?? '',
+    cmoOfficeCode: '',
   });
-  const [salesPersons, setSalesPersons] = useState<HyundaiKeyValue[]>([]);
+  const [salesPersons, setSalesPersons] = useState<CmoSelectOption[]>([]);
   const [cmoLoading, setCmoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(lead.hyundaiAssignError ?? null);
@@ -86,16 +89,32 @@ export function LeadAssignRow({
       .then((data) => {
         if (cancelled) return;
         if (data.error) throw new Error(data.error);
-        const list: HyundaiKeyValue[] = data.salesPersons ?? [];
+        const list: CmoSelectOption[] = data.salesPersons ?? [];
         setSalesPersons(list);
-        if (!selection.cmoEmpNo && list.length > 0) {
+        if (!selection.cmoSelectKey && list.length > 0) {
           const first = list[0];
-          const { CMOCode, CMOName } = resolveCmoAssignFields(first.Key, first.Value);
+          const { CMOName } = resolveCmoAssignFields(first.Key, first.Value);
           setSelection((prev) => ({
             ...prev,
-            cmoEmpNo: CMOCode,
+            cmoSelectKey: first.Key,
             cmoName: CMOName,
+            cmoOfficeCode: first.officeMemberCode,
           }));
+        } else if (selection.cmoSelectKey && list.length > 0) {
+          const existing = list.find(
+            (sp) =>
+              sp.Key === selection.cmoSelectKey ||
+              parseCmoSelectKey(sp.Key).cmoCode === selection.cmoSelectKey
+          );
+          if (existing) {
+            const { CMOName } = resolveCmoAssignFields(existing.Key, existing.Value);
+            setSelection((prev) => ({
+              ...prev,
+              cmoSelectKey: existing.Key,
+              cmoName: CMOName,
+              cmoOfficeCode: existing.officeMemberCode,
+            }));
+          }
         }
       })
       .catch((err: unknown) => {
@@ -144,7 +163,8 @@ export function LeadAssignRow({
   */
 
   const handleSubmit = async () => {
-    if (!selection.vendorCode || !selection.cmoEmpNo) {
+    const { cmoCode } = parseCmoSelectKey(selection.cmoSelectKey);
+    if (!selection.vendorCode || !cmoCode) {
       setError('Pilih dealer dan CMO terlebih dahulu');
       return;
     }
@@ -156,8 +176,9 @@ export function LeadAssignRow({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vendorCode: selection.vendorCode,
-          cmoEmpNo: selection.cmoEmpNo,
+          cmoEmpNo: cmoCode,
           cmoName: selection.cmoName,
+          cmoOfficeCode: selection.cmoOfficeCode || undefined,
         }),
       });
       const data = await res.json();
@@ -275,17 +296,18 @@ export function LeadAssignRow({
       </td>
       <td className="px-3 py-2 align-top">
         <select
-          value={selection.cmoEmpNo}
+          value={selection.cmoSelectKey}
           onChange={(e) => {
             const sp = salesPersons.find((s) => s.Key === e.target.value);
-            const { CMOCode, CMOName } = resolveCmoAssignFields(
+            const { CMOName } = resolveCmoAssignFields(
               e.target.value,
               sp?.Value ?? ''
             );
             setSelection({
               ...selection,
-              cmoEmpNo: CMOCode,
+              cmoSelectKey: e.target.value,
               cmoName: CMOName,
+              cmoOfficeCode: sp?.officeMemberCode ?? '',
             });
           }}
           disabled={!canSubmit || submitting || !selection.vendorCode || cmoLoading}
@@ -304,7 +326,12 @@ export function LeadAssignRow({
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!canSubmit || submitting || !selection.vendorCode || !selection.cmoEmpNo}
+          disabled={
+            !canSubmit ||
+            submitting ||
+            !selection.vendorCode ||
+            !selection.cmoSelectKey
+          }
           className="w-full min-w-[5rem] px-2 py-1.5 bg-[#002c5f] text-white rounded-lg text-xs font-semibold hover:bg-[#002c5f]/90 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
         >
           {submitting ? '...' : 'SUBMIT'}
