@@ -390,6 +390,7 @@ model Lead {
   tenor       Int?
   notes       String?  @db.Text
   ktpUrl      String?  // URL gambar KTP yang diupload
+  ocrSnapshot Json?    // Hasil OCR KTP yang ditinjau/dikoreksi user di ContactModal
   citizenType String?  // LOCAL | FOREIGNER
   motherName  String?  // Nama ibu kandung
   homeOwnershipStatus String? // Status kepemilikan rumah/bangunan
