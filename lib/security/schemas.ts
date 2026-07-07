@@ -122,6 +122,7 @@ const optionalHttpUrl = z
   .transform((v) => (v == null || v === '' ? null : v));
 
 import { LEAD_SOURCES } from '@/lib/lead-source';
+import { ocrKtpSnapshotSchema } from '@/lib/ocr-ktp-snapshot';
 
 export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER'] as const;
 
@@ -175,6 +176,7 @@ export const leadCreateSchema = z
     tenor: requiredFiniteNumber({ min: 1, max: 120, integer: true, label: 'tenor' }),
 
     ktpUrl: httpUrlSchema,
+    ocrSnapshot: ocrKtpSnapshotSchema,
     citizenType: z.enum(['LOCAL', 'FOREIGNER'], { message: 'citizenType wajib diisi' }),
     motherName: requiredSafeText(MAX_NAME, 'nama ibu kandung'),
     homeOwnershipStatus: z.enum(HOME_OWNERSHIP_VALUES, {

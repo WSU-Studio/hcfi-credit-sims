@@ -53,7 +53,6 @@ export function ResultStep({
   const [error, setError] = useState<string | null>(null);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
-  const [dpPercent, setDpPercent] = useState<number>(10);
   const [firstInstallment, setFirstInstallment] = useState<FirstInstallment>('ADDM');
   const [selectedTenor, setSelectedTenor] = useState<number>(36);
 
@@ -74,6 +73,11 @@ export function ResultStep({
 
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
+  // DP% dikunci per produk dari GetListDefaultProductNameFromRuleByLeadNo — ubah manual
+  // menyebabkan SimulateFinancialCalculate gagal / response kosong.
+  const dpPercent = selectedProduct?.DPPrcnt ?? 0;
+  // Hyundai: IsPromotion wajib true untuk produk dari tab Promotion (CalculateProductFromRule).
+  const isPromotion = tab === 'Promotion';
 
   // Tab promotion hanya relevan saat ada produk promo yang cocok partner code.
   // Kalau promo kosong (mis. partner code tidak cocok), balik ke tab Standard.
@@ -101,25 +105,17 @@ export function ResultStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otrPrice, leadNo, partnerCode]);
 
-  useEffect(() => {
-    if (selectedProduct) setDpPercent(selectedProduct.DPPrcnt);
-  }, [selectedProduct]);
-
-  // Auto-calculate setiap kali firstInstallment, selectedProduct, atau
-  // dpPercent berubah. Tidak ada guard `!simulateLoading` — supaya user bisa
-  // klik DP% berturut-turut dan request terbaru tetap dijalankan. Stale
-  // response di-drop via generation counter di `handleCalculate`.
+  // Auto-calculate setiap kali firstInstallment atau selectedProduct berubah.
+  // Stale response di-drop via generation counter di `handleCalculate`.
   useEffect(() => {
     if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode) {
-      // Debounce 100ms supaya klik beruntun (mis. drag tombol DP%) tidak
-      // generate puluhan request berurutan.
       const timer = setTimeout(() => {
         handleCalculate();
       }, 100);
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstInstallment, selectedProduct?.ProductCode, selectedProduct?.ProductName, dpPercent]);
+  }, [firstInstallment, selectedProduct?.ProductCode, selectedProduct?.ProductName, dpPercent, isPromotion]);
 
   // Bersihin in-flight request kalau komponen unmount.
   useEffect(() => {
@@ -165,7 +161,6 @@ export function ResultStep({
       const first = data.ListDefaultStandardProductObj?.[0];
       if (first) {
         setSelectedProduct((prev) => prev ?? first);
-        setDpPercent((prev) => (prev === 10 ? first.DPPrcnt : prev));
       }
     } catch (e) {
       if (generation !== fetchListGeneration.current) return;
@@ -201,7 +196,7 @@ export function ResultStep({
           productCode: selectedProduct.ProductCode,
           productName: selectedProduct.ProductName,
           firstInstallment,
-          isPromotion: tab === 'Promotion',
+          isPromotion,
           partnerCode,
         }),
         signal: controller.signal,
@@ -229,6 +224,16 @@ export function ResultStep({
       if (generation === simulateGeneration.current) {
         setSimulateLoading(false);
       }
+    }
+  };
+
+  const selectTab = (next: TabKind) => {
+    setTab(next);
+    const nextProducts = next === 'Standard' ? listStandard : listPromo;
+    const first = nextProducts[0];
+    if (first) {
+      setSelectedProduct(first);
+      setTableRows([]);
     }
   };
 
@@ -282,7 +287,7 @@ export function ResultStep({
         <div className="flex gap-2 p-1 rounded-xl bg-gray-100 border border-gray-200">
           <button
             type="button"
-            onClick={() => setTab('Standard')}
+            onClick={() => selectTab('Standard')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
               tab === 'Standard' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
             }`}
@@ -291,7 +296,7 @@ export function ResultStep({
           </button>
           <button
             type="button"
-            onClick={() => setTab('Promotion')}
+            onClick={() => selectTab('Promotion')}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
               tab === 'Promotion' ? 'bg-[#002c5f] text-white' : 'text-gray-600 hover:bg-gray-200'
             }`}
@@ -309,7 +314,6 @@ export function ResultStep({
             type="button"
             onClick={() => {
               setSelectedProduct(p);
-              setDpPercent(p.DPPrcnt);
               setTableRows([]);
             }}
             className={`p-4 rounded-xl border-2 text-left transition flex flex-col justify-start cursor-pointer ${
@@ -339,37 +343,13 @@ export function ResultStep({
             <div className="text-lg font-semibold">{otrPrice != null ? formatCurrency(otrPrice) : '-'}</div>
           </div>
 
-          {/* DP % */}
+          {/* DP % — dikunci sesuai DPPrcnt dari rule produk */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('dpPercent')}</label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {[10, 15, 20, 25, 30, 35, 50].map((pct) => (
-                <button
-                  key={pct}
-                  type="button"
-                  onClick={() => setDpPercent(pct)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
-                    dpPercent === pct ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]'
-                  }`}
-                >
-                  {pct} %
-                </button>
-              ))}
+            <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5">
+              <span className="text-lg font-semibold text-[#002c5f]">{dpPercent} %</span>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={5}
-                max={80}
-                value={dpPercent}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  if (!Number.isNaN(v) && v >= 5 && v <= 80) setDpPercent(v);
-                }}
-                className="w-24 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
-              />
-              <span className="text-gray-500">%</span>
-            </div>
+            <p className="mt-1 text-xs text-gray-500">{t('dpPercentLocked')}</p>
             <p className="mt-1 text-xs text-gray-500">
               DP: {otrPrice != null ? formatCurrency(Math.round((otrPrice * dpPercent) / 100)) : '-'}
             </p>

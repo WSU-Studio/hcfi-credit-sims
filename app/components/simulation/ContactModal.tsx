@@ -7,10 +7,18 @@ import type { Vendor } from '@/app/types/credit-simulation';
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import {
+  emptyOcrKtpSnapshot,
+  isOcrKtpSnapshotComplete,
+  type OcrKtpSnapshot,
+} from '@/lib/ocr-ktp-snapshot';
 import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import { HoneypotField } from '@/app/components/security/HoneypotField';
+import { KtpOcrReviewForm } from '@/app/components/simulation/KtpOcrReviewForm';
 
 export type UserLocation = { latitude: number; longitude: number } | null;
+
+type OcrCategory = 'SUCCESS' | 'EMPTY_READ' | 'HTTP_ERROR' | 'API_ERROR' | 'INVALID_JSON';
 
 interface ContactModalProps {
   open: boolean;
@@ -55,6 +63,13 @@ export function ContactModal({
   const [ktpFileName, setKtpFileName] = useState<string | null>(null);
   const [ktpUploading, setKtpUploading] = useState(false);
   const [ktpError, setKtpError] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrCategory, setOcrCategory] = useState<OcrCategory | null>(null);
+  const [ocrDiagnosis, setOcrDiagnosis] = useState<string | null>(null);
+  const [ocrSnapshot, setOcrSnapshot] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
+  const [ocrDraft, setOcrDraft] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
+  const [showOcrForm, setShowOcrForm] = useState(false);
   const [citizenType, setCitizenType] = useState<'LOCAL' | 'FOREIGNER'>('LOCAL');
   const [motherName, setMotherName] = useState('');
   const [homeOwnership, setHomeOwnership] = useState<string>('');
@@ -90,7 +105,14 @@ export function ContactModal({
   }, [open, userLocation]);
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showOcrForm) {
+        setShowOcrForm(false);
+        return;
+      }
+      onClose();
+    };
     if (open) {
       document.addEventListener('keydown', handleEsc);
       document.body.style.overflow = 'hidden';
@@ -99,7 +121,7 @@ export function ContactModal({
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open, onClose, showOcrForm]);
 
   useEffect(() => {
     if (!open) {
@@ -110,6 +132,13 @@ export function ContactModal({
        setKtpFileName(null);
        setKtpUploading(false);
        setKtpError(null);
+       setOcrLoading(false);
+       setOcrError(null);
+       setOcrCategory(null);
+       setOcrDiagnosis(null);
+       setOcrSnapshot(emptyOcrKtpSnapshot());
+       setOcrDraft(emptyOcrKtpSnapshot());
+       setShowOcrForm(false);
        setCitizenType('LOCAL');
        setMotherName('');
        setHomeOwnership('');
@@ -121,10 +150,88 @@ export function ContactModal({
     }
   }, [open]);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneDigits = phone.replace(/\D/g, '');
+  const isOcrComplete = isOcrKtpSnapshotComplete(ocrSnapshot);
+  const isFormComplete =
+    name.trim().length > 0 &&
+    phone.trim().length > 0 &&
+    phoneDigits.length >= 10 &&
+    email.trim().length > 0 &&
+    emailRegex.test(email) &&
+    Boolean(ktpUrl) &&
+    !ktpUploading &&
+    !ocrLoading &&
+    isOcrComplete &&
+    motherName.trim().length > 0 &&
+    homeOwnership.length > 0 &&
+    consent;
+
+  const runKtpOcr = async (file: File) => {
+    setOcrLoading(true);
+    setOcrError(null);
+    setOcrCategory(null);
+    setOcrDiagnosis(null);
+    setOcrSnapshot(emptyOcrKtpSnapshot());
+    setOcrDraft(emptyOcrKtpSnapshot());
+    setShowOcrForm(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/leads/ocr-ktp', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'OCR gagal');
+      }
+
+      setOcrCategory(data.category as OcrCategory);
+      setOcrDiagnosis(data.diagnosis ?? null);
+      const snapshot = (data.snapshot as OcrKtpSnapshot | undefined) ?? emptyOcrKtpSnapshot();
+      setOcrSnapshot(snapshot);
+      setOcrDraft(snapshot);
+      setShowOcrForm(true);
+
+      if (data.category === 'SUCCESS' || data.category === 'EMPTY_READ') {
+        if (!name.trim() && snapshot.nama.trim()) {
+          setName(snapshot.nama.trim());
+        }
+        if (snapshot.mrNationalityCode === 'FOREIGNER') {
+          setCitizenType('FOREIGNER');
+        } else if (snapshot.mrNationalityCode === 'LOCAL') {
+          setCitizenType('LOCAL');
+        }
+      }
+
+      if (data.category !== 'SUCCESS' && data.category !== 'EMPTY_READ') {
+        setOcrError(data.errorMessage || data.diagnosis || 'OCR gagal membaca KTP');
+      }
+    } catch (err) {
+      setOcrError(err instanceof Error ? err.message : 'OCR gagal');
+      setShowOcrForm(true);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleOpenOcrModal = () => {
+    setOcrDraft(ocrSnapshot);
+    setShowOcrForm(true);
+  };
+
+  const handleSaveOcrDraft = () => {
+    setOcrSnapshot(ocrDraft);
+    setShowOcrForm(false);
+  };
+
   const handleKtpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setKtpError(null);
+    setOcrError(null);
     setKtpUploading(true);
     try {
       const formData = new FormData();
@@ -139,6 +246,7 @@ export function ContactModal({
       }
       setKtpUrl(data.url);
       setKtpFileName(file.name);
+      await runKtpOcr(file);
     } catch (err) {
       setKtpError(err instanceof Error ? err.message : 'Upload gagal');
     } finally {
@@ -151,8 +259,15 @@ export function ContactModal({
     e.preventDefault();
     setError(null);
 
-    if (!name.trim() || !phone.trim() || !email.trim()) {
+    if (!name.trim() || !phone.trim() || !email.trim() || !ktpUrl || !motherName.trim() || !homeOwnership) {
       setError(t('pleaseFillAll'));
+      return;
+    }
+
+    if (!isOcrKtpSnapshotComplete(ocrSnapshot)) {
+      setError(t('ocrIncomplete'));
+      setOcrDraft(ocrSnapshot);
+      setShowOcrForm(true);
       return;
     }
 
@@ -190,6 +305,13 @@ export function ContactModal({
           dpPercent: dpPercent || null,
           tenor: tenor || null,
           ktpUrl,
+          ocrSnapshot: {
+            ...ocrSnapshot,
+            nama: ocrSnapshot.nama.trim() || name.trim(),
+            mrNationalityCode:
+              ocrSnapshot.mrNationalityCode ||
+              (citizenType === 'FOREIGNER' ? 'FOREIGNER' : 'LOCAL'),
+          },
           citizenType,
           motherName: motherName.trim() || null,
           homeOwnershipStatus: homeOwnership || null,
@@ -363,12 +485,13 @@ export function ContactModal({
             <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {citizenType === 'FOREIGNER' ? t('ktpUploadLabelForeigner') : t('ktpUploadLabel')}
+                  {citizenType === 'FOREIGNER' ? t('ktpUploadLabelForeigner') : t('ktpUploadLabel')}{' '}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <label
                     className={`inline-flex items-center h-11 px-4 rounded-lg bg-[#002c5f] text-white text-sm font-medium cursor-pointer transition-colors ${
-                      ktpUploading || loading || success
+                      ktpUploading || ocrLoading || loading || success
                         ? 'opacity-50 cursor-not-allowed pointer-events-none'
                         : 'hover:bg-[#002c5f]/90'
                     }`}
@@ -377,19 +500,27 @@ export function ContactModal({
                       type="file"
                       accept="image/*"
                       onChange={handleKtpChange}
-                      disabled={ktpUploading || loading || success}
+                      disabled={ktpUploading || ocrLoading || loading || success}
                       className="sr-only"
                     />
                     {t('browse')}
                   </label>
                   <span className={`text-sm ${ktpUrl ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
-                    {ktpUploading ? t('ktpUploading') : ktpUrl && ktpFileName ? ktpFileName : t('noFileSelected')}
+                    {ktpUploading
+                      ? t('ktpUploading')
+                      : ocrLoading
+                        ? t('ocrProcessing')
+                        : ktpUrl && ktpFileName
+                          ? ktpFileName
+                          : t('noFileSelected')}
                   </span>
                 </div>
-                {ktpUploading && (
-                  <p className="mt-1 text-xs text-gray-500">{t('ktpUploading')}</p>
+                {(ktpUploading || ocrLoading) && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {ktpUploading ? t('ktpUploading') : t('ocrProcessing')}
+                  </p>
                 )}
-                {ktpUrl && !ktpUploading && (
+                {ktpUrl && !ktpUploading && !ocrLoading && (
                   <p className="mt-1 text-xs text-green-600">
                     {t('ktpUploadSuccess')}
                   </p>
@@ -397,20 +528,47 @@ export function ContactModal({
                 {ktpError && (
                   <p className="mt-1 text-xs text-red-600">{ktpError}</p>
                 )}
+                {ocrError && (
+                  <p className="mt-1 text-xs text-amber-700">{ocrError}</p>
+                )}
+                {ocrCategory === 'EMPTY_READ' && ocrDiagnosis && (
+                  <p className="mt-1 text-xs text-amber-700">{ocrDiagnosis}</p>
+                )}
                 <p className="mt-1 text-xs text-gray-500">
                   {t('ktpUploadHint')}
                 </p>
+                {ktpUrl && !ocrLoading && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (showOcrForm) {
+                          setShowOcrForm(false);
+                          return;
+                        }
+                        handleOpenOcrModal();
+                      }}
+                      className="text-xs font-medium text-[#002c5f] hover:text-[#002c5f]/80 cursor-pointer border border-gray-300 rounded-lg px-2 py-1"
+                    >
+                      {showOcrForm ? t('ocrHideData') : t('ocrShowData')}
+                    </button>
+                    <span className={`text-xs font-medium ${isOcrComplete ? 'text-green-600' : 'text-red-600'}`}>
+                      {isOcrComplete ? t('ocrStatusComplete') : t('ocrStatusIncomplete')}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label htmlFor="mother-name" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {t('motherNameLabel')}
+                  {t('motherNameLabel')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="mother-name"
                   type="text"
                   value={motherName}
                   onChange={(e) => setMotherName(e.target.value)}
+                  required
                   disabled={loading || success}
                   className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder={t('motherNamePlaceholder')}
@@ -419,12 +577,13 @@ export function ContactModal({
 
               <div>
                 <label htmlFor="home-ownership" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {t('homeOwnershipLabel')}
+                  {t('homeOwnershipLabel')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="home-ownership"
                   value={homeOwnership}
                   onChange={(e) => setHomeOwnership(e.target.value)}
+                  required
                   disabled={loading || success}
                   className="w-full h-11 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
                 >
@@ -478,7 +637,7 @@ export function ContactModal({
             </button>
             <button
               type="submit"
-              disabled={loading || success || !consent}
+              disabled={loading || success || !isFormComplete}
               className="flex-1 px-4 py-2.5 bg-[#002c5f] text-white rounded-lg font-medium hover:bg-[#002c5f]/90 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? t('sending') : success ? t('success') : t('submitContact')}
@@ -486,6 +645,59 @@ export function ContactModal({
           </div>
         </form>
       </div>
+
+      {showOcrForm && ktpUrl && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t('close')}
+            onClick={() => setShowOcrForm(false)}
+            className="absolute inset-0 bg-black/50"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('ocrReviewTitle')}
+            className="relative z-10 w-full max-w-5xl rounded-xl bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <h3 className="text-sm font-semibold text-gray-900">{t('ocrReviewTitle')}</h3>
+              <button
+                type="button"
+                onClick={() => setShowOcrForm(false)}
+                className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition"
+                aria-label={t('close')}
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+            <div className="max-h-[75vh] overflow-y-auto p-4">
+              <KtpOcrReviewForm
+                value={ocrDraft}
+                onChange={setOcrDraft}
+                disabled={loading || success}
+              />
+            </div>
+            <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setShowOcrForm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveOcrDraft}
+                disabled={loading || success}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#002c5f] rounded-lg hover:bg-[#002c5f]/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('ocrSaveData')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

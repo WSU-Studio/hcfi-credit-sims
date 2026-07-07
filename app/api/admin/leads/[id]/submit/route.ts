@@ -7,6 +7,7 @@ import {
   submitLeadToHyundai,
 } from '@/lib/hyundai-lead-integration';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import { parseOcrKtpSnapshot } from '@/lib/ocr-ktp-snapshot';
 import { adminHyundaiCallLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
@@ -145,6 +146,7 @@ export async function POST(
         citizenType: lead.citizenType,
         notes: lead.notes,
         ktpUrl: lead.ktpUrl,
+        ocrSnapshot: parseOcrKtpSnapshot(lead.ocrSnapshot),
         simulationLeadNo: lead.simulationLeadNo,
       },
       vendor,
