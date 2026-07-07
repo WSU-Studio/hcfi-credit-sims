@@ -14,6 +14,7 @@ import {
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 import { filterPromotionByPartnerCode, normalizePartnerCode } from '@/lib/hyundai-partner';
+import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-rows';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -208,9 +209,13 @@ export function ResultStep({
         if (data?.errorId) setErrorId(String(data.errorId));
         throw new Error(data.error || t('errorCalculate'));
       }
-      setTableRows(data.ListProductObj ?? []);
-      const row36 = (data.ListProductObj ?? []).find((r: ProductCalculation) => r.Tenor === 36);
-      const first = (data.ListProductObj ?? [])[0];
+      const rows = filterProductRowsByFirstInstallment(
+        data.ListProductObj ?? [],
+        firstInstallment
+      );
+      setTableRows(rows);
+      const row36 = rows.find((r) => r.Tenor === 36);
+      const first = rows[0];
       setSelectedTenor(row36?.Tenor ?? first?.Tenor ?? 36);
     } catch (e) {
       // AbortError dari controller.abort() bukan error sungguhan — skip diam-diam.

@@ -13,6 +13,8 @@ import {
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
 import { applyPartnerFields } from '@/lib/hyundai-partner';
+import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-rows';
+import type { ProductCalculation } from '@/app/types/credit-simulation';
 
 /**
  * Hyundai Fase 2 — kalkulasi cicilan per tenor untuk satu produk yang user pilih.
@@ -76,7 +78,14 @@ export async function POST(request: NextRequest) {
       await simulateDelay(400);
       const custom = siteMock.content?.simulate;
       if (custom && Array.isArray(custom.ListProductObj) && custom.ListProductObj.length > 0) {
-        return NextResponse.json({ ...custom, dataSource: 'mock-site-settings' });
+        return NextResponse.json({
+          ...custom,
+          ListProductObj: filterProductRowsByFirstInstallment(
+            custom.ListProductObj as ProductCalculation[],
+            resolvedFirstInstallment
+          ),
+          dataSource: 'mock-site-settings',
+        });
       }
       const res = mockApi.calculateProductFromRule({
         otrPrice: Number(otrPrice),
@@ -147,7 +156,12 @@ export async function POST(request: NextRequest) {
         throw new Error(String(apiMessage || 'Calculate failed'));
       }
 
-      return NextResponse.json(data);
+      const list = ((data as { ListProductObj?: ProductCalculation[] }).ListProductObj ??
+        []) as ProductCalculation[];
+      return NextResponse.json({
+        ...(data as object),
+        ListProductObj: filterProductRowsByFirstInstallment(list, resolvedFirstInstallment),
+      });
     } catch (e) {
       const rawMessage = e instanceof Error ? e.message : 'Calculate failed';
       const errorId = extractHyundaiErrorId(e);
