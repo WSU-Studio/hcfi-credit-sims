@@ -93,7 +93,7 @@
     "selected": "Selected:",
     "otr": "OTR",
     "dpPercent": "DP %",
-    "dpPercentLocked": "DP % is set automatically based on the selected credit product rules.",
+    "dpPercentMinHint": "Minimum DP is {min}% based on the selected credit product rules.",
     "firstInstallmentType": "First Installment Type",
     "addmAddbHint": "ADDM = first installment paid in advance; ADDB = first installment paid in arrears",
     "calculating": "Calculating simulation...",

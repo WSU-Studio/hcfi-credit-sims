@@ -19,6 +19,20 @@ import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-r
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
 
+const DP_PRESET_OPTIONS = [10, 15, 20, 25, 30, 35, 50] as const;
+
+function resolveMinDpPercent(product: ProductCalculation | null): number {
+  if (!product) return 0;
+  if ((product.DPPrcntBhv ?? '').trim().toUpperCase() !== 'MIN') return 0;
+  return Number(product.DPPrcnt) || 0;
+}
+
+function resolveDefaultDpPercent(product: ProductCalculation): number {
+  const min = resolveMinDpPercent(product);
+  const ruleDp = Number(product.DPPrcnt) || 10;
+  return Math.max(min, ruleDp);
+}
+
 interface ResultStepProps {
   leadNo?: string;
   otrPrice?: number;
@@ -54,6 +68,7 @@ export function ResultStep({
   const [error, setError] = useState<string | null>(null);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
+  const [dpPercent, setDpPercent] = useState<number>(10);
   const [firstInstallment, setFirstInstallment] = useState<FirstInstallment>('ADDM');
   const [selectedTenor, setSelectedTenor] = useState<number>(36);
 
@@ -74,9 +89,7 @@ export function ResultStep({
 
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
-  // DP% dikunci per produk dari GetListDefaultProductNameFromRuleByLeadNo — ubah manual
-  // menyebabkan SimulateFinancialCalculate gagal / response kosong.
-  const dpPercent = selectedProduct?.DPPrcnt ?? 0;
+  const minDpPercent = resolveMinDpPercent(selectedProduct);
   // Hyundai: IsPromotion wajib true untuk produk dari tab Promotion (CalculateProductFromRule).
   const isPromotion = tab === 'Promotion';
 
@@ -106,7 +119,16 @@ export function ResultStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otrPrice, leadNo, partnerCode]);
 
-  // Auto-calculate setiap kali firstInstallment atau selectedProduct berubah.
+  useEffect(() => {
+    if (!selectedProduct) return;
+    setDpPercent((prev) => {
+      const min = resolveMinDpPercent(selectedProduct);
+      if (prev < min) return resolveDefaultDpPercent(selectedProduct);
+      return prev;
+    });
+  }, [selectedProduct]);
+
+  // Auto-calculate setiap kali firstInstallment, selectedProduct, atau dpPercent berubah.
   // Stale response di-drop via generation counter di `handleCalculate`.
   useEffect(() => {
     if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode) {
@@ -162,6 +184,7 @@ export function ResultStep({
       const first = data.ListDefaultStandardProductObj?.[0];
       if (first) {
         setSelectedProduct((prev) => prev ?? first);
+        setDpPercent((prev) => (prev === 10 ? resolveDefaultDpPercent(first) : prev));
       }
     } catch (e) {
       if (generation !== fetchListGeneration.current) return;
@@ -232,14 +255,17 @@ export function ResultStep({
     }
   };
 
+  const selectProduct = (product: ProductCalculation) => {
+    setSelectedProduct(product);
+    setDpPercent(resolveDefaultDpPercent(product));
+    setTableRows([]);
+  };
+
   const selectTab = (next: TabKind) => {
     setTab(next);
     const nextProducts = next === 'Standard' ? listStandard : listPromo;
     const first = nextProducts[0];
-    if (first) {
-      setSelectedProduct(first);
-      setTableRows([]);
-    }
+    if (first) selectProduct(first);
   };
 
   const formatCurrency = (n: number) =>
@@ -317,10 +343,7 @@ export function ResultStep({
           <button
             key={`${p.ProductCode}-${p.ProductName}`}
             type="button"
-            onClick={() => {
-              setSelectedProduct(p);
-              setTableRows([]);
-            }}
+            onClick={() => selectProduct(p)}
             className={`p-4 rounded-xl border-2 text-left transition flex flex-col justify-start cursor-pointer ${
               selectedProduct?.ProductName === p.ProductName
                 ? 'border-[#002c5f] bg-[#002c5f]/10'
@@ -348,13 +371,51 @@ export function ResultStep({
             <div className="text-lg font-semibold">{otrPrice != null ? formatCurrency(otrPrice) : '-'}</div>
           </div>
 
-          {/* DP % — dikunci sesuai DPPrcnt dari rule produk */}
+          {/* DP % — pilihan di atas minimum rule (DPPrcnt + DPPrcntBhv Min) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('dpPercent')}</label>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5">
-              <span className="text-lg font-semibold text-[#002c5f]">{dpPercent} %</span>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {DP_PRESET_OPTIONS.map((pct) => {
+                const belowMin = pct < minDpPercent;
+                return (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setDpPercent(pct)}
+                    disabled={belowMin}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      belowMin
+                        ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                        : dpPercent === pct
+                          ? 'bg-[#002c5f] text-white cursor-pointer'
+                          : 'bg-white border border-gray-300 hover:border-[#002c5f] cursor-pointer'
+                    }`}
+                  >
+                    {pct} %
+                  </button>
+                );
+              })}
             </div>
-            <p className="mt-1 text-xs text-gray-500">{t('dpPercentLocked')}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={Math.max(5, minDpPercent)}
+                max={80}
+                value={dpPercent}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  const floor = Math.max(5, minDpPercent);
+                  if (!Number.isNaN(v) && v >= floor && v <= 80) setDpPercent(v);
+                }}
+                className="w-24 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
+              />
+              <span className="text-gray-500">%</span>
+            </div>
+            {minDpPercent > 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                {t('dpPercentMinHint', { min: minDpPercent })}
+              </p>
+            )}
             <p className="mt-1 text-xs text-gray-500">
               DP: {otrPrice != null ? formatCurrency(Math.round((otrPrice * dpPercent) / 100)) : '-'}
             </p>

@@ -93,7 +93,7 @@
     "selected": "Selected:",
     "otr": "OTR",
     "dpPercent": "DP %",
-    "dpPercentLocked": "DP % ditetapkan otomatis sesuai aturan produk kredit yang dipilih.",
+    "dpPercentMinHint": "Minimum DP {min}% sesuai aturan produk kredit yang dipilih.",
     "firstInstallmentType": "Tipe Angsuran Pertama",
     "addmAddbHint": "ADDM = angsuran pertama dibayar di muka; ADDB = angsuran pertama dibayar belakang",
     "calculating": "Menghitung simulasi...",
