@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
       dpPercent: data.dpPercent,
       tenor: data.tenor != null ? Math.trunc(data.tenor) : null,
       ktpUrl: data.ktpUrl,
+      ocrSnapshot: data.ocrSnapshot as object,
       citizenType: data.citizenType,
       motherName: data.motherName,
       homeOwnershipStatus: data.homeOwnershipStatus,

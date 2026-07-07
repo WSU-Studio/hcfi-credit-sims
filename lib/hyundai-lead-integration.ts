@@ -16,12 +16,16 @@
  *     7. SaveFinalCalculateResult
  *
  *   Fase 3 — Customer Data
- *     8.  GetOcrKtpData                          (OCR)
- *     9.  GetLocationDataByZipcode               (Master Data Dropdown)
- *     10. sync insurance                         (helper internal)
- *     11. ValidateCustZipCode                    (Validation, fail-fast)
- *     12. ValidateDuplicatePhoneAndEmail         (Validation, fail-fast)
- *     13. AddLeadCust                            (Save — ujung Fase 3)
+ *     8.  GetOcrKtpData                          (OCR — sumber alamat/AreaCode/ZipCode)
+ *     9.  sync insurance                         (helper internal)
+ *     10. ValidateCustZipCode                    (Validation, fail-fast)
+ *     11. ValidateDuplicatePhoneAndEmail         (Validation, fail-fast)
+ *     12. AddLeadCust                            (Save — ujung Fase 3)
+ *
+ *   Catatan Fase 3: AreaCode1 (kecamatan) / AreaCode2 (kelurahanDesa) / City /
+ *   ZipCode diambil apa adanya dari hasil OCR — TIDAK lagi via
+ *   GetLocationDataByZipcode (yang dulu fallback ke area dealer sehingga alamat
+ *   customer jadi salah). Nilai yang divalidasi = nilai yang dikirim.
  *
  * Catatan:
  *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
@@ -59,14 +63,17 @@ import { bootstrapLeadFinancialAndInsurance } from '@/lib/hyundai-lead-financial
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { syncLeadAssetInsurance } from '@/lib/hyundai-insurance';
 import { resolveDefaultOemAccessories, type ResolvedOemAccessories } from '@/lib/hyundai-oem-accessory';
-import {
-  resolveCustomerLocation,
-  type HyundaiCustomerLocation,
-} from '@/lib/hyundai-zipcode-resolve';
+import type { HyundaiCustomerLocation } from '@/lib/hyundai-zipcode-resolve';
 import {
   validateCustomerZipcode,
   validateCustomerPhoneAndEmail,
 } from '@/lib/hyundai-customer-validation';
+import {
+  isOcrKtpSnapshotComplete,
+  parseOcrKtpSnapshot,
+  snapshotToOcrRead,
+  type OcrKtpSnapshot,
+} from '@/lib/ocr-ktp-snapshot';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
 import {
   HYUNDAI_VENDOR_LIST_PATH,
@@ -155,7 +162,7 @@ export async function fetchVendorsForAssignment(): Promise<Vendor[]> {
     HYUNDAI_VENDOR_LIST_PATH,
     buildHyundaiVendorListBody({
       hasAvailableAssetOnly: true,
-      hasCmoAssignedOnly: true,
+      hasCmoAssignedOnly: false,
     })
   );
   return data.ReturnObject ?? [];
@@ -178,6 +185,8 @@ export type LeadRecordForHyundai = {
   citizenType: string | null;
   notes: string | null;
   ktpUrl: string | null;
+  /** Hasil OCR yang ditinjau user di ContactModal — dipakai saat admin submit. */
+  ocrSnapshot?: OcrKtpSnapshot | null;
   /** LeadNo dari simulasi Step 4 — dipakai untuk reuse saat office CMO cocok. */
   simulationLeadNo?: string | null;
   /**
@@ -332,8 +341,19 @@ async function finalizeLeadCustomerPhase(params: {
   ktpFile?: { fileName: string; base64: string; buffer: Buffer };
 }): Promise<void> {
   let ocrRead: OcrKtpRead | null = null;
+  const savedSnapshot = parseOcrKtpSnapshot(params.lead.ocrSnapshot);
 
-  if (params.ktpFile) {
+  if (savedSnapshot && isOcrKtpSnapshotComplete(savedSnapshot)) {
+    ocrRead = snapshotToOcrRead(savedSnapshot);
+    await persistOcrResult({
+      leadId: params.lead.id,
+      hyundaiLeadNo: params.leadNo,
+      ktpFileName: params.ktpFile?.fileName,
+      status: 'SUCCESS',
+      rawResponse: { source: 'contact_modal_review', snapshot: savedSnapshot },
+      read: ocrRead,
+    });
+  } else if (params.ktpFile) {
     try {
       const ocrRes = await getOcrKtpData({
         trxNo: params.leadNo,
@@ -365,10 +385,18 @@ async function finalizeLeadCustomerPhase(params: {
     }
   }
 
-  const customerLocation = await resolveCustomerLocation({
-    ocr: ocrRead,
-    vendorZipCode: params.vendor.ZipCode,
-  });
+  // AreaCode1/2, ZipCode, City diambil apa adanya dari hasil OCR (bukan lagi
+  // di-resolve via GetLocationDataByZipcode yang dulu fallback ke area dealer).
+  // Objek ini dipakai konsisten oleh insurance sync, ValidateCustZipCode, dan
+  // AddLeadCust — jadi yang divalidasi = yang dikirim. Kalau OCR kosong, Hyundai
+  // yang akan menolak (tidak ada fallback dealer yang mengaburkan alamat asli).
+  const customerLocation: HyundaiCustomerLocation = {
+    zipCode: ocrRead?.Zipcode?.trim() ?? '',
+    city: ocrRead?.kotaKabupaten?.trim() ?? '',
+    areaCode1: ocrRead?.kecamatan?.trim() ?? '',
+    areaCode2: ocrRead?.kelurahanDesa?.trim() ?? '',
+    province: ocrRead?.provinsi?.trim() || undefined,
+  };
 
   const idNo = ocrRead?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000';
   await syncLeadAssetInsurance({
@@ -415,7 +443,8 @@ async function finalizeLeadCustomerPhase(params: {
         '[submitLeadToHyundai] AddLeadCust menolak IdFile.Content, retry tanpa lampiran KTP:',
         msg
       );
-      const { IdFile: _omitted, ...withoutIdFile } = addLeadCustPayload;
+      const withoutIdFile = { ...addLeadCustPayload };
+      delete withoutIdFile.IdFile;
       await hyundaiPostLogged('/v1/IntegrationWebsite/AddLeadCust', withoutIdFile, {
         leadId: params.lead.id,
         hyundaiLeadNo: params.leadNo,
