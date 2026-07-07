@@ -11,6 +11,7 @@ type LeadSummary = {
   phone: string;
   email: string;
   ktpUrl: string | null;
+  ocrSnapshot?: unknown;
 };
 
 type OcrRow = {
@@ -39,8 +40,84 @@ type OcrRow = {
   lead: LeadSummary;
 };
 
+type ComparableField = {
+  label: string;
+  snapshot: string;
+  raw: string;
+  payload: string;
+};
+
 const formatDate = (date: string) =>
   new Date(date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+
+const toComparable = (value: unknown): string => {
+  if (value == null) return '';
+  return String(value).trim();
+};
+
+const equalValue = (a: string, b: string): boolean =>
+  a.replace(/\s+/g, ' ').toUpperCase() === b.replace(/\s+/g, ' ').toUpperCase();
+
+function buildComparisonRows(row: OcrRow): ComparableField[] {
+  const snapshot = asRecord(row.lead.ocrSnapshot);
+  const raw = asRecord(row.rawResponse);
+  const read = asRecord(raw.Read);
+  const payload = asRecord(row.addLeadCustPayload);
+
+  return [
+    {
+      label: 'NIK / IdNo',
+      snapshot: toComparable(snapshot.nik),
+      raw: toComparable(read.nik),
+      payload: toComparable(payload.IdNo),
+    },
+    {
+      label: 'Nama',
+      snapshot: toComparable(snapshot.nama),
+      raw: toComparable(read.nama),
+      payload: toComparable(payload.CustName),
+    },
+    {
+      label: 'Kecamatan / AreaCode1',
+      snapshot: toComparable(snapshot.kecamatan),
+      raw: toComparable(read.kecamatan),
+      payload: toComparable(payload.AreaCode1),
+    },
+    {
+      label: 'Kelurahan / AreaCode2',
+      snapshot: toComparable(snapshot.kelurahanDesa),
+      raw: toComparable(read.kelurahanDesa),
+      payload: toComparable(payload.AreaCode2),
+    },
+    {
+      label: 'RW / AreaCode3',
+      snapshot: toComparable(snapshot.Rw),
+      raw: toComparable(read.Rw),
+      payload: toComparable(payload.AreaCode3),
+    },
+    {
+      label: 'RT / AreaCode4',
+      snapshot: toComparable(snapshot.Rt),
+      raw: toComparable(read.Rt),
+      payload: toComparable(payload.AreaCode4),
+    },
+    {
+      label: 'Kota / City',
+      snapshot: toComparable(snapshot.kotaKabupaten),
+      raw: toComparable(read.kotaKabupaten),
+      payload: toComparable(payload.City),
+    },
+    {
+      label: 'Zipcode',
+      snapshot: toComparable(snapshot.Zipcode),
+      raw: toComparable(read.Zipcode),
+      payload: toComparable(payload.ZipCode),
+    },
+  ];
+}
 
 export function LeadOcrTable() {
   const [rows, setRows] = useState<OcrRow[]>([]);
@@ -85,6 +162,7 @@ export function LeadOcrTable() {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 cursor-pointer"
         >
           <option value="">Semua status</option>
+          <option value="DRAFT">DRAFT</option>
           <option value="SUCCESS">SUCCESS</option>
           <option value="FAILED">FAILED</option>
         </select>
@@ -118,6 +196,7 @@ export function LeadOcrTable() {
             <tbody className="divide-y divide-gray-200 bg-white">
               {rows.map((row) => {
                 const expanded = expandedId === row.id;
+                const compareRows = buildComparisonRows(row);
                 return (
                   <Fragment key={row.id}>
                     <tr className="hover:bg-gray-50">
@@ -142,6 +221,8 @@ export function LeadOcrTable() {
                           className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
                             row.status === 'SUCCESS'
                               ? 'bg-green-100 text-green-800'
+                              : row.status === 'DRAFT'
+                                ? 'bg-amber-100 text-amber-800'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
@@ -205,6 +286,58 @@ export function LeadOcrTable() {
                               </dl>
                             </div>
                             <div className="space-y-3">
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                                  Snapshot OCR (Contact Modal)
+                                </h4>
+                                <JsonBlock value={row.lead.ocrSnapshot ?? null} />
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                                  Perbandingan Snapshot vs Raw vs Payload
+                                </h4>
+                                <div className="overflow-x-auto border border-gray-200 rounded-md bg-white">
+                                  <table className="min-w-full text-xs">
+                                    <thead className="bg-gray-50">
+                                      <tr>
+                                        <th className="px-2 py-1 text-left text-gray-600">Field</th>
+                                        <th className="px-2 py-1 text-left text-gray-600">Snapshot</th>
+                                        <th className="px-2 py-1 text-left text-gray-600">Raw OCR</th>
+                                        <th className="px-2 py-1 text-left text-gray-600">Payload</th>
+                                        <th className="px-2 py-1 text-left text-gray-600">Status</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {compareRows.map((item) => {
+                                        const matchSnapshotPayload = equalValue(item.snapshot, item.payload);
+                                        const matchRawPayload = equalValue(item.raw, item.payload);
+                                        const ok = item.payload
+                                          ? matchSnapshotPayload || matchRawPayload
+                                          : false;
+                                        return (
+                                          <tr key={item.label}>
+                                            <td className="px-2 py-1 font-medium text-gray-700">{item.label}</td>
+                                            <td className="px-2 py-1 text-gray-900">{item.snapshot || '—'}</td>
+                                            <td className="px-2 py-1 text-gray-900">{item.raw || '—'}</td>
+                                            <td className="px-2 py-1 text-gray-900">{item.payload || '—'}</td>
+                                            <td className="px-2 py-1">
+                                              <span
+                                                className={`inline-flex px-1.5 py-0.5 rounded font-medium ${
+                                                  ok
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
+                                                }`}
+                                              >
+                                                {ok ? 'match' : 'mismatch'}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
                                   Response OCR (raw)
