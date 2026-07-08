@@ -351,9 +351,9 @@ export function ResultStep({
             }`}
           >
             <div className="font-semibold mb-2">{p.ProductName}</div>
-            <div className="text-xs text-gray-500 mb-1">TDP: {formatCurrency(p.TdpAmt)}</div>
+            <div className="text-xs text-gray-500 mb-1">{t('productCardTdp')}: {formatCurrency(p.TdpAmt)}</div>
             <div className="text-sm font-bold text-[#002c5f]">
-              Installment: {formatCurrency(p.InstallmentAmt)}
+              {t('productCardInstallment')}: {formatCurrency(p.InstallmentAmt)}
             </div>
           </button>
         ))}
@@ -417,7 +417,7 @@ export function ResultStep({
               </p>
             )}
             <p className="mt-1 text-xs text-gray-500">
-              DP: {otrPrice != null ? formatCurrency(Math.round((otrPrice * dpPercent) / 100)) : '-'}
+              {t('dpAmountLabel')}: {otrPrice != null ? formatCurrency(Math.round((otrPrice * dpPercent) / 100)) : '-'}
             </p>
           </div>
 
@@ -546,7 +546,12 @@ export function ResultStep({
                 {!isDealerSales && (
                   <a
                     href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
-                      `Halo, saya tertarik simulasi:\n${selectedProduct.ProductName}\nDP ${dpPercent}%\nTenor ${highlightedRow.Tenor} bln\nAngsuran ${formatCurrency(highlightedRow.InstallmentAmt)}/bln`
+                      t('whatsappMessageTemplate', {
+                        productName: selectedProduct.ProductName,
+                        dpPercent,
+                        tenor: highlightedRow.Tenor,
+                        installment: formatCurrency(highlightedRow.InstallmentAmt),
+                      })
                     )}`}
                     target="_blank"
                     rel="noreferrer"
@@ -592,7 +597,7 @@ export function ResultStep({
                 leadSource={leadSource}
                 productName={
                   highlightedRow
-                    ? `${selectedProduct?.ProductName} - Tenor ${highlightedRow.Tenor} bulan`
+                    ? `${selectedProduct?.ProductName} - ${t('tenorWithMonths', { tenor: highlightedRow.Tenor })}`
                     : selectedProduct?.ProductName
                 }
                 otrPrice={otrPrice ?? undefined}
