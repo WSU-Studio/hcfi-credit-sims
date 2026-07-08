@@ -69,6 +69,7 @@ export function SimulationWizard({
     manufacturingYear?: number;
     fscCode?: string;
     trimName?: string;
+    variantPrice?: number;
     exteriorColorCode?: string;
     exteriorColorName?: string;
     interiorColorCode?: string;
@@ -139,6 +140,7 @@ export function SimulationWizard({
     manufacturingYear: number;
     fscCode: string;
     trimName: string;
+    variantPrice?: number;
     exteriorColorCode: string;
     exteriorColorName: string;
     interiorColorCode: string;
@@ -403,7 +405,7 @@ export function SimulationWizard({
               {currentStepKey === 'price' && (
                 <PriceStep
                   modelName={selectedAsset!.AssetName}
-                  suggestedPrice={selectedAsset!.Price}
+                  suggestedPrice={specs.variantPrice ?? selectedAsset!.Price}
                   assetCode={selectedAsset!.AssetCode}
                   lockPromotionDiscount={isDealerSales}
                   onComplete={handlePriceComplete}

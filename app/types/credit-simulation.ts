@@ -58,6 +58,8 @@ export interface ManufacturingYear {
 export interface AssetVariant extends KeyValuePair {
   Key: string; // FscCode (trim code)
   Value: string; // SANTA FE HEV PRIME
+  /** OTR price per variant from GetListAssetVariantByModelManufYear */
+  Price?: number;
 }
 
 // Color Types

@@ -11,6 +11,7 @@ interface SpecificationStepProps {
     manufacturingYear: number;
     fscCode: string;
     trimName: string;
+    variantPrice?: number;
     exteriorColorCode: string;
     exteriorColorName: string;
     interiorColorCode: string;
@@ -20,6 +21,7 @@ interface SpecificationStepProps {
     manufacturingYear?: number;
     fscCode?: string;
     trimName?: string;
+    variantPrice?: number;
     exteriorColorCode?: string;
     exteriorColorName?: string;
     interiorColorCode?: string;
@@ -70,7 +72,17 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
         body: JSON.stringify({ ModelCode: modelCode, DealerCode: dealerCode, ManufYear: selectedYear }),
       });
       const data = await response.json();
-      if (data.ReturnObject) setVariants(data.ReturnObject);
+      if (data.ReturnObject) {
+        setVariants(
+          (data.ReturnObject as AssetVariant[]).map((variant) => ({
+            ...variant,
+            Price:
+              variant.Price != null && !Number.isNaN(Number(variant.Price))
+                ? Number(variant.Price)
+                : undefined,
+          }))
+        );
+      }
     } catch (err) {
       console.error('Error fetching variants:', err);
     } finally {
@@ -181,6 +193,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
         manufacturingYear: selectedYear as number,
         fscCode: selectedVariant,
         trimName: variant.Value,
+        variantPrice: variant.Price,
         exteriorColorCode: selectedExtColor,
         exteriorColorName: extColor.Value,
         interiorColorCode: selectedIntColor,
