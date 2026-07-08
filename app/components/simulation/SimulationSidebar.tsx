@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { Vendor, AssetMaster } from '@/app/types/credit-simulation';
 import { IconMapPin } from '@tabler/icons-react';
 import { VehicleImage } from '@/app/components/simulation/VehicleImage';
@@ -17,6 +18,7 @@ interface SimulationSidebarProps {
 }
 
 export function SimulationSidebar({ dealer, asset, specs, onChangeModel }: SimulationSidebarProps) {
+  const t = useTranslations('creditSimulation');
   const location = [dealer.City, dealer.VendorName].filter(Boolean).join(', ');
 
   return (
@@ -41,30 +43,30 @@ export function SimulationSidebar({ dealer, asset, specs, onChangeModel }: Simul
         onClick={onChangeModel}
         className="w-full py-2.5 rounded-lg border-2 border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-100 hover:border-gray-400 transition mb-5"
       >
-        Ganti Model
+        {t('changeModel')}
       </button>
 
       {/* Specs */}
       <dl className="space-y-1.5 text-sm">
         <div>
-          <dt className="text-gray-500 text-xs font-medium">Model</dt>
+          <dt className="text-gray-500 text-xs font-medium">{t('stepModel')}</dt>
           <dd className="text-gray-900 font-semibold mt-0.5">{asset.AssetName || '—'}</dd>
         </div>
         <div>
-          <dt className="text-gray-500 text-xs font-medium">Tipe</dt>
+          <dt className="text-gray-500 text-xs font-medium">{t('sidebarTypeLabel')}</dt>
           <dd className="text-gray-900 font-semibold mt-0.5">{specs.trimName || '—'}</dd>
         </div>
         <div>
-          <dt className="text-gray-500 text-xs font-medium">Exterior</dt>
+          <dt className="text-gray-500 text-xs font-medium">{t('sidebarExteriorLabel')}</dt>
           <dd className="text-gray-900 font-semibold mt-0.5">{specs.exteriorColorName || '—'}</dd>
         </div>
         <div>
-          <dt className="text-gray-500 text-xs font-medium">Interior</dt>
+          <dt className="text-gray-500 text-xs font-medium">{t('sidebarInteriorLabel')}</dt>
           <dd className="text-gray-900 font-semibold mt-0.5">{specs.interiorColorName || '—'}</dd>
         </div>
         {specs.manufacturingYear && (
           <div>
-            <dt className="text-gray-500 text-xs font-medium">Tahun</dt>
+            <dt className="text-gray-500 text-xs font-medium">{t('sidebarYearLabel')}</dt>
             <dd className="text-gray-900 font-semibold mt-0.5">{specs.manufacturingYear}</dd>
           </div>
         )}

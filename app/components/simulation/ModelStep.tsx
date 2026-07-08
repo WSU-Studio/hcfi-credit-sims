@@ -1,16 +1,12 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import type { AssetMaster } from '@/app/types/credit-simulation';
 
-const CATEGORIES = [
-  { key: 'ALL', label: 'Semua' },
-  { key: 'SUV', label: 'SUV' },
-  { key: 'EV', label: 'EV' },
-  { key: 'MPV', label: 'MPV' },
-] as const;
+const CATEGORY_KEYS = ['ALL', 'SUV', 'EV', 'MPV'] as const;
 
-type CategoryKey = (typeof CATEGORIES)[number]['key'];
+type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
 interface ModelStepProps {
   dealerCode: string;
@@ -19,6 +15,7 @@ interface ModelStepProps {
 }
 
 export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProps) {
+  const t = useTranslations('creditSimulation');
   const [assets, setAssets] = useState<AssetMaster[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +50,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
         setAssets(data.ListAssetMasterObj);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load models';
+      const message = err instanceof Error ? err.message : t('errorLoadModels');
       setError(message);
       console.error('Error fetching assets:', err);
     } finally {
@@ -77,9 +74,9 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
   return (
     <div className="space-y-6 text-gray-900">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Pilih Model Mobil</h2>
+        <h2 className="text-2xl font-semibold mb-2">{t('modelStepTitle')}</h2>
         <p className="text-[var(--muted)]">
-          Pilih tipe kendaraan, lalu model yang ingin Anda simulasi
+          {t('modelStepDescription')}
         </p>
       </div>
 
@@ -94,11 +91,11 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
 
       {loading ? (
         <div className="py-12 text-center text-[var(--muted)]">
-          Memuat model mobil...
+          {t('loadingModels')}
         </div>
       ) : assets.length === 0 ? (
         <div className="py-12 text-center text-[var(--muted)]">
-          Tidak ada model tersedia untuk dealer ini
+          {t('noModelsForDealer')}
         </div>
       ) : (
         <>
@@ -106,31 +103,32 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
           <div
             className="flex flex-wrap gap-2 p-1 rounded-xl bg-[var(--muted)]/10 border border-[var(--border)]"
             role="tablist"
-            aria-label="Filter tipe kendaraan"
+            aria-label={t('filterVehicleType')}
           >
-            {CATEGORIES.map((cat) => {
+            {CATEGORY_KEYS.map((categoryKey) => {
               const count =
-                cat.key === 'ALL'
+                categoryKey === 'ALL'
                   ? assets.length
-                  : assets.filter((a) => a.AssetCategoryName === cat.key).length;
-              const isActive = activeCategory === cat.key;
+                  : assets.filter((a) => a.AssetCategoryName === categoryKey).length;
+              const isActive = activeCategory === categoryKey;
+              const label = categoryKey === 'ALL' ? t('categoryAll') : categoryKey;
 
               return (
                 <button
-                  key={cat.key}
+                  key={categoryKey}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  aria-controls={`panel-${cat.key}`}
-                  id={`tab-${cat.key}`}
-                  onClick={() => setActiveCategory(cat.key)}
+                  aria-controls={`panel-${categoryKey}`}
+                  id={`tab-${categoryKey}`}
+                  onClick={() => setActiveCategory(categoryKey)}
                   className={`min-w-[5rem] px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? 'bg-[#002c5f] text-white shadow-sm'
                       : 'text-[var(--muted)] hover:bg-[var(--muted)]/20 hover:text-[var(--foreground)]'
                   }`}
                 >
-                  {cat.label}
+                  {label}
                   {count > 0 && (
                     <span
                       className={`ml-1.5 ${isActive ? 'text-white/80' : 'text-[var(--muted)]'}`}
@@ -152,7 +150,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
           >
             {filteredAssets.length === 0 ? (
               <div className="py-12 text-center text-[var(--muted)]">
-                Tidak ada model dalam kategori ini
+                {t('noModelsInCategory')}
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -195,7 +193,7 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                       </div>
                       <div className="pt-4 border-t border-[var(--border)]">
                         <div className="text-xs text-[var(--muted)] uppercase tracking-wide">
-                          Mulai dari
+                          {t('startingFrom')}
                         </div>
                         <div className="mt-1 text-xl font-bold text-[#002c5f]">
                           {formatPrice(asset.Price)}

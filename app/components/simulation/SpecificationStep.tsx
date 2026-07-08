@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import type { ManufacturingYear, AssetVariant, ExteriorColor, InteriorColor } from '@/app/types/credit-simulation';
 
 interface SpecificationStepProps {
@@ -27,6 +28,7 @@ interface SpecificationStepProps {
 }
 
 export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSpecs }: SpecificationStepProps) {
+  const t = useTranslations('creditSimulation');
   const [manufacturingYears, setManufacturingYears] = useState<ManufacturingYear[]>([]);
   const [variants, setVariants] = useState<AssetVariant[]>([]);
   const [exteriorColors, setExteriorColors] = useState<ExteriorColor[]>([]);
@@ -197,15 +199,15 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
   return (
     <div className="space-y-6 text-gray-900">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Pilih Spesifikasi</h2>
-        <p className="text-gray-500">Pilih tahun produksi, varian, dan warna kendaraan</p>
+        <h2 className="text-2xl font-semibold mb-2">{t('specStepTitle')}</h2>
+        <p className="text-gray-500">{t('specStepDescription')}</p>
       </div>
 
       <div className="space-y-6 text-gray-900">
         {/* Manufacturing Year */}
         <div>
           <label className="block text-sm font-medium mb-2">
-            Tahun Produksi <span className="text-red-500">*</span>
+            {t('manufacturingYearLabel')} <span className="text-red-500">*</span>
           </label>
           <select
             value={selectedYear}
@@ -217,7 +219,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             aria-describedby={loadingYears ? 'loading-years-desc' : undefined}
           >
             <option value="">
-              {loadingYears ? 'Memuat tahun produksi...' : 'Pilih Tahun Produksi'}
+              {loadingYears ? t('loadingManufacturingYear') : t('selectManufacturingYear')}
             </option>
             {!loadingYears &&
               manufacturingYears.map((year) => (
@@ -226,7 +228,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           </select>
           {loadingYears && (
             <p id="loading-years-desc" className="mt-1.5 text-sm text-gray-500">
-              Mengambil data tahun produksi...
+              {t('fetchingManufacturingYears')}
             </p>
           )}
         </div>
@@ -235,7 +237,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
         {selectedYear && (
           <div>
             <label className="block text-sm font-medium mb-2">
-              Varian/Trim <span className="text-red-500">*</span>
+              {t('variantTrimLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedVariant}
@@ -247,7 +249,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               aria-describedby={loadingVariants ? 'loading-variants-desc' : undefined}
             >
               <option value="">
-                {loadingVariants ? 'Memuat varian...' : 'Pilih Varian'}
+                {loadingVariants ? t('loadingVariants') : t('selectVariant')}
               </option>
               {!loadingVariants &&
                 variants.map((variant) => (
@@ -256,7 +258,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             </select>
             {loadingVariants && (
               <p id="loading-variants-desc" className="mt-1.5 text-sm text-gray-500">
-                Mengambil data varian/trim...
+                {t('fetchingVariants')}
               </p>
             )}
           </div>
@@ -266,7 +268,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
         {selectedVariant && (
           <div>
             <label className="block text-sm font-medium mb-2">
-              Warna Eksterior <span className="text-red-500">*</span>
+              {t('exteriorColorLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedExtColor}
@@ -278,7 +280,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               aria-describedby={loadingExterior ? 'loading-exterior-desc' : undefined}
             >
               <option value="">
-                {loadingExterior ? 'Memuat warna eksterior...' : 'Pilih Warna Eksterior'}
+                {loadingExterior ? t('loadingExteriorColors') : t('selectExteriorColor')}
               </option>
               {!loadingExterior &&
                 exteriorColors.map((color) => (
@@ -287,7 +289,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             </select>
             {loadingExterior && (
               <p id="loading-exterior-desc" className="mt-1.5 text-sm text-gray-500">
-                Mengambil data warna eksterior...
+                {t('fetchingExteriorColors')}
               </p>
             )}
           </div>
@@ -297,7 +299,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
         {selectedExtColor && (
           <div>
             <label className="block text-sm font-medium mb-2">
-              Warna Interior <span className="text-red-500">*</span>
+              {t('interiorColorLabel')} <span className="text-red-500">*</span>
             </label>
             <select
               value={selectedIntColor}
@@ -309,7 +311,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
               aria-describedby={loadingInterior ? 'loading-interior-desc' : undefined}
             >
               <option value="">
-                {loadingInterior ? 'Memuat warna interior...' : 'Pilih Warna Interior'}
+                {loadingInterior ? t('loadingInteriorColors') : t('selectInteriorColor')}
               </option>
               {!loadingInterior &&
                 interiorColors.map((color) => (
@@ -318,7 +320,7 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
             </select>
             {loadingInterior && (
               <p id="loading-interior-desc" className="mt-1.5 text-sm text-gray-500">
-                Mengambil data warna interior...
+                {t('fetchingInteriorColors')}
               </p>
             )}
           </div>
@@ -333,11 +335,11 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
           disabled={!isFormValid}
           className="w-full px-6 py-3 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer transition-colors duration-300"
         >
-          Lanjut ke Harga
+          {t('continueToPrice')}
         </button>
         {!isFormValid && (
           <p className="mt-2 text-sm text-gray-500 text-center">
-            Silakan lengkapi semua field untuk melanjutkan
+            {t('completeAllFieldsHint')}
           </p>
         )}
       </div>
