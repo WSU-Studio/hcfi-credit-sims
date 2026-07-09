@@ -381,6 +381,9 @@ model Lead {
   phone       String
   email       String
   productName String?
+  productCode String?  // Kode produk kredit Hyundai (RF, BL, 50:50, dst.)
+  firstInstallment String? // ADDM | ADDB — skema cicilan pertama
+  isPromotion Boolean @default(false) // true jika user pilih tab Promotion
   vehicleSummary String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
   assetSnapshot  Json?   // Kode model/trim/warna untuk Hyundai AddLeadAsset
   otrPrice    Float?
