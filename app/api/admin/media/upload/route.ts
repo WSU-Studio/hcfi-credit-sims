@@ -6,6 +6,8 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
+import { isLocalMediaStorageEnabled } from '@/lib/media-storage-mode';
+import { saveLocalMediaFile } from '@/lib/local-media-storage';
 import { getS3Bucket, getS3Client } from '@/lib/s3-client';
 import { mediaProxyUrlFromKey } from '@/lib/s3-url';
 import { adminMediaUploadLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
@@ -40,8 +42,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Content-Type harus multipart/form-data' }, { status: 415 });
     }
 
-    const bucket = getS3Bucket();
-
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     if (!file || !(file instanceof File)) {
@@ -67,18 +67,22 @@ export async function POST(request: NextRequest) {
     const metadata = await sharp(webpBuffer).metadata();
     const key = `${FOLDER}/${randomUUID()}-${Date.now()}.webp`;
 
-    const client = getS3Client();
-    await client.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        Body: webpBuffer,
-        ContentType: 'image/webp',
-      })
-    );
+    if (isLocalMediaStorageEnabled()) {
+      await saveLocalMediaFile(key, webpBuffer);
+    } else {
+      const bucket = getS3Bucket();
+      const client = getS3Client();
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: webpBuffer,
+          ContentType: 'image/webp',
+        })
+      );
+    }
 
-    // Bucket is private (VPC endpoint only). Browsers must hit our proxy
-    // (`/api/media/file/{key}`), not the direct S3 URL.
+    // Browsers hit our proxy (`/api/media/file/{key}`), not S3 directly.
     const url = mediaProxyUrlFromKey(key);
 
     const media = await prisma.media.create({
@@ -98,6 +102,9 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Upload gagal';
     if (message.includes('Forbidden')) {
       return NextResponse.json({ error: message }, { status: 403 });
+    }
+    if (isLocalMediaStorageEnabled()) {
+      return NextResponse.json({ error: 'Upload gagal. Silakan coba lagi.' }, { status: 500 });
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }

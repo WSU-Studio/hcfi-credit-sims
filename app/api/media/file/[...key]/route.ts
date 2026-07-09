@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isLocalMediaStorageEnabled } from '@/lib/media-storage-mode';
+import { readLocalMediaFile } from '@/lib/local-media-storage';
 import { getS3Bucket } from '@/lib/s3-client';
 import { streamS3ObjectAsResponse } from '@/lib/s3-stream';
 import { isMediaS3Key } from '@/lib/s3-url';
@@ -33,6 +35,21 @@ export async function GET(
   const key = keySegments.map((seg) => decodeURIComponent(seg)).join('/');
   if (!isMediaS3Key(key)) {
     return NextResponse.json({ error: 'Invalid media key' }, { status: 400 });
+  }
+
+  if (isLocalMediaStorageEnabled()) {
+    try {
+      const { buffer, contentType } = await readLocalMediaFile(key);
+      return new NextResponse(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    } catch {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
   }
 
   let bucket: string;
