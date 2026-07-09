@@ -157,12 +157,12 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
                       }`}
                     >
                       <p className="font-medium text-gray-900">{dealer.VendorName}</p>
-                      {dealer.ZipCode && (
+                      {/* {dealer.ZipCode && (
                         <p className="mt-1 text-sm text-[var(--muted)]">
                           {dealer.ZipCode}
                           {dealer.OriOfficeName ? ` · ${dealer.OriOfficeName}` : ''}
                         </p>
-                      )}
+                      )} */}
                     </button>
                   );
                 })}
