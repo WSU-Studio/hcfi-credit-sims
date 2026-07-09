@@ -16,7 +16,7 @@ export function Footer({ company }: FooterProps) {
 
   return (
     <footer className="border-t border-slate-200 bg-slate-100/90 text-sm text-slate-700">
-      <Container className="space-y-8 py-12">
+      <Container className="space-y-8 py-12 px-4 md:px-0">
         <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
           <div className="space-y-3">
             <Image src="/HF-logo.svg" alt="Hyundai Capital" width={240} height={28} priority />

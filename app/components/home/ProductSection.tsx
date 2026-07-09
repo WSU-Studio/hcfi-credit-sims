@@ -22,7 +22,7 @@ export function ProductSection({ products, titleOverrideId, titleOverrideEn }: P
 
   return (
     <section id="products" className="bg-[var(--background)] pt-12 md:pt-16">
-      <Container className="space-y-6 pb-12 md:pb-20 border-b border-[var(--border)]">
+      <Container className="space-y-6 pb-12 md:pb-20 border-b border-[var(--border)] px-4 md:px-0">
         <div className="space-y-2 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">{sectionTitle}</h2>
 

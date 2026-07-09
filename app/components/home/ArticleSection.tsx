@@ -23,7 +23,7 @@ export function ArticleSection({ articles, titleOverrideId, titleOverrideEn }: A
 
   return (
     <section id="artikel" className="bg-[var(--background)] pt-12 md:pt-16 pb-4 md:pb-6">
-      <Container className="space-y-6">
+      <Container className="space-y-6 px-4 md:px-0">
         <div className="space-y-2 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[var(--foreground)] md:text-3xl">
             {sectionTitle}

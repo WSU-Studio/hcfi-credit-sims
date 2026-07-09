@@ -184,7 +184,7 @@ export default async function StaticPageBySlug({
     <section className="min-h-[40vh]">
       {hasLayout ? (
         <div>
-          <Container>
+          <Container className="px-4 md:px-0">
             {basicContentBlock}
           </Container>
           <div className="space-y-8">
@@ -203,11 +203,11 @@ export default async function StaticPageBySlug({
                 </div>
               );
             })}
-            <Container>{bottomNav}</Container>
+            <Container className="px-4 md:px-0">{bottomNav}</Container>
           </div>
         </div>
       ) : (
-        <Container>
+        <Container className="px-4 md:px-0">
           {basicContentBlock}
           {showBasicContent && !page.content && (
             <p className="text-white/70">{tCommon('noContent')}</p>
