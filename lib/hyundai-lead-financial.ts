@@ -81,7 +81,25 @@ function pickSimulationProduct(
   products: HyundaiDefaultProduct[],
   params: { dpPercent: number; tenor: number; productName?: string | null }
 ): HyundaiDefaultProduct {
-  const hint = parseProductNameHint(params.productName).toLowerCase();
+  const hint = parseProductNameHint(params.productName);
+  const hintLower = hint.toLowerCase();
+
+  // Prioritas tertinggi: nama produk persis seperti yang user pilih di simulasi web.
+  // Tanpa ini, beberapa produk RF dengan DP% sama (mis. "Product Bunga Murah" vs
+  // "[Jabo] Standard Low Interest") bisa tertukar karena match tenor+DP saja.
+  if (hintLower) {
+    const byExactName = products.find(
+      (p) => p.ProductName?.trim().toLowerCase() === hintLower
+    );
+    if (byExactName) return { ...byExactName, Tenor: params.tenor };
+
+    const byNameAndDp = products.find(
+      (p) =>
+        p.ProductName?.trim().toLowerCase() === hintLower &&
+        Math.abs(Number(p.DPPrcnt) - params.dpPercent) < 0.01
+    );
+    if (byNameAndDp) return { ...byNameAndDp, Tenor: params.tenor };
+  }
 
   const exact = products.find(
     (p) =>
