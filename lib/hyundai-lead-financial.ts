@@ -77,12 +77,29 @@ function isRetryableProductFetchError(error: unknown): boolean {
   );
 }
 
+type SimulationProductParams = {
+  dpPercent: number;
+  tenor: number;
+  productName?: string | null;
+  productCode?: string | null;
+};
+
 function pickSimulationProduct(
   products: HyundaiDefaultProduct[],
-  params: { dpPercent: number; tenor: number; productName?: string | null }
+  params: SimulationProductParams
 ): HyundaiDefaultProduct {
   const hint = parseProductNameHint(params.productName);
   const hintLower = hint.toLowerCase();
+  const code = params.productCode?.trim();
+
+  if (hintLower && code) {
+    const byCodeAndName = products.find(
+      (p) =>
+        p.ProductCode === code &&
+        p.ProductName?.trim().toLowerCase() === hintLower
+    );
+    if (byCodeAndName) return { ...byCodeAndName, Tenor: params.tenor };
+  }
 
   // Prioritas tertinggi: nama produk persis seperti yang user pilih di simulasi web.
   // Tanpa ini, beberapa produk RF dengan DP% sama (mis. "Product Bunga Murah" vs
@@ -140,6 +157,37 @@ function pickSimulationProduct(
   return { ...fallbackTenor, Tenor: params.tenor };
 }
 
+function resolveProductForSubmit(
+  products: HyundaiDefaultProduct[],
+  params: SimulationProductParams
+): HyundaiDefaultProduct {
+  const hint = parseProductNameHint(params.productName);
+  const code = params.productCode?.trim();
+
+  if (hint && code) {
+    const fromList = products.find(
+      (p) =>
+        p.ProductCode === code &&
+        p.ProductName?.trim().toLowerCase() === hint.toLowerCase()
+    );
+    if (fromList) return { ...fromList, Tenor: params.tenor };
+
+    // Lead menyimpan pilihan eksplisit user — pakai langsung walau tidak ada di list refresh.
+    return {
+      ProductCode: code,
+      ProductName: hint,
+      DPPrcnt: params.dpPercent,
+      Tenor: params.tenor,
+    };
+  }
+
+  if (products.length > 0) {
+    return pickSimulationProduct(products, params);
+  }
+
+  return productFromSimulationFallback(params);
+}
+
 function mapNameRowsToProducts(
   rows: ProductNameRow[],
   tenor: number
@@ -154,11 +202,17 @@ function mapNameRowsToProducts(
     }));
 }
 
-function productFromSimulationFallback(params: {
-  dpPercent: number;
-  tenor: number;
-  productName?: string | null;
-}): HyundaiDefaultProduct {
+function productFromSimulationFallback(params: SimulationProductParams): HyundaiDefaultProduct {
+  const hint = parseProductNameHint(params.productName);
+  if (hint && params.productCode?.trim()) {
+    return {
+      ProductCode: params.productCode.trim(),
+      ProductName: hint,
+      DPPrcnt: params.dpPercent,
+      Tenor: params.tenor,
+    };
+  }
+
   const mapped = resolveHyundaiProductFromSimulation(params);
   return {
     ProductCode: mapped.productCode,
@@ -319,6 +373,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   dpPercent: number;
   tenor: number;
   productName?: string | null;
+  productCode?: string | null;
   firstInstallment?: 'ADDM' | 'ADDB';
   isPromotion?: boolean;
   mrChannelCode?: string;
@@ -339,27 +394,22 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
     isPartner,
   });
 
-  const products = [
-    ...(productsRes.ListDefaultStandardProductObj ?? []),
-    ...(productsRes.ListDefaultPromotionProductObj ?? []),
-  ];
+  const standard = productsRes.ListDefaultStandardProductObj ?? [];
+  const promo = productsRes.ListDefaultPromotionProductObj ?? [];
+  const isPromotion = Boolean(params.isPromotion);
+  const primaryProducts = isPromotion ? promo : standard;
+  const products =
+    primaryProducts.length > 0 ? primaryProducts : [...standard, ...promo];
 
-  const product =
-    products.length > 0
-      ? pickSimulationProduct(products, {
-          dpPercent: params.dpPercent,
-          tenor: params.tenor,
-          productName: params.productName,
-        })
-      : productFromSimulationFallback({
-          dpPercent: params.dpPercent,
-          tenor: params.tenor,
-          productName: params.productName,
-        });
+  const product = resolveProductForSubmit(products, {
+    dpPercent: params.dpPercent,
+    tenor: params.tenor,
+    productName: params.productName,
+    productCode: params.productCode,
+  });
 
   const dpAmt = Math.round(params.otrPrice * (params.dpPercent / 100));
   const firstInstallment: 'ADDM' | 'ADDB' = params.firstInstallment ?? 'ADDM';
-  const isPromotion = Boolean(params.isPromotion);
   const channelCode = params.mrChannelCode || HYUNDAI_CHANNEL_CODE;
 
   // Step 1 — priming rule produk untuk Hyundai DB.

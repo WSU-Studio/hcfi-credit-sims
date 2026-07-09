@@ -147,6 +147,18 @@ export const leadCreateSchema = z
     email: emailSchema,
 
     productName: requiredSafeText(MAX_PRODUCT, 'produk'),
+    productCode: z
+      .string({ message: 'productCode wajib diisi' })
+      .max(32, 'max 32 karakter')
+      .transform(cleanString)
+      .refine((v) => v.length > 0, { message: 'productCode wajib diisi' })
+      .refine((v) => /^[A-Za-z0-9:_-]+$/.test(v), {
+        message: 'productCode tidak valid',
+      }),
+    firstInstallment: z.enum(['ADDM', 'ADDB'], {
+      message: 'firstInstallment wajib diisi',
+    }),
+    isPromotion: z.boolean({ message: 'isPromotion wajib diisi' }),
     vehicleSummary: optionalSafeText(MAX_PRODUCT),
 
     // LeadNo Hyundai dari Step 4 (PriceStep). Format Hyundai TrxNo:

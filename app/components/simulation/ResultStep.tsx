@@ -600,6 +600,9 @@ export function ResultStep({
                     ? `${selectedProduct?.ProductName} - ${t('tenorWithMonths', { tenor: highlightedRow.Tenor })}`
                     : selectedProduct?.ProductName
                 }
+                productCode={selectedProduct?.ProductCode}
+                firstInstallment={firstInstallment}
+                isPromotion={isPromotion}
                 otrPrice={otrPrice ?? undefined}
                 dpPercent={dpPercent}
                 tenor={highlightedRow?.Tenor}

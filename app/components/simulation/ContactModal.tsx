@@ -29,6 +29,9 @@ interface ContactModalProps {
    */
   leadNo?: string | null;
   productName?: string;
+  productCode?: string;
+  firstInstallment?: 'ADDM' | 'ADDB';
+  isPromotion?: boolean;
   otrPrice?: number;
   dpPercent?: number;
   tenor?: number;
@@ -45,6 +48,9 @@ export function ContactModal({
   onClose,
   leadNo,
   productName,
+  productCode,
+  firstInstallment,
+  isPromotion,
   otrPrice,
   dpPercent,
   tenor,
@@ -294,6 +300,9 @@ export function ContactModal({
           email: email.trim(),
           simulationLeadNo: leadNo || null,
           productName: productName || null,
+          productCode: productCode || null,
+          firstInstallment: firstInstallment ?? 'ADDM',
+          isPromotion: Boolean(isPromotion),
           vehicleSummary: vehicleSummary || null,
           assetSnapshot: assetSnapshot || null,
           vendorCode: dealer?.VendorCode ?? null,

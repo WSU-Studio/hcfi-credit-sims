@@ -174,6 +174,9 @@ export type LeadRecordForHyundai = {
   phone: string;
   email: string;
   productName: string | null;
+  productCode?: string | null;
+  firstInstallment?: 'ADDM' | 'ADDB' | null;
+  isPromotion?: boolean | null;
   vehicleSummary: string | null;
   assetSnapshot?: LeadAssetSnapshot | null;
   vendorCode?: string | null;
@@ -548,6 +551,9 @@ export async function submitLeadToHyundai(params: {
       dpPercent: params.lead.dpPercent ?? 10,
       tenor: params.lead.tenor ?? 36,
       productName: params.lead.productName,
+      productCode: params.lead.productCode,
+      firstInstallment: params.lead.firstInstallment ?? 'ADDM',
+      isPromotion: params.lead.isPromotion ?? false,
       leadId: params.lead.id,
       isPartner,
     });
@@ -610,6 +616,9 @@ export async function submitLeadToHyundai(params: {
       dpPercent: params.lead.dpPercent ?? 10,
       tenor: params.lead.tenor ?? 36,
       productName: params.lead.productName,
+      productCode: params.lead.productCode,
+      firstInstallment: params.lead.firstInstallment ?? 'ADDM',
+      isPromotion: params.lead.isPromotion ?? false,
       leadId: params.lead.id,
       isPartner,
     });
