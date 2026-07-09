@@ -135,6 +135,12 @@ export async function POST(
         phone: lead.phone,
         email: lead.email,
         productName: lead.productName,
+        productCode: lead.productCode,
+        firstInstallment:
+          lead.firstInstallment === 'ADDB' || lead.firstInstallment === 'ADDM'
+            ? lead.firstInstallment
+            : 'ADDM',
+        isPromotion: lead.isPromotion,
         vehicleSummary: lead.vehicleSummary,
         assetSnapshot: parseLeadAssetSnapshot(lead.assetSnapshot),
         vendorCode: lead.vendorCode,

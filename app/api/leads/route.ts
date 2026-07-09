@@ -157,6 +157,9 @@ export async function POST(request: NextRequest) {
       phone: data.phone,
       email: data.email,
       productName: data.productName,
+      productCode: data.productCode,
+      firstInstallment: data.firstInstallment,
+      isPromotion: data.isPromotion,
       vehicleSummary: data.vehicleSummary,
       assetSnapshot:
         data.assetSnapshot && typeof data.assetSnapshot === 'object'
