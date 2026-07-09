@@ -167,7 +167,7 @@ export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
     >
       <div
         ref={containerRef}
-        className="relative w-full h-[376px] md:h-[480px] lg:h-[640px] overflow-hidden touch-pan-y select-none"
+        className="relative w-full aspect-square md:aspect-[2/1] lg:aspect-[5/2] overflow-hidden touch-pan-y select-none"
         style={{ touchAction: transition === 'slide' ? 'pan-y' : 'auto' }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
