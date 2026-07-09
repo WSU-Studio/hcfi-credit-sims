@@ -6,6 +6,7 @@ import type { NavItem } from "@/app/types";
 import { Container } from "@/app/components/ui/Container";
 import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
+import { IconMenu2 } from "@tabler/icons-react";
 
 type HeaderProps = {
   items: NavItem[];
@@ -19,7 +20,7 @@ export function Header({ items, locale }: HeaderProps) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
-      <Container className="flex items-center justify-between h-14">
+      <Container className="flex items-center justify-between h-14 px-4 md:px--0 gap-3">
         <div className="flex items-center gap-2">
           <Link href="/">
             <Image src="/HF-logo.svg" className="brightness-0 invert" alt="Hyundai Capital" width={280} height={36} priority />
@@ -61,15 +62,11 @@ export function Header({ items, locale }: HeaderProps) {
           aria-label={t("menu")}
           aria-expanded={open}
           aria-controls="mobile-menu"
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/30 text-white md:hidden hover:bg-white/10 transition-colors"
+          className="flex h-10 w-10 items-center justify-center text-white md:hidden hover:bg-white/10 transition-colors"
           onClick={() => setOpen((prev) => !prev)}
         >
           <span className="sr-only">{t("menu")}</span>
-          <div className="flex flex-col gap-[6px]">
-            <span className="block h-0.5 w-5 bg-white" />
-            <span className="block h-0.5 w-5 bg-white" />
-            <span className="block h-0.5 w-5 bg-white" />
-          </div>
+          <IconMenu2 />
         </button>
       </Container>
 
@@ -80,17 +77,17 @@ export function Header({ items, locale }: HeaderProps) {
               <Link
                 key={`${item.label}-${index}`}
                 href={item.href}
-                className="py-2 text-sm font-medium text-white hover:text-white/80 transition-colors"
+                className="py-2 px-4 text-sm font-medium text-white hover:text-white/80 transition-colors"
                 onClick={() => setOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="flex gap-2 pt-2 border-t border-white/20">
-              <Link href={pathname} locale="id" className="py-2 text-sm font-medium text-white/90" onClick={() => setOpen(false)}>
+            <div className="flex gap-2 pt-4 px-4 border-t border-white/20">
+              <Link href={pathname} locale="id" className={`py-2 text-sm font-medium text-white/90 rounded-lg p-4 transition-colors border-sky-600/20 border ${locale === "id" ? "bg-sky-600/20 text-white" : "text-white/80 hover:bg-sky-600/20 hover:text-white"}`} onClick={() => setOpen(false)}>
                 ID
               </Link>
-              <Link href={pathname} locale="en" className="py-2 text-sm font-medium text-white/90" onClick={() => setOpen(false)}>
+              <Link href={pathname} locale="en" className={`py-2 text-sm font-medium text-white/90 rounded-lg p-4 transition-colors border-sky-600/20 border ${locale === "en" ? "bg-sky-600/20 text-white" : "text-white/80 hover:bg-sky-600/20 hover:text-white"}`} onClick={() => setOpen(false)}>
                 EN
               </Link>
             </div>
