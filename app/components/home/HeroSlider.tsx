@@ -216,12 +216,13 @@ export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
                     />
                   )}
                   <Container className="relative flex h-full items-end md:pb-8" noDefaultPadding>
-                    <div className="w-full flex flex-col md:max-w-3xl space-y-3 bg-slate-800/60 p-6 md:rounded-xl">
+                    <Link href={slide.ctaUrl || ''} className={`absolute inset-0 md:hidden ${slide.ctaUrl ? '' : 'pointer-events-none'}`}></Link>
+                    <div className="w-full flex flex-col md:max-w-3xl space-y-3 bg-slate-800/60 p-5 pb-3 md:pb-6 md:rounded-xl">
                       <p className="text-lg md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
                         {slide.title}{" "}
                         <span className="text-blue-600/90">{slide.highlight}</span>
                       </p>
-                      <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
+                      <p className="w-full text-xs md:text-sm leading-relaxed text-white/90 md:text-base line-clamp-3 md:line-clamp-none">
                         {slide.description}
                       </p>
                       {slide.ctaLabel && slide.ctaUrl ? (
@@ -272,12 +273,13 @@ export function HeroSlider({ slides, transition = 'slide' }: HeroSliderProps) {
                     />
                   )}
                   <Container className="relative flex h-full items-end pb-8 md:pb-12">
-                    <div className="w-full max-w-3xl space-y-3 bg-slate-800/60 p-6 rounded-xl">
+                    <Link href={slide.ctaUrl || ''} className={`absolute inset-0 md:hidden ${slide.ctaUrl ? '' : 'pointer-events-none'}`}></Link>
+                    <div className="w-full max-w-3xl space-y-3 bg-slate-800/60 p-6 pb-3 md:pb-5 rounded-xl">
                       <p className="text-lg md:text-2xl lg:text-3xl font-semibold leading-tight text-white">
                         {slide.title}{" "}
                         <span className="text-blue-600/90">{slide.highlight}</span>
                       </p>
-                      <p className="w-full text-sm leading-relaxed text-white/90 md:text-base">
+                      <p className="w-full text-xs md:text-sm leading-relaxed text-white/90 md:text-base line-clamp-3 md:line-clamp-none">
                         {slide.description}
                       </p>
                       {slide.ctaLabel && slide.ctaUrl ? (
