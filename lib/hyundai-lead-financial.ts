@@ -3,6 +3,7 @@ import { hyundaiPostLogged } from '@/lib/hyundai-api-log';
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { resolveHyundaiProductFromSimulation } from '@/lib/hyundai-product-map';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
+import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
 
 export type HyundaiDefaultProduct = {
   ProductCode: string;
@@ -52,6 +53,77 @@ type SimulateFinancialResponse = {
 };
 
 const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
+
+function numField(obj: Record<string, unknown>, ...keys: string[]): number {
+  for (const key of keys) {
+    const v = obj[key];
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) {
+      return Number(v);
+    }
+  }
+  return 0;
+}
+
+function strField(obj: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const v = obj[key];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return '';
+}
+
+/**
+ * Map SummaryInfoObj (FinalCalculateByLeadNo) → FinalSummaryInfo per mapping Richard.
+ * Defensif terhadap nested/flat shape dan casing field.
+ */
+export function mapSummaryInfoToFinalSummary(
+  summary: Record<string, unknown>,
+  fallbacks: {
+    productName?: string | null;
+    productCode?: string | null;
+    firstInstallment?: 'ADDM' | 'ADDB';
+    otrPrice?: number;
+    dpPercent?: number;
+    tenor?: number;
+  } = {}
+): FinalSummaryInfo {
+  const assetPriceAmt =
+    numField(summary, 'AssetPriceAmt', 'assetPriceAmt') ||
+    (fallbacks.otrPrice ?? 0);
+  const ntfAmt = numField(summary, 'NtfAmt', 'ntfAmt', 'NTFAmt');
+  const downPaymentAmt =
+    numField(summary, 'AssetDownPaymentAmt', 'DownPaymentAmt', 'dpAmt', 'DpAmt') ||
+    (assetPriceAmt > 0 && ntfAmt > 0 ? Math.max(0, assetPriceAmt - ntfAmt) : 0);
+
+  return {
+    productName:
+      strField(summary, 'ProductName', 'productName') ||
+      parseProductNameHint(fallbacks.productName) ||
+      '',
+    productCode:
+      strField(summary, 'ProductCode', 'productCode') ||
+      fallbacks.productCode?.trim() ||
+      null,
+    assetDownPaymentPrcnt:
+      numField(summary, 'AssetDownPaymentPrcnt', 'assetDownPaymentPrcnt') ||
+      (fallbacks.dpPercent ?? 0),
+    tenor: numField(summary, 'Tenor', 'tenor') || (fallbacks.tenor ?? 0),
+    flatRatePrcnt: numField(summary, 'FlatRatePrcnt', 'flatRatePrcnt'),
+    instAmt: numField(summary, 'InstAmt', 'instAmt', 'InstallmentAmt'),
+    totalDownPaymentAmt: numField(
+      summary,
+      'TotalDownPaymentAmt',
+      'totalDownPaymentAmt',
+      'TdpAmt'
+    ),
+    totalPaymentAmt: numField(summary, 'TotalPaymentAmt', 'totalPaymentAmt'),
+    assetPriceAmt,
+    ntfAmt,
+    downPaymentAmt,
+    firstInstallment: fallbacks.firstInstallment,
+  };
+}
 
 function pickSimulateRowForTenor(
   rows: SimulateFinancialRow[],
@@ -364,6 +436,9 @@ async function fetchDefaultProducts(
  *   4. FinalCalculateByLeadNo    — final compute
  *   5. SaveFinalCalculateResult  — persist ke Adins
  *
+ * Dipakai admin submit dan View Summary (PDF). Return SummaryInfoObj ter-map
+ * supaya UI/PDF cocok dengan Cust Consent.
+ *
  * Saat Hyundai tidak return produk default (common di sebagian dealer), kita
  * fallback ke mapping dari simulation product (`productFromSimulationFallback`).
  */
@@ -387,7 +462,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
    * ke Lead untuk audit trail. Boleh null kalau dipanggil di context lain.
    */
   leadId?: string | null;
-}): Promise<void> {
+}): Promise<FinalSummaryInfo> {
   const logMeta = { leadId: params.leadId ?? null, hyundaiLeadNo: params.leadNo };
   const isPartner = resolveIsPartner({ isPartner: params.isPartner });
   const productsRes = await fetchDefaultProducts(params.leadNo, params.tenor, {
@@ -506,4 +581,20 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
     }),
     { ...logMeta, endpoint: 'SaveFinalCalculateResult' }
   );
+
+  return mapSummaryInfoToFinalSummary(finalRes.SummaryInfoObj, {
+    productName: product.ProductName,
+    productCode: product.ProductCode,
+    firstInstallment,
+    otrPrice: params.otrPrice,
+    dpPercent: params.dpPercent,
+    tenor: params.tenor,
+  });
+}
+
+/** Alias eksplisit untuk View Summary / PDF — same chain, return mapped summary. */
+export async function finalizeSimulationSummary(
+  params: Parameters<typeof bootstrapLeadFinancialAndInsurance>[0]
+): Promise<FinalSummaryInfo> {
+  return bootstrapLeadFinancialAndInsurance(params);
 }

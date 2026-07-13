@@ -115,6 +115,26 @@ export interface DefaultProduct {
   InstSchemeName: string;
 }
 
+/**
+ * Ringkasan angka resmi dari FinalCalculateByLeadNo.SummaryInfoObj
+ * (mapping per Richard Fam — harus match Cust Consent).
+ */
+export interface FinalSummaryInfo {
+  productName: string;
+  productCode?: string | null;
+  assetDownPaymentPrcnt: number;
+  tenor: number;
+  flatRatePrcnt: number;
+  instAmt: number;
+  totalDownPaymentAmt: number;
+  totalPaymentAmt: number;
+  assetPriceAmt: number;
+  ntfAmt: number;
+  /** DP amount — turunan AssetPriceAmt - NtfAmt jika field amount tidak ada di response. */
+  downPaymentAmt: number;
+  firstInstallment?: 'ADDM' | 'ADDB';
+}
+
 // Form State Types
 export interface SimulationFormData {
   // Step 1: Dealer
