@@ -15,6 +15,7 @@ import { ContactModal, type UserLocation } from '@/app/components/simulation/Con
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 import { filterPromotionByPartnerCode, normalizePartnerCode } from '@/lib/hyundai-partner';
 import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-rows';
+import Link from 'next/link';
 
 type TabKind = 'Standard' | 'Promotion';
 type FirstInstallment = 'ADDM' | 'ADDB';
@@ -528,7 +529,7 @@ export function ResultStep({
                 type="button"
                 onClick={() => setFirstInstallment('ADDM')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-                  firstInstallment === 'ADDM' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
+                  firstInstallment === 'ADDM' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]/50'
                 }`}
               >
                 ADDM
@@ -537,7 +538,7 @@ export function ResultStep({
                 type="button"
                 onClick={() => setFirstInstallment('ADDB')}
                 className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-                  firstInstallment === 'ADDB' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300'
+                  firstInstallment === 'ADDB' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]/50'
                 }`}
               >
                 ADDB
@@ -643,7 +644,7 @@ export function ResultStep({
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 {!isDealerSales && (
-                  <a
+                  <Link
                     href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
                       t('whatsappMessageTemplate', {
                         productName: selectedProduct.ProductName,
@@ -654,16 +655,16 @@ export function ResultStep({
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer transition-colors duration-300"
+                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-600/90 transition cursor-pointer transition-colors duration-300"
                   >
                     <IconBrandWhatsapp size={20} className="text-gray-100" />
                     <span className="text-gray-100">{t('whatsapp')}</span>
-                  </a>
+                  </Link>
                 )}
                 <button
                   type="button"
                   onClick={() => setContactOpen(true)}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
                 >
                   <IconSend size={20} />
                   {isDealerSales ? t('dealerSubmitLead') : t('contact')}
@@ -671,7 +672,7 @@ export function ResultStep({
                 <button
                   type="button"
                   onClick={openSummary}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
                 >
                   <IconFileDescription size={20} />
                   {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
