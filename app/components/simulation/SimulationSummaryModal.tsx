@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { jsPDF } from 'jspdf';
-import type { ProductCalculation } from '@/app/types/credit-simulation';
-import { IconX, IconDownload } from '@tabler/icons-react';
+import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
+import { IconX, IconDownload, IconLoader2 } from '@tabler/icons-react';
+import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 
 type LetterheadData = {
   name: string;
@@ -21,12 +22,16 @@ export interface VehicleSummaryInfo {
 interface SimulationSummaryModalProps {
   open: boolean;
   onClose: () => void;
-  product: ProductCalculation;
+  leadNo?: string | null;
   vehicle?: VehicleSummaryInfo;
-  otrPrice: number;
   discount?: number;
-  dpPercent: number;
   firstInstallment: 'ADDM' | 'ADDB';
+  /** Data resmi dari FinalCalculateByLeadNo (Cust Consent mapping). */
+  summary: FinalSummaryInfo | null;
+  loading?: boolean;
+  error?: string | null;
+  errorId?: string | null;
+  onRetry?: () => void;
 }
 
 const DEFAULT_LETTERHEAD: LetterheadData = {
@@ -66,12 +71,15 @@ function loadLogoAsDataUrl(logoPath: string): Promise<string | null> {
 export function SimulationSummaryModal({
   open,
   onClose,
-  product,
+  leadNo,
   vehicle,
-  otrPrice,
   discount = 0,
-  dpPercent,
   firstInstallment,
+  summary,
+  loading = false,
+  error = null,
+  errorId = null,
+  onRetry,
 }: SimulationSummaryModalProps) {
   const t = useTranslations('creditSimulation');
   const locale = useLocale();
@@ -114,28 +122,27 @@ export function SimulationSummaryModal({
     }
   }, [open]);
 
-  const dpAmt = Math.round(otrPrice * (dpPercent / 100));
-  const prov = product.ProvisionType === 'PRCNT' ? Math.round((otrPrice - dpAmt) * (product.ProvisionFee / 100)) : product.ProvisionFee;
-  const feePaidByCustomer = product.AdminFeeAmt + product.FiduciaFeeAmt + prov;
-  const assetInsurancePaid = 0; // placeholder if not from API
-  const subsidyAmt = 0;
+  const resolvedInstallment =
+    summary?.firstInstallment === 'ADDB' || summary?.firstInstallment === 'ADDM'
+      ? summary.firstInstallment
+      : firstInstallment;
   const installLabel =
-    firstInstallment === 'ADDM' ? t('installmentAmountAddm') : t('installmentAmountAddb');
-  const totalPayment =
-    firstInstallment === 'ADDM'
-      ? product.TdpAmt + product.InstallmentAmt * (product.Tenor - 1)
-      : product.TdpAmt + product.InstallmentAmt * product.Tenor;
-  const ntfAmount = otrPrice - dpAmt;
+    resolvedInstallment === 'ADDM' ? t('installmentAmountAddm') : t('installmentAmountAddb');
+
+  // Breakdown fee/insurance belum di-mapping Richard — tetap placeholder 0.
+  const assetInsurancePaid = 0;
+  const feePaidByCustomer = 0;
+  const subsidyAmt = 0;
 
   const handleDownloadPdf = async () => {
+    if (!summary) return;
+
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const left = 14;
     let y = 15;
 
-    // Letterhead (kop surat)
     const lh = letterhead ?? DEFAULT_LETTERHEAD;
 
-    // Logo - try to load and embed
     const logoDataUrl = await loadLogoAsDataUrl('/HF-logo.svg');
     if (logoDataUrl) {
       const logoW = 57;
@@ -146,13 +153,11 @@ export function SimulationSummaryModal({
       y = 15;
     }
 
-    // Company name
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(lh.name, left, y);
     y += 6;
 
-    // Address
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const addressLines = lh.address.filter((line) => line.trim() !== '');
@@ -162,13 +167,11 @@ export function SimulationSummaryModal({
     });
     y += 2;
 
-    // Divider line
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
     doc.line(left, y, 200, y);
     y += 10;
 
-    // Title
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(t('summaryModalTitle'), left, y);
@@ -178,8 +181,13 @@ export function SimulationSummaryModal({
     doc.setFont('helvetica', 'bold');
     doc.text(t('summaryProductSectionTitle'), left, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(product.ProductName, left, y + 6);
-    y += 16;
+    doc.text(summary.productName, left, y + 6);
+    y += 12;
+    if (leadNo) {
+      doc.text(`${t('summaryLeadNoLabel')}: ${leadNo}`, left, (y += 5));
+      y += 4;
+    }
+    y += 8;
 
     if (vehicle?.modelName || vehicle?.trimName || vehicle?.exteriorColor || vehicle?.interiorColor) {
       doc.setFont('helvetica', 'bold');
@@ -197,12 +205,12 @@ export function SimulationSummaryModal({
     doc.text(t('summarySectionTitle'), left, y);
     y += 6;
     doc.setFont('helvetica', 'normal');
-    doc.text(`${t('summaryDownPaymentPercentLabel')}: ${dpPercent}%`, left, (y += 5));
-    doc.text(`${t('tenor')}: ${t('tenorWithMonths', { tenor: product.Tenor })}`, left, (y += 5));
-    doc.text(`${t('summaryFlatRatePercentLabel')}: ${product.EffRatePrcnt}%`, left, (y += 5));
-    doc.text(`${installLabel}: ${formatRp(product.InstallmentAmt)}`, left, (y += 5));
-    doc.text(`${t('summaryTotalDownPaymentLabel')}: ${formatRp(product.TdpAmt)}`, left, (y += 5));
-    doc.text(`${t('summaryTotalPaymentLabel')}: ${formatRp(totalPayment)}`, left, (y += 5));
+    doc.text(`${t('summaryDownPaymentPercentLabel')}: ${summary.assetDownPaymentPrcnt}%`, left, (y += 5));
+    doc.text(`${t('tenor')}: ${t('tenorWithMonths', { tenor: summary.tenor })}`, left, (y += 5));
+    doc.text(`${t('summaryFlatRatePercentLabel')}: ${summary.flatRatePrcnt}%`, left, (y += 5));
+    doc.text(`${installLabel}: ${formatRp(summary.instAmt)}`, left, (y += 5));
+    doc.text(`${t('summaryTotalDownPaymentLabel')}: ${formatRp(summary.totalDownPaymentAmt)}`, left, (y += 5));
+    doc.text(`${t('summaryTotalPaymentLabel')}: ${formatRp(summary.totalPaymentAmt)}`, left, (y += 5));
     y += 8;
 
     doc.setFont('helvetica', 'bold');
@@ -210,14 +218,14 @@ export function SimulationSummaryModal({
     y += 6;
     doc.setFont('helvetica', 'normal');
     if (discount > 0) {
-      doc.text(`${t('summaryInitialAssetPriceLabel')}: ${formatRp(otrPrice + discount)}`, left, (y += 5));
+      doc.text(`${t('summaryInitialAssetPriceLabel')}: ${formatRp(summary.assetPriceAmt + discount)}`, left, (y += 5));
       doc.text(`${t('summaryDiscountLabel')}: (${formatRp(discount)})`, left, (y += 5));
     }
-    doc.text(`${t('summaryTotalAssetPriceLabel')}: ${formatRp(otrPrice)}`, left, (y += 5));
-    doc.text(`${t('summaryDownPaymentLabel')}: (${formatRp(dpAmt)})`, left, (y += 5));
-    doc.text(`${t('summaryNtfAmountLabel')}: ${formatRp(ntfAmount)}`, left, (y += 5));
+    doc.text(`${t('summaryTotalAssetPriceLabel')}: ${formatRp(summary.assetPriceAmt)}`, left, (y += 5));
+    doc.text(`${t('summaryDownPaymentLabel')}: (${formatRp(summary.downPaymentAmt)})`, left, (y += 5));
+    doc.text(`${t('summaryNtfAmountLabel')}: ${formatRp(summary.ntfAmt)}`, left, (y += 5));
 
-    doc.save(`${t('summaryPdfFileName')}-${product.ProductCode ?? 'summary'}.pdf`);
+    doc.save(`${t('summaryPdfFileName')}-${summary.productCode ?? 'summary'}.pdf`);
   };
 
   if (!open) return null;
@@ -251,128 +259,156 @@ export function SimulationSummaryModal({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Product */}
-          <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">
-              {t('summaryProductSectionTitle')}
-            </h3>
-            <p className="text-gray-900 font-medium">{product.ProductName}</p>
-          </section>
-
-          {/* Vehicle Info */}
-          {(vehicle?.modelName || vehicle?.trimName || vehicle?.exteriorColor || vehicle?.interiorColor) && (
-            <section>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
-                | {t('summaryVehicleInfoSectionTitle')}
-              </h3>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {vehicle.modelName && (
-                  <>
-                    <dt className="text-gray-500">{t('summaryVehicleModelLabel')}</dt>
-                    <dd className="font-medium text-gray-900">{vehicle.modelName}</dd>
-                  </>
-                )}
-                {vehicle.trimName && (
-                  <>
-                    <dt className="text-gray-500">{t('summaryTrimLabel')}</dt>
-                    <dd className="font-medium text-gray-900">{vehicle.trimName}</dd>
-                  </>
-                )}
-                {vehicle.exteriorColor && (
-                  <>
-                    <dt className="text-gray-500">{t('summaryExteriorColorLabel')}</dt>
-                    <dd className="font-medium text-gray-900">{vehicle.exteriorColor}</dd>
-                  </>
-                )}
-                {vehicle.interiorColor && (
-                  <>
-                    <dt className="text-gray-500">{t('summaryInteriorColorLabel')}</dt>
-                    <dd className="font-medium text-gray-900">{vehicle.interiorColor}</dd>
-                  </>
-                )}
-              </dl>
-            </section>
+          {loading && (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-[#002c5f]">
+              <IconLoader2 size={36} className="animate-spin" aria-hidden />
+              <p className="text-sm text-gray-600 text-center max-w-sm">
+                {t('summaryLoadingFinal')}
+              </p>
+            </div>
           )}
 
-          {/* Summary */}
-          <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
-              | {t('summarySectionTitle')}
-            </h3>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <dt className="text-gray-500">{t('summaryDownPaymentPercentLabel')}</dt>
-              <dd className="font-medium text-gray-900">{dpPercent}</dd>
-              <dt className="text-gray-500">{t('tenor')}</dt>
-              <dd className="font-medium text-gray-900">{product.Tenor}</dd>
-              <dt className="text-gray-500">{t('summaryFlatRatePercentLabel')}</dt>
-              <dd className="font-medium text-gray-900">{product.EffRatePrcnt}</dd>
-              <dt className="text-gray-500">{t('summaryInsuranceTypeLabel')}</dt>
-              <dd className="font-medium text-gray-900">{t('summaryInsuranceTypeValue')}</dd>
-              <dt className="text-gray-500">{t('summaryInsurancePaymentTypeLabel')}</dt>
-              <dd className="font-medium text-gray-900">{t('summaryInAdvanceValue')}</dd>
-              <dt className="text-gray-500">{t('summaryFeePaymentTypeLabel')}</dt>
-              <dd className="font-medium text-gray-900">{t('summaryInAdvanceValue')}</dd>
-              <dt className="text-gray-500">{installLabel}</dt>
-              <dd className="font-semibold text-gray-900">{formatRp(product.InstallmentAmt)}</dd>
-              <dt className="text-gray-500">{t('summaryTotalDownPaymentLabel')}</dt>
-              <dd className="font-semibold text-gray-900">{formatRp(product.TdpAmt)}</dd>
-              <dt className="text-gray-500">{t('summaryTotalPaymentLabel')}</dt>
-              <dd className="font-semibold text-[#002c5f]">{formatRp(totalPayment)}</dd>
-            </dl>
-          </section>
+          {!loading && error && (
+            <SimulationRetryError
+              compact
+              title={t('summaryErrorFinal')}
+              message={error}
+              hint={t('errorRetryHint')}
+              retryLabel={t('summaryRetryFinal')}
+              onRetry={onRetry ?? (() => {})}
+              retrying={loading}
+              errorId={errorId}
+            />
+          )}
 
-          {/* Total Down Payment */}
-          <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
-              | {t('summaryTotalDownPaymentSectionTitle')}
-            </h3>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <dt className="text-gray-500">{t('summaryDownPaymentLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(dpAmt)}</dd>
-              <dt className="text-gray-500">{t('summaryInstallmentAmountLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(product.InstallmentAmt)}</dd>
-              <dt className="text-gray-500">{t('summaryAssetInsurancePaidLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(assetInsurancePaid)}</dd>
-              <dt className="text-gray-500">{t('summaryFeePaidByCustomerLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(feePaidByCustomer)}</dd>
-              <dt className="text-gray-500">{t('summarySubsidyAmountLabel')}</dt>
-              <dd className="font-medium text-gray-900">({formatRp(subsidyAmt)})</dd>
-              <dt className="text-gray-500">{t('summaryTotalDownPaymentLabel')}</dt>
-              <dd className="font-semibold text-gray-900">{formatRp(product.TdpAmt)}</dd>
-            </dl>
-          </section>
+          {!loading && !error && summary && (
+            <>
+              <section>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                  {t('summaryProductSectionTitle')}
+                </h3>
+                <p className="text-gray-900 font-medium">{summary.productName}</p>
+                {leadNo && (
+                  <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <dt className="text-gray-500">{t('summaryLeadNoLabel')}</dt>
+                    <dd className="font-medium text-gray-900 font-mono tracking-tight">{leadNo}</dd>
+                  </dl>
+                )}
+              </section>
 
-          {/* NTF */}
-          <section>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
-              | {t('summaryNtfSectionTitle')}
-            </h3>
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              {discount > 0 && (
-                <>
-                  <dt className="text-gray-500">{t('summaryInitialAssetPriceLabel')}</dt>
-                  <dd className="font-medium text-gray-900">{formatRp(otrPrice + discount)}</dd>
-                  <dt className="text-gray-500">{t('summaryDiscountLabel')}</dt>
-                  <dd className="font-medium text-red-600">({formatRp(discount)})</dd>
-                </>
+              {(vehicle?.modelName || vehicle?.trimName || vehicle?.exteriorColor || vehicle?.interiorColor) && (
+                <section>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                    | {t('summaryVehicleInfoSectionTitle')}
+                  </h3>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    {vehicle.modelName && (
+                      <>
+                        <dt className="text-gray-500">{t('summaryVehicleModelLabel')}</dt>
+                        <dd className="font-medium text-gray-900">{vehicle.modelName}</dd>
+                      </>
+                    )}
+                    {vehicle.trimName && (
+                      <>
+                        <dt className="text-gray-500">{t('summaryTrimLabel')}</dt>
+                        <dd className="font-medium text-gray-900">{vehicle.trimName}</dd>
+                      </>
+                    )}
+                    {vehicle.exteriorColor && (
+                      <>
+                        <dt className="text-gray-500">{t('summaryExteriorColorLabel')}</dt>
+                        <dd className="font-medium text-gray-900">{vehicle.exteriorColor}</dd>
+                      </>
+                    )}
+                    {vehicle.interiorColor && (
+                      <>
+                        <dt className="text-gray-500">{t('summaryInteriorColorLabel')}</dt>
+                        <dd className="font-medium text-gray-900">{vehicle.interiorColor}</dd>
+                      </>
+                    )}
+                  </dl>
+                </section>
               )}
-              <dt className="text-gray-500">{t('summaryTotalAssetPriceLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(otrPrice)}</dd>
-              <dt className="text-gray-500">{t('summaryDownPaymentLabel')}</dt>
-              <dd className="font-medium text-gray-900">({formatRp(dpAmt)})</dd>
-              <dt className="text-gray-500">{t('summaryAssetInsuranceCapitalizedLabel')}</dt>
-              <dd className="font-medium text-gray-900">{formatRp(0)}</dd>
-              <dt className="text-gray-500">{t('summaryNtfAmountLabel')}</dt>
-              <dd className="font-semibold text-[#002c5f]">{formatRp(ntfAmount)}</dd>
-            </dl>
-          </section>
+
+              <section>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                  | {t('summarySectionTitle')}
+                </h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <dt className="text-gray-500">{t('summaryDownPaymentPercentLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{summary.assetDownPaymentPrcnt}</dd>
+                  <dt className="text-gray-500">{t('tenor')}</dt>
+                  <dd className="font-medium text-gray-900">{summary.tenor}</dd>
+                  <dt className="text-gray-500">{t('summaryFlatRatePercentLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{summary.flatRatePrcnt}</dd>
+                  <dt className="text-gray-500">{t('summaryInsuranceTypeLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{t('summaryInsuranceTypeValue')}</dd>
+                  <dt className="text-gray-500">{t('summaryInsurancePaymentTypeLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{t('summaryInAdvanceValue')}</dd>
+                  <dt className="text-gray-500">{t('summaryFeePaymentTypeLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{t('summaryInAdvanceValue')}</dd>
+                  <dt className="text-gray-500">{installLabel}</dt>
+                  <dd className="font-semibold text-gray-900">{formatRp(summary.instAmt)}</dd>
+                  <dt className="text-gray-500">{t('summaryTotalDownPaymentLabel')}</dt>
+                  <dd className="font-semibold text-gray-900">{formatRp(summary.totalDownPaymentAmt)}</dd>
+                  <dt className="text-gray-500">{t('summaryTotalPaymentLabel')}</dt>
+                  <dd className="font-semibold text-[#002c5f]">{formatRp(summary.totalPaymentAmt)}</dd>
+                </dl>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                  | {t('summaryTotalDownPaymentSectionTitle')}
+                </h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <dt className="text-gray-500">{t('summaryDownPaymentLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(summary.downPaymentAmt)}</dd>
+                  <dt className="text-gray-500">{t('summaryInstallmentAmountLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(summary.instAmt)}</dd>
+                  <dt className="text-gray-500">{t('summaryAssetInsurancePaidLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(assetInsurancePaid)}</dd>
+                  <dt className="text-gray-500">{t('summaryFeePaidByCustomerLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(feePaidByCustomer)}</dd>
+                  <dt className="text-gray-500">{t('summarySubsidyAmountLabel')}</dt>
+                  <dd className="font-medium text-gray-900">({formatRp(subsidyAmt)})</dd>
+                  <dt className="text-gray-500">{t('summaryTotalDownPaymentLabel')}</dt>
+                  <dd className="font-semibold text-gray-900">{formatRp(summary.totalDownPaymentAmt)}</dd>
+                </dl>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">
+                  | {t('summaryNtfSectionTitle')}
+                </h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  {discount > 0 && (
+                    <>
+                      <dt className="text-gray-500">{t('summaryInitialAssetPriceLabel')}</dt>
+                      <dd className="font-medium text-gray-900">{formatRp(summary.assetPriceAmt + discount)}</dd>
+                      <dt className="text-gray-500">{t('summaryDiscountLabel')}</dt>
+                      <dd className="font-medium text-red-600">({formatRp(discount)})</dd>
+                    </>
+                  )}
+                  <dt className="text-gray-500">{t('summaryTotalAssetPriceLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(summary.assetPriceAmt)}</dd>
+                  <dt className="text-gray-500">{t('summaryDownPaymentLabel')}</dt>
+                  <dd className="font-medium text-gray-900">({formatRp(summary.downPaymentAmt)})</dd>
+                  <dt className="text-gray-500">{t('summaryAssetInsuranceCapitalizedLabel')}</dt>
+                  <dd className="font-medium text-gray-900">{formatRp(0)}</dd>
+                  <dt className="text-gray-500">{t('summaryNtfAmountLabel')}</dt>
+                  <dd className="font-semibold text-[#002c5f]">{formatRp(summary.ntfAmt)}</dd>
+                </dl>
+              </section>
+            </>
+          )}
         </div>
 
         <div className="sticky bottom-0 border-t border-gray-200 bg-gray-50 px-6 py-4 flex justify-end gap-3">
           <button
             type="button"
             onClick={handleDownloadPdf}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#002c5f] text-[#002c5f] rounded-lg font-medium hover:bg-[#002c5f]/5 transition cursor-pointer"
+            disabled={!summary || loading || !!error}
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#002c5f] text-[#002c5f] rounded-lg font-medium hover:bg-[#002c5f]/5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IconDownload size={18} />
             {t('downloadPdf')}

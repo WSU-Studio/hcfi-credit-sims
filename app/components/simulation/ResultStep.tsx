@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import type { ProductCalculation, Vendor } from '@/app/types/credit-simulation';
+import type { FinalSummaryInfo, ProductCalculation, Vendor } from '@/app/types/credit-simulation';
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
@@ -80,18 +80,26 @@ export function ResultStep({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
+  const [finalSummary, setFinalSummary] = useState<FinalSummaryInfo | null>(null);
+  const [finalSummaryLoading, setFinalSummaryLoading] = useState(false);
+  const [finalSummaryError, setFinalSummaryError] = useState<string | null>(null);
+  const [finalSummaryErrorId, setFinalSummaryErrorId] = useState<string | null>(null);
+  const [finalSummaryCacheKey, setFinalSummaryCacheKey] = useState<string | null>(null);
   const fetchListGeneration = useRef(0);
   // Counter + abort controller untuk drop stale response saat user ubah
   // DP%/firstInstallment cepat (race condition: tabel bisa nampilkan data dari
   // fetch sebelumnya kalau response lama tiba setelah response baru).
   const simulateGeneration = useRef(0);
   const simulateAbortRef = useRef<AbortController | null>(null);
+  const finalSummaryAbortRef = useRef<AbortController | null>(null);
+  const finalSummaryGeneration = useRef(0);
 
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
   const minDpPercent = resolveMinDpPercent(selectedProduct);
   // Hyundai: IsPromotion wajib true untuk produk dari tab Promotion (CalculateProductFromRule).
   const isPromotion = tab === 'Promotion';
+  const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
 
   // Tab promotion hanya relevan saat ada produk promo yang cocok partner code.
   // Kalau promo kosong (mis. partner code tidak cocok), balik ke tab Standard.
@@ -144,8 +152,101 @@ export function ResultStep({
   useEffect(() => {
     return () => {
       simulateAbortRef.current?.abort();
+      finalSummaryAbortRef.current?.abort();
     };
   }, []);
+
+  const buildFinalSummaryCacheKey = () => {
+    if (!leadNo || !selectedProduct || !highlightedRow || !otrPrice) return null;
+    return [
+      leadNo,
+      selectedProduct.ProductCode,
+      selectedProduct.ProductName,
+      dpPercent,
+      highlightedRow.Tenor,
+      firstInstallment,
+      isPromotion ? '1' : '0',
+    ].join('|');
+  };
+
+  const fetchFinalSummary = async () => {
+    if (!leadNo || !selectedProduct || !highlightedRow || !otrPrice) {
+      setFinalSummaryError(t('summaryErrorFinal'));
+      return;
+    }
+
+    const cacheKey = buildFinalSummaryCacheKey();
+    if (cacheKey && cacheKey === finalSummaryCacheKey && finalSummary) {
+      return;
+    }
+
+    finalSummaryAbortRef.current?.abort();
+    const controller = new AbortController();
+    finalSummaryAbortRef.current = controller;
+    const generation = ++finalSummaryGeneration.current;
+
+    setFinalSummaryLoading(true);
+    setFinalSummaryError(null);
+    setFinalSummaryErrorId(null);
+    try {
+      const res = await fetch('/api/simulation/final-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadNo,
+          LeadNo: leadNo,
+          otrPrice,
+          dpPercent,
+          tenor: highlightedRow.Tenor,
+          productCode: selectedProduct.ProductCode,
+          productName: selectedProduct.ProductName,
+          firstInstallment,
+          isPromotion,
+          partnerCode,
+        }),
+        signal: controller.signal,
+      });
+      const data = await res.json();
+      if (generation !== finalSummaryGeneration.current) return;
+      if (!res.ok) {
+        if (data?.errorId) setFinalSummaryErrorId(String(data.errorId));
+        throw new Error(data.error || data.message || t('summaryErrorFinal'));
+      }
+      setFinalSummary(data.summary as FinalSummaryInfo);
+      setFinalSummaryCacheKey(cacheKey);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (generation !== finalSummaryGeneration.current) return;
+      setFinalSummary(null);
+      setFinalSummaryCacheKey(null);
+      setFinalSummaryError(e instanceof Error ? e.message : t('summaryErrorFinal'));
+    } finally {
+      if (generation === finalSummaryGeneration.current) {
+        setFinalSummaryLoading(false);
+      }
+    }
+  };
+
+  const openSummary = () => {
+    setSummaryOpen(true);
+    void fetchFinalSummary();
+  };
+
+  // Invalidate cached final summary saat pilihan simulasi berubah.
+  useEffect(() => {
+    setFinalSummary(null);
+    setFinalSummaryCacheKey(null);
+    setFinalSummaryError(null);
+    setFinalSummaryErrorId(null);
+  }, [
+    leadNo,
+    selectedProduct?.ProductCode,
+    selectedProduct?.ProductName,
+    dpPercent,
+    selectedTenor,
+    firstInstallment,
+    isPromotion,
+  ]);
 
   const fetchList = async () => {
     const generation = ++fetchListGeneration.current;
@@ -270,8 +371,6 @@ export function ResultStep({
 
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
-
-  const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
 
   useEffect(() => {
     if (highlightedRow) onSelectProduct?.(highlightedRow);
@@ -571,7 +670,7 @@ export function ResultStep({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSummaryOpen(true)}
+                  onClick={openSummary}
                   className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 border-2 border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-500/10 transition cursor-pointer transition-colors duration-300"
                 >
                   <IconFileDescription size={20} />
@@ -581,12 +680,15 @@ export function ResultStep({
               <SimulationSummaryModal
                 open={summaryOpen}
                 onClose={() => setSummaryOpen(false)}
-                product={highlightedRow}
+                leadNo={leadNo}
                 vehicle={vehicle}
-                otrPrice={otrPrice ?? 0}
                 discount={discount}
-                dpPercent={dpPercent}
                 firstInstallment={firstInstallment}
+                summary={finalSummary}
+                loading={finalSummaryLoading}
+                error={finalSummaryError}
+                errorId={finalSummaryErrorId}
+                onRetry={fetchFinalSummary}
               />
               <ContactModal
                 open={contactOpen}
