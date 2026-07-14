@@ -22,10 +22,9 @@
  *     11. ValidateDuplicatePhoneAndEmail         (Validation, fail-fast)
  *     12. AddLeadCust                            (Save — ujung Fase 3)
  *
- *   Catatan Fase 3: AreaCode1 (kecamatan) / AreaCode2 (kelurahanDesa) / City /
- *   ZipCode diambil apa adanya dari hasil OCR — TIDAK lagi via
- *   GetLocationDataByZipcode (yang dulu fallback ke area dealer sehingga alamat
- *   customer jadi salah). Nilai yang divalidasi = nilai yang dikirim.
+ *   Catatan Fase 3: ZipCode + AreaCode1/2 dari OCR (bukan fallback dealer).
+ *   City di-normalize via GetLocationDataByZipcode(OCR zip) + UPPERCASE supaya
+ *   match master Confins (mis. OCR "Jakarta Pusat" → "JAKARTA PUSAT").
  *
  * Catatan:
  *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
@@ -63,7 +62,10 @@ import { bootstrapLeadFinancialAndInsurance } from '@/lib/hyundai-lead-financial
 import { integrationRequestBody } from '@/lib/hyundai-integration-request';
 import { syncLeadAssetInsurance } from '@/lib/hyundai-insurance';
 import { resolveDefaultOemAccessories, type ResolvedOemAccessories } from '@/lib/hyundai-oem-accessory';
-import type { HyundaiCustomerLocation } from '@/lib/hyundai-zipcode-resolve';
+import {
+  buildCustomerLocationFromOcr,
+  type HyundaiCustomerLocation,
+} from '@/lib/hyundai-zipcode-resolve';
 import {
   validateCustomerZipcode,
   validateCustomerPhoneAndEmail,
@@ -388,18 +390,10 @@ async function finalizeLeadCustomerPhase(params: {
     }
   }
 
-  // AreaCode1/2, ZipCode, City diambil apa adanya dari hasil OCR (bukan lagi
-  // di-resolve via GetLocationDataByZipcode yang dulu fallback ke area dealer).
-  // Objek ini dipakai konsisten oleh insurance sync, ValidateCustZipCode, dan
-  // AddLeadCust — jadi yang divalidasi = yang dikirim. Kalau OCR kosong, Hyundai
-  // yang akan menolak (tidak ada fallback dealer yang mengaburkan alamat asli).
-  const customerLocation: HyundaiCustomerLocation = {
-    zipCode: ocrRead?.Zipcode?.trim() ?? '',
-    city: ocrRead?.kotaKabupaten?.trim() ?? '',
-    areaCode1: ocrRead?.kecamatan?.trim() ?? '',
-    areaCode2: ocrRead?.kelurahanDesa?.trim() ?? '',
-    province: ocrRead?.provinsi?.trim() || undefined,
-  };
+  // Zip + kecamatan/kelurahan dari OCR; City dari master zip (fallback OCR + UPPERCASE).
+  // Dipakai konsisten di insurance sync, ValidateCustZipCode, dan AddLeadCust.
+  const customerLocation: HyundaiCustomerLocation =
+    await buildCustomerLocationFromOcr(ocrRead);
 
   const idNo = ocrRead?.nik?.replace(/\D/g, '').slice(0, 16) || '0000000000000000';
   await syncLeadAssetInsurance({
