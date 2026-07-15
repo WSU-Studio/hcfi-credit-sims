@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     await requirePermission('LEADS', 'view');
 
     const vendorCode = new URL(request.url).searchParams.get('vendorCode');
-    const oriOfficeCode = new URL(request.url).searchParams.get('oriOfficeCode');
+    // const oriOfficeCode = new URL(request.url).searchParams.get('oriOfficeCode');
     if (!vendorCode) {
       return NextResponse.json({ error: 'vendorCode is required' }, { status: 400 });
     }

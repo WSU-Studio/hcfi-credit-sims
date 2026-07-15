@@ -17,7 +17,7 @@ export type ResolvedOemAccessories = {
   list: { mrAssetOemAccessoryCode: string; assetOemAccessoryPriceAmt: number }[];
 };
 
-/** Empty OEM accessory lists — website tidak punya input aksesori (konfirmasi Pak Richard 2026-07). */
+/** Empty OEM accessory lists — website tidak punya input aksesori (konfirmasi Pak image.pngRichard 2026-07). */
 export const EMPTY_OEM_ACCESSORIES: ResolvedOemAccessories = {
   codes: [],
   list: [],

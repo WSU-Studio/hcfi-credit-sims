@@ -117,9 +117,9 @@ const httpUrlSchema = z
   .max(2048)
   .refine((v) => /^https?:\/\/[^\s<>"']+$/i.test(v), { message: 'URL tidak valid' });
 
-const optionalHttpUrl = z
-  .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
-  .transform((v) => (v == null || v === '' ? null : v));
+// const optionalHttpUrl = z
+//   .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
+//   .transform((v) => (v == null || v === '' ? null : v));
 
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import { ocrKtpSnapshotSchema } from '@/lib/ocr-ktp-snapshot';

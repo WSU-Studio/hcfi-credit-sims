@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
-import { IconEdit, IconLink, IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconLink, IconTrash } from '@tabler/icons-react';
 import Link from 'next/link';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });

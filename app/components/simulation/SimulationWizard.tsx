@@ -10,7 +10,7 @@ import { PriceStep } from '@/app/components/simulation/PriceStep';
 import { ResultStep } from '@/app/components/simulation/ResultStep';
 import { SimulationSidebar } from '@/app/components/simulation/SimulationSidebar';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
-import type { Vendor, AssetMaster, ProductCalculation } from '@/app/types/credit-simulation';
+import type { Vendor, AssetMaster } from '@/app/types/credit-simulation';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
