@@ -64,6 +64,7 @@ export function LeadsTable() {
   const [runningSlikId, setRunningSlikId] = useState<string | null>(null);
   const [canChangeFollowUp, setCanChangeFollowUp] = useState<boolean>(false);
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
+  const [canEditOcrSnapshot, setCanEditOcrSnapshot] = useState<boolean>(false);
   const [ktpPreviewLeadId, setKtpPreviewLeadId] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
@@ -91,10 +92,12 @@ export function LeadsTable() {
         const acts: string[] = data.activities || [];
         setCanChangeFollowUp(acts.includes('leads.changeFollowUpStatus'));
         setCanDownloadLeads(acts.includes('leads.downloadLeads'));
+        setCanEditOcrSnapshot(acts.includes('leads.editOcrSnapshot'));
       })
       .catch(() => {
         setCanChangeFollowUp(false);
         setCanDownloadLeads(false);
+        setCanEditOcrSnapshot(false);
       });
   }, []);
 
@@ -498,6 +501,7 @@ export function LeadsTable() {
                       vendors={vendors}
                       vendorsLoading={vendorsLoading}
                       canSubmit
+                      canEditOcrSnapshot={canEditOcrSnapshot}
                       onSubmitted={fetchLeads}
                     />
                   </tr>

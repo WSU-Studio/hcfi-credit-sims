@@ -36,6 +36,8 @@ interface LeadAssignRowProps {
   vendors: Vendor[];
   vendorsLoading: boolean;
   canSubmit: boolean;
+  /** Activity `leads.editOcrSnapshot` */
+  canEditOcrSnapshot?: boolean;
   onSubmitted: () => void;
 }
 
@@ -50,6 +52,7 @@ export function LeadAssignRow({
   vendors,
   vendorsLoading,
   canSubmit,
+  canEditOcrSnapshot = false,
   onSubmitted,
 }: LeadAssignRowProps) {
   const isSubmitted = lead.hyundaiAssignStatus === 'SUBMITTED' && !!lead.hyundaiLeadNo;
@@ -351,31 +354,35 @@ export function LeadAssignRow({
         >
           {submitting ? '...' : 'SUBMIT'}
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setOcrSavedHint(false);
-            setOcrEditOpen(true);
-          }}
-          disabled={!canSubmit || submitting}
-          className="mt-1.5 w-full min-w-[5rem] px-2 py-1.5 border border-gray-300 bg-white text-gray-700 rounded-lg text-[10px] font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
-        >
-          Edit Identitas
-        </button>
+        {canEditOcrSnapshot && (
+          <button
+            type="button"
+            onClick={() => {
+              setOcrSavedHint(false);
+              setOcrEditOpen(true);
+            }}
+            disabled={submitting}
+            className="mt-1.5 w-full min-w-[5rem] px-2 py-1.5 border border-gray-300 bg-white text-gray-700 rounded-lg text-[10px] font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Edit Identitas
+          </button>
+        )}
         {ocrSavedHint && !error && (
           <p className="text-[10px] text-green-700 mt-1 leading-tight">
             Data Identitas (KTP) tersimpan. Silakan SUBMIT ulang.
           </p>
         )}
         {error && <p className="text-[10px] text-red-600 mt-1 leading-tight">{error}</p>}
-        <EditLeadOcrSnapshotModal
-          open={ocrEditOpen}
-          leadId={lead.id}
-          leadName={lead.name}
-          initialSnapshot={lead.ocrSnapshot}
-          onClose={() => setOcrEditOpen(false)}
-          onSaved={handleOcrSaved}
-        />
+        {canEditOcrSnapshot && (
+          <EditLeadOcrSnapshotModal
+            open={ocrEditOpen}
+            leadId={lead.id}
+            leadName={lead.name}
+            initialSnapshot={lead.ocrSnapshot}
+            onClose={() => setOcrEditOpen(false)}
+            onSaved={handleOcrSaved}
+          />
+        )}
       </td>
     </>
   );
