@@ -145,6 +145,7 @@ export async function POST(
         assetSnapshot: parseLeadAssetSnapshot(lead.assetSnapshot),
         vendorCode: lead.vendorCode,
         otrPrice: lead.otrPrice,
+        discount: lead.discount,
         dpPercent: lead.dpPercent,
         tenor: lead.tenor,
         motherName: lead.motherName,

@@ -171,7 +171,10 @@ export async function POST(request: NextRequest) {
       oriOfficeCode: data.oriOfficeCode,
       oriOfficeName: data.oriOfficeName,
       otrPrice: data.otrPrice ?? draft.otrPrice,
-      discount: draft.discount ?? null,
+      discount:
+        data.discount != null && Number.isFinite(data.discount)
+          ? data.discount
+          : (draft.discount ?? null),
       partnerCode: draft.partnerCode ?? null,
       dpPercent: data.dpPercent,
       tenor: data.tenor != null ? Math.trunc(data.tenor) : null,

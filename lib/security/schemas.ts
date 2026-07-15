@@ -184,6 +184,7 @@ export const leadCreateSchema = z
     oriOfficeName: optionalSafeText(MAX_VENDOR),
 
     otrPrice: requiredFiniteNumber({ min: 1, label: 'OTR' }),
+    discount: z.coerce.number().nonnegative().optional(),
     dpPercent: requiredFiniteNumber({ min: 0, max: 100, label: 'DP %' }),
     tenor: requiredFiniteNumber({ min: 1, max: 120, integer: true, label: 'tenor' }),
 

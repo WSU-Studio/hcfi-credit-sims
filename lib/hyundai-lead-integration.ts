@@ -183,6 +183,8 @@ export type LeadRecordForHyundai = {
   assetSnapshot?: LeadAssetSnapshot | null;
   vendorCode?: string | null;
   otrPrice: number | null;
+  /** Nominal diskon dari PriceStep / LeadAssetDraft — dikirim sebagai AssetDiscAmt. */
+  discount?: number | null;
   dpPercent: number | null;
   tenor: number | null;
   motherName: string | null;
@@ -207,6 +209,7 @@ function buildAddLeadAssetBody(
   asset: ResolvedLeadAsset,
   oem: ResolvedOemAccessories,
   assetPriceAmt: number,
+  assetDiscAmt: number = 0,
   officeOverride?: { OriOfficeCode: string; OriOfficeName: string }
 ): Record<string, unknown> {
   return {
@@ -229,7 +232,7 @@ function buildAddLeadAssetBody(
     MrAssetInteriorName: asset.interiorColorName,
     MrAssetExteriorCode: asset.exteriorColorCode,
     MrAssetExteriorName: asset.exteriorColorName,
-    AssetDiscAmt: 0,
+    AssetDiscAmt: assetDiscAmt > 0 ? assetDiscAmt : 0,
     AdditionalItemPriceAmt: 0,
     AdditionalItemName: '',
     ListMrAssetOEMAccessoryCode: oem.codes,
@@ -585,6 +588,8 @@ export async function submitLeadToHyundai(params: {
           }
         : undefined;
 
+    const assetDiscAmt = Math.max(0, Number(params.lead.discount) || 0);
+
     const assetRes = await hyundaiPost<HyundaiApiEnvelope>(
       '/v1/IntegrationWebsite/AddLeadAsset',
       buildAddLeadAssetBody(
@@ -593,6 +598,7 @@ export async function submitLeadToHyundai(params: {
         resolvedAsset,
         oemAccessories,
         assetPriceAmt,
+        assetDiscAmt,
         officeOverride
       )
     );

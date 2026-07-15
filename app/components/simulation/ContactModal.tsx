@@ -31,6 +31,7 @@ interface ContactModalProps {
   firstInstallment?: 'ADDM' | 'ADDB';
   isPromotion?: boolean;
   otrPrice?: number;
+  discount?: number;
   dpPercent?: number;
   tenor?: number;
   vehicleSummary?: string;
@@ -50,6 +51,7 @@ export function ContactModal({
   firstInstallment,
   isPromotion,
   otrPrice,
+  discount,
   dpPercent,
   tenor,
   vehicleSummary,
@@ -306,6 +308,7 @@ export function ContactModal({
           oriOfficeCode: dealer?.OriOfficeCode ?? null,
           oriOfficeName: dealer?.OriOfficeName ?? null,
           otrPrice: otrPrice || null,
+          discount: discount != null && discount > 0 ? discount : null,
           dpPercent: dpPercent || null,
           tenor: tenor || null,
           ktpUrl,

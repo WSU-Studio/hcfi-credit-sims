@@ -707,6 +707,7 @@ export function ResultStep({
                 firstInstallment={firstInstallment}
                 isPromotion={isPromotion}
                 otrPrice={otrPrice ?? undefined}
+                discount={discount}
                 dpPercent={dpPercent}
                 tenor={highlightedRow?.Tenor}
                 vehicleSummary={
