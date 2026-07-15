@@ -13,8 +13,35 @@ import {
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
 import { applyPartnerFields } from '@/lib/hyundai-partner';
-import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-rows';
+import {
+  filterProductRowsByFirstInstallment,
+  getAvailableFirstInstallments,
+  normalizeFirstInstallment,
+  pickAllowedFirstInstallment,
+  type FirstInstallmentType,
+} from '@/lib/product-calculation-rows';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
+
+function buildSimulatePayload(
+  fullList: ProductCalculation[],
+  preferred: FirstInstallmentType | null,
+  extra: Record<string, unknown> = {}
+) {
+  const availableFirstInstallments = getAvailableFirstInstallments(fullList);
+  const resolvedFirstInstallment = pickAllowedFirstInstallment(
+    availableFirstInstallments,
+    preferred
+  );
+  const ListProductObj = resolvedFirstInstallment
+    ? filterProductRowsByFirstInstallment(fullList, resolvedFirstInstallment)
+    : [];
+  return {
+    ...extra,
+    ListProductObj,
+    availableFirstInstallments,
+    resolvedFirstInstallment,
+  };
+}
 
 /**
  * Hyundai Fase 2 — kalkulasi cicilan per tenor untuk satu produk yang user pilih.
@@ -68,8 +95,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const resolvedFirstInstallment: 'ADDM' | 'ADDB' =
-      firstInstallment === 'ADDB' ? 'ADDB' : 'ADDM';
+    const preferredFirstInstallment =
+      normalizeFirstInstallment(firstInstallment) ?? ('ADDM' as FirstInstallmentType);
 
     const siteMock = await getMockApiSettings();
     const mockEnabled = siteMock.enabled || isMockModeEnabled();
@@ -79,10 +106,10 @@ export async function POST(request: NextRequest) {
       const custom = siteMock.content?.simulate;
       if (custom && Array.isArray(custom.ListProductObj) && custom.ListProductObj.length > 0) {
         return NextResponse.json({
-          ...custom,
-          ListProductObj: filterProductRowsByFirstInstallment(
+          ...buildSimulatePayload(
             custom.ListProductObj as ProductCalculation[],
-            resolvedFirstInstallment
+            preferredFirstInstallment,
+            custom as Record<string, unknown>
           ),
           dataSource: 'mock-site-settings',
         });
@@ -92,9 +119,12 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: resolvedFirstInstallment,
+        firstInstallment: preferredFirstInstallment,
       });
-      return NextResponse.json({ ...res, dataSource: 'mock' });
+      return NextResponse.json({
+        ...buildSimulatePayload(res.ListProductObj, preferredFirstInstallment, res),
+        dataSource: 'mock',
+      });
     }
 
     if (!leadNo) {
@@ -158,10 +188,9 @@ export async function POST(request: NextRequest) {
 
       const list = ((data as { ListProductObj?: ProductCalculation[] }).ListProductObj ??
         []) as ProductCalculation[];
-      return NextResponse.json({
-        ...(data as object),
-        ListProductObj: filterProductRowsByFirstInstallment(list, resolvedFirstInstallment),
-      });
+      return NextResponse.json(
+        buildSimulatePayload(list, preferredFirstInstallment, data as Record<string, unknown>)
+      );
     } catch (e) {
       const rawMessage = e instanceof Error ? e.message : 'Calculate failed';
       const errorId = extractHyundaiErrorId(e);
@@ -188,9 +217,12 @@ export async function POST(request: NextRequest) {
         dpPrcnt: Number(dpPrcnt),
         productCode: String(productCode),
         productName: String(productName),
-        firstInstallment: resolvedFirstInstallment,
+        firstInstallment: preferredFirstInstallment,
       });
-      return NextResponse.json({ ...mockResult, dataSource: 'mock' });
+      return NextResponse.json({
+        ...buildSimulatePayload(mockResult.ListProductObj, preferredFirstInstallment, mockResult),
+        dataSource: 'mock',
+      });
     }
   } catch (err: unknown) {
     console.error('[simulate] handler error:', err);
