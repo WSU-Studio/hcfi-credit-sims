@@ -18,8 +18,6 @@ import { KtpOcrReviewForm } from '@/app/components/simulation/KtpOcrReviewForm';
 
 export type UserLocation = { latitude: number; longitude: number } | null;
 
-type OcrCategory = 'SUCCESS' | 'EMPTY_READ' | 'HTTP_ERROR' | 'API_ERROR' | 'INVALID_JSON';
-
 interface ContactModalProps {
   open: boolean;
   onClose: () => void;
@@ -71,8 +69,6 @@ export function ContactModal({
   const [ktpError, setKtpError] = useState<string | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
-  const [ocrCategory, setOcrCategory] = useState<OcrCategory | null>(null);
-  const [ocrDiagnosis, setOcrDiagnosis] = useState<string | null>(null);
   const [ocrSnapshot, setOcrSnapshot] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
   const [ocrDraft, setOcrDraft] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
   const [showOcrForm, setShowOcrForm] = useState(false);
@@ -140,8 +136,6 @@ export function ContactModal({
        setKtpError(null);
        setOcrLoading(false);
        setOcrError(null);
-       setOcrCategory(null);
-       setOcrDiagnosis(null);
        setOcrSnapshot(emptyOcrKtpSnapshot());
        setOcrDraft(emptyOcrKtpSnapshot());
        setShowOcrForm(false);
@@ -176,8 +170,6 @@ export function ContactModal({
   const runKtpOcr = async (file: File) => {
     setOcrLoading(true);
     setOcrError(null);
-    setOcrCategory(null);
-    setOcrDiagnosis(null);
     setOcrSnapshot(emptyOcrKtpSnapshot());
     setOcrDraft(emptyOcrKtpSnapshot());
     setShowOcrForm(false);
@@ -191,17 +183,16 @@ export function ContactModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'OCR gagal');
+        throw new Error(data.error || t('ocrFailedGeneric'));
       }
 
-      setOcrCategory(data.category as OcrCategory);
-      setOcrDiagnosis(data.diagnosis ?? null);
+      const category = String(data.category ?? '');
       const snapshot = (data.snapshot as OcrKtpSnapshot | undefined) ?? emptyOcrKtpSnapshot();
       setOcrSnapshot(snapshot);
       setOcrDraft(snapshot);
       setShowOcrForm(true);
 
-      if (data.category === 'SUCCESS' || data.category === 'EMPTY_READ') {
+      if (category === 'SUCCESS' || category === 'EMPTY_READ') {
         if (!name.trim() && snapshot.nama.trim()) {
           setName(snapshot.nama.trim());
         }
@@ -212,11 +203,15 @@ export function ContactModal({
         }
       }
 
-      if (data.category !== 'SUCCESS' && data.category !== 'EMPTY_READ') {
-        setOcrError(data.errorMessage || data.diagnosis || 'OCR gagal membaca KTP');
+      if (category === 'EMPTY_READ') {
+        setOcrError(data.userMessage || t('ocrEmptyReadHint'));
+      } else if (category !== 'SUCCESS') {
+        setOcrError(
+          data.userMessage || data.errorMessage || t('ocrFailedGeneric')
+        );
       }
     } catch (err) {
-      setOcrError(err instanceof Error ? err.message : 'OCR gagal');
+      setOcrError(err instanceof Error ? err.message : t('ocrFailedGeneric'));
       setShowOcrForm(true);
     } finally {
       setOcrLoading(false);
@@ -539,9 +534,6 @@ export function ContactModal({
                 )}
                 {ocrError && (
                   <p className="mt-1 text-xs text-amber-700">{ocrError}</p>
-                )}
-                {ocrCategory === 'EMPTY_READ' && ocrDiagnosis && (
-                  <p className="mt-1 text-xs text-amber-700">{ocrDiagnosis}</p>
                 )}
                 <p className="mt-1 text-xs text-gray-500">
                   {t('ktpUploadHint')}

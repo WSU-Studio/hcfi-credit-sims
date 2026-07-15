@@ -55,11 +55,11 @@ const TONE_BY_CATEGORY: Record<OcrTestResultCategory, Tone> = {
 
 const TITLE_BY_CATEGORY: Record<OcrTestResultCategory, string> = {
   SUCCESS: 'OCR berhasil — data KTP terbaca',
-  EMPTY_READ: 'API sukses, tapi engine OCR tidak bisa baca gambar',
-  HTTP_ERROR: 'Hyundai mengembalikan HTTP error',
-  API_ERROR: 'Hyundai menolak request (StatusCode internal != 200)',
-  INVALID_JSON: 'Response Hyundai tidak bisa di-parse',
-  NETWORK_ERROR: 'Gagal mencapai server Hyundai',
+  EMPTY_READ: 'Request sukses, tapi data KTP kosong (foto mungkin kurang jelas)',
+  HTTP_ERROR: 'Upstream OCR mengembalikan HTTP error',
+  API_ERROR: 'Upstream OCR menolak request (StatusCode internal != 200)',
+  INVALID_JSON: 'Response OCR tidak bisa di-parse',
+  NETWORK_ERROR: 'Gagal mencapai server OCR',
 };
 
 const TONE_STYLES: Record<

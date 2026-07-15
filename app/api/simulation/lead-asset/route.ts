@@ -17,6 +17,7 @@ import { getClientIp, leadAssetDraftLimiter, tooManyRequestsResponse } from '@/l
 import {
   extractHyundaiErrorId,
   toUserFacingHyundaiError,
+  DEFAULT_USER_FACING_SERVICE_ERROR,
 } from '@/lib/hyundai-known-errors';
 import { leadAssetDraftSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
@@ -269,7 +270,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: toUserFacingHyundaiError(error, rawMessage),
+        error: toUserFacingHyundaiError(error, DEFAULT_USER_FACING_SERVICE_ERROR),
         errorId,
       },
       { status: 502 }

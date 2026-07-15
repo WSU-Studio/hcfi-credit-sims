@@ -50,8 +50,9 @@ export async function validateCustomerZipcode(
     }));
   } catch (err) {
     const original = err instanceof Error ? err.message : String(err);
+    console.error('[validateCustomerLocation]', { zipCode: input.zipCode, city: input.city, original });
     throw new Error(
-      `Validasi ZipCode gagal di Hyundai (ZipCode=${input.zipCode}, City=${input.city}). Detail: ${original}`
+      `Kode pos / kota belum valid (ZipCode=${input.zipCode}, City=${input.city}). Pastikan data KTP terbaca jelas.`
     );
   }
 }
@@ -73,8 +74,13 @@ export async function validateCustomerPhoneAndEmail(
     }));
   } catch (err) {
     const original = err instanceof Error ? err.message : String(err);
+    console.error('[validateCustomerPhoneAndEmail]', {
+      email: input.email,
+      phoneNo: input.phoneNo,
+      original,
+    });
     throw new Error(
-      `Validasi Phone/Email gagal di Hyundai (Email=${input.email}, Phone=${input.phoneNo}). Detail: ${original}`
+      'Email atau nomor telepon sudah terdaftar / belum valid. Silakan periksa kembali data kontak.'
     );
   }
 }

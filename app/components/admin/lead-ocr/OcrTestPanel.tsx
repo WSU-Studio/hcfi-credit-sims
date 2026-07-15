@@ -101,7 +101,7 @@ export function OcrTestPanel({ defaultOpen = true }: { defaultOpen?: boolean }) 
                 onFileChange={setFile}
                 maxBytes={MAX_BYTES}
                 disabled={loading}
-                hint="Tip: WebP otomatis di-konversi ke JPEG sebelum dikirim ke Hyundai (engine OCR mereka tidak baca WebP)."
+                hint="Tip: WebP otomatis di-konversi ke JPEG sebelum dikirim (engine OCR hanya menerima JPEG/PNG)."
               />
             </div>
 

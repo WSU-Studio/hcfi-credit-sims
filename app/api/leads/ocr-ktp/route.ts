@@ -75,14 +75,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       category: analysis.category,
-      diagnosis: analysis.diagnosis,
-      errorMessage: analysis.errorMessage,
+      userMessage: analysis.userMessage,
+      errorMessage: analysis.errorMessage ?? analysis.userMessage,
       snapshot: ocrReadToSnapshot(read),
       read,
     });
   } catch (error: unknown) {
     console.error('[leads/ocr-ktp]', error);
-    const message = error instanceof Error ? error.message : 'OCR gagal';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          'Gagal membaca data KTP. Silakan coba lagi, atau unggah ulang foto yang lebih jelas.',
+      },
+      { status: 500 }
+    );
   }
 }

@@ -231,7 +231,7 @@ function pickSimulationProduct(
 
   const fallbackTenor = byTenor[0] ?? byDp[0] ?? products[0];
   if (!fallbackTenor) {
-    throw new Error('Produk simulasi kredit tidak ditemukan di Hyundai untuk lead ini.');
+    throw new Error('Produk simulasi kredit tidak ditemukan untuk lead ini. Silakan pilih produk lain.');
   }
   return { ...fallbackTenor, Tenor: params.tenor };
 }
@@ -508,10 +508,10 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
       })
     );
   } catch (calcError) {
-    const detail = calcError instanceof Error ? calcError.message : String(calcError);
+    console.error('[finalize] CalculateProductFromRule failed:', calcError);
     throw new Error(
-      `Gagal menghitung produk kredit di Hyundai (${product.ProductName}, DP ${params.dpPercent}%). ` +
-        `Dealer/aset mungkin belum punya rule produk ini. Detail: ${detail}`
+      `Produk ${product.ProductName} dengan DP ${params.dpPercent}% belum tersedia untuk pilihan ini. ` +
+        `Silakan coba lagi, atau pilih produk lain.`
     );
   }
 
@@ -563,7 +563,9 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   );
 
   if (!finalRes.SummaryInfoObj) {
-    throw new Error('FinalCalculateByLeadNo tidak mengembalikan data kalkulasi.');
+    throw new Error(
+      'Ringkasan kredit belum tersedia. Silakan coba lagi, atau pilih produk/tenor lain.'
+    );
   }
 
   // Step 5 — persist ke Adins.

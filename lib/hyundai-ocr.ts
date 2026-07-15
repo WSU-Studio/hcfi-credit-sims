@@ -98,21 +98,36 @@ export type OcrAnalysisResult = {
   category: OcrAnalysisCategory;
   data: OcrKtpResponse | null;
   errorMessage: string | null;
-  /** Penjelasan ramah-admin tentang category — bukan error tapi diagnostic. */
+  /**
+   * Penjelasan teknis untuk admin/tool diagnostik (boleh detail).
+   * Jangan tampilkan ke user publik.
+   */
   diagnosis: string;
+  /** Pesan singkat untuk UI publik (ContactModal). Tanpa nama vendor/API. */
+  userMessage: string;
 };
 
+/** Diagnostik internal admin — jangan di-render di ContactModal. */
 const DIAGNOSIS_BY_CATEGORY: Record<OcrAnalysisCategory, string> = {
-  SUCCESS:
-    'Engine OCR Hyundai berhasil membaca data KTP dari gambar.',
+  SUCCESS: 'OCR berhasil membaca data KTP dari gambar.',
   EMPTY_READ:
-    'API call sukses (HTTP 200, StatusCode 200, Message "Success"), TAPI field "Read" kosong (null). Artinya: panggilan & autentikasi OK, tapi engine OCR (Adins) tidak bisa mengekstrak data dari gambar yang dikirim. Bukan bug API — masalah ada di kualitas/konten gambar.',
+    'HTTP/Status sukses tapi field Read kosong — biasanya kualitas/konten gambar (blur, gelap, terpotong).',
+  HTTP_ERROR: 'Upstream OCR mengembalikan HTTP non-2xx (token, jaringan, atau server).',
+  API_ERROR: 'Upstream OCR HTTP 200 tapi StatusCode internal != 200 (validasi business rule).',
+  INVALID_JSON: 'Response OCR bukan JSON valid (HTML error page atau timeout).',
+};
+
+/** Pesan untuk end-user di credit simulation. */
+const USER_MESSAGE_BY_CATEGORY: Record<OcrAnalysisCategory, string> = {
+  SUCCESS: 'Data KTP berhasil dibaca. Silakan periksa kembali hasilnya.',
+  EMPTY_READ:
+    'Foto KTP belum bisa dibaca. Silakan unggah ulang foto yang lebih jelas, terang, dan tidak blur.',
   HTTP_ERROR:
-    'Hyundai mengembalikan HTTP non-2xx. Cek token AdInsKey, koneksi, atau status server Hyundai.',
+    'Gagal membaca data KTP. Silakan coba lagi beberapa saat, atau unggah ulang foto yang lebih jelas.',
   API_ERROR:
-    'Hyundai mengembalikan HTTP 200 tapi StatusCode internal mereka != 200 — biasanya validasi business rule.',
+    'Gagal membaca data KTP. Silakan coba lagi, atau unggah ulang foto yang lebih jelas.',
   INVALID_JSON:
-    'Response Hyundai bukan JSON valid (kemungkinan HTML error page atau timeout).',
+    'Gagal membaca data KTP. Silakan coba lagi beberapa saat.',
 };
 
 /**
@@ -126,7 +141,7 @@ const DIAGNOSIS_BY_CATEGORY: Record<OcrAnalysisCategory, string> = {
 export function analyzeOcrKtpResponse(
   rawText: string,
   httpOk: boolean,
-  httpStatus: number
+  _httpStatus: number
 ): OcrAnalysisResult {
   let data: OcrKtpResponse | null = null;
   try {
@@ -135,8 +150,9 @@ export function analyzeOcrKtpResponse(
     return {
       category: 'INVALID_JSON',
       data: null,
-      errorMessage: `Response bukan JSON valid (HTTP ${httpStatus})`,
+      errorMessage: USER_MESSAGE_BY_CATEGORY.INVALID_JSON,
       diagnosis: DIAGNOSIS_BY_CATEGORY.INVALID_JSON,
+      userMessage: USER_MESSAGE_BY_CATEGORY.INVALID_JSON,
     };
   }
 
@@ -144,8 +160,9 @@ export function analyzeOcrKtpResponse(
     return {
       category: 'HTTP_ERROR',
       data,
-      errorMessage: data?.Message || `HTTP ${httpStatus}`,
+      errorMessage: USER_MESSAGE_BY_CATEGORY.HTTP_ERROR,
       diagnosis: DIAGNOSIS_BY_CATEGORY.HTTP_ERROR,
+      userMessage: USER_MESSAGE_BY_CATEGORY.HTTP_ERROR,
     };
   }
 
@@ -154,8 +171,9 @@ export function analyzeOcrKtpResponse(
     return {
       category: 'API_ERROR',
       data,
-      errorMessage: data?.Message || `Hyundai StatusCode ${apiStatus}`,
+      errorMessage: USER_MESSAGE_BY_CATEGORY.API_ERROR,
       diagnosis: DIAGNOSIS_BY_CATEGORY.API_ERROR,
+      userMessage: USER_MESSAGE_BY_CATEGORY.API_ERROR,
     };
   }
 
@@ -165,6 +183,7 @@ export function analyzeOcrKtpResponse(
       data,
       errorMessage: null,
       diagnosis: DIAGNOSIS_BY_CATEGORY.EMPTY_READ,
+      userMessage: USER_MESSAGE_BY_CATEGORY.EMPTY_READ,
     };
   }
 
@@ -173,6 +192,7 @@ export function analyzeOcrKtpResponse(
     data,
     errorMessage: null,
     diagnosis: DIAGNOSIS_BY_CATEGORY.SUCCESS,
+    userMessage: USER_MESSAGE_BY_CATEGORY.SUCCESS,
   };
 }
 

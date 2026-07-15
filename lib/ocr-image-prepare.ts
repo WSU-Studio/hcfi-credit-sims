@@ -55,10 +55,9 @@ export async function prepareImageForOcr(input: {
       .jpeg({ quality: OCR_JPEG_QUALITY, mozjpeg: true })
       .toBuffer();
   } catch (convertErr) {
+    console.error('[ocr-image-prepare] convert failed:', convertErr);
     throw new Error(
-      `KTP tidak bisa dikonversi ke JPEG untuk Hyundai: ${
-        convertErr instanceof Error ? convertErr.message : String(convertErr)
-      }`
+      'KTP tidak bisa diproses. Pastikan file berupa foto jelas (JPG/PNG/WEBP).'
     );
   }
 

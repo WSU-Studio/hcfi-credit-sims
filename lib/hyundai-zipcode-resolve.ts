@@ -115,6 +115,6 @@ export async function resolveCustomerLocation(params: {
   }
 
   throw new Error(
-    'Kode pos tidak terdaftar di Hyundai. Upload KTP yang terbaca jelas atau pilih dealer dengan kode pos valid.'
+    'Kode pos tidak terdaftar. Upload KTP yang terbaca jelas atau pilih dealer dengan kode pos valid.'
   );
 }
