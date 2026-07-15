@@ -17,6 +17,12 @@ export type ResolvedOemAccessories = {
   list: { mrAssetOemAccessoryCode: string; assetOemAccessoryPriceAmt: number }[];
 };
 
+/** Empty OEM accessory lists — website tidak punya input aksesori (konfirmasi Pak Richard 2026-07). */
+export const EMPTY_OEM_ACCESSORIES: ResolvedOemAccessories = {
+  codes: [],
+  list: [],
+};
+
 export async function fetchOemAccessories(modelCode: string): Promise<OemAccessoryItem[]> {
   const data = await hyundaiPost<{ ReturnObject?: ProductByModelRow[] }>(
     '/Foundation/v1/AssetMasterForMobileX/GetListProductByModel',
@@ -35,27 +41,13 @@ export async function fetchOemAccessories(modelCode: string): Promise<OemAccesso
     }));
 }
 
-/** Hyundai AddLeadAsset requires at least one OEM accessory to initialize lead insurance. */
+/**
+ * Aksesori untuk AddLeadAsset.
+ * Selalu kosong `[]` — user tidak memilih aksesori di form simulasi;
+ * Richard Fam konfirmasi list kosong diizinkan di AddLeadAsset.
+ */
 export async function resolveDefaultOemAccessories(
-  modelCode: string
+  _modelCode: string
 ): Promise<ResolvedOemAccessories> {
-  const items = await fetchOemAccessories(modelCode);
-  if (items.length === 0) {
-    throw new Error(
-      `Aksesori OEM tidak ditemukan untuk model ${modelCode}. Submit ke Hyundai tidak dapat dilanjutkan.`
-    );
-  }
-
-  const withPrice = items.find((i) => i.priceAmt > 0);
-  const chosen = withPrice ?? items[0];
-
-  return {
-    codes: [chosen.code],
-    list: [
-      {
-        mrAssetOemAccessoryCode: chosen.code,
-        assetOemAccessoryPriceAmt: chosen.priceAmt,
-      },
-    ],
-  };
+  return EMPTY_OEM_ACCESSORIES;
 }
