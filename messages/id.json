@@ -136,6 +136,8 @@
     "installmentPerMonth": "Angsuran/Bulan",
     "months": "bulan",
     "effectiveRate": "Bunga Efektif",
+    "balloonAmount": "Nilai Balloon",
+    "balloonAmountHint": "Jumlah yang dibayar di akhir tenor (selain angsuran bulanan).",
     "whatsapp": "Konsultasi Online",
     "contact": "Ajukan Permohonan",
     "viewSummary": "Dapatkan Penawaran",

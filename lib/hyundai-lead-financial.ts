@@ -128,6 +128,7 @@ export function mapSummaryInfoToFinalSummary(
       'AssetInsurancePaidAmt'
     ),
     feePaidAmt: numField(summary, 'FeePaidAmt', 'feePaidAmt', 'FeePaidByCustomerAmt'),
+    balloonAmt: numField(summary, 'BalloonAmt', 'balloonAmt'),
     firstInstallment: fallbacks.firstInstallment,
   };
 }

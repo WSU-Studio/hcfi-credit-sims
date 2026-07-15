@@ -55,6 +55,10 @@ function buildMockFinalSummary(params: {
     downPaymentAmt: dpAmt,
     assetInsPaidAmt,
     feePaidAmt,
+    balloonAmt:
+      params.productCode.toUpperCase() === 'BL'
+        ? Math.round(ntfAmt * 0.6)
+        : 0,
     firstInstallment: params.firstInstallment,
   };
 }

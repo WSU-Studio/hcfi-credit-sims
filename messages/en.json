@@ -136,6 +136,8 @@
     "installmentPerMonth": "Installment/Month",
     "months": "months",
     "effectiveRate": "Effective Rate",
+    "balloonAmount": "Balloon Amount",
+    "balloonAmountHint": "Amount due at the end of the tenor (in addition to monthly installments).",
     "whatsapp": "Online Consultation",
     "contact": "Submit Application",
     "viewSummary": "Get Quotation",

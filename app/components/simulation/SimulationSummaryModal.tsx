@@ -133,6 +133,8 @@ export function SimulationSummaryModal({
   const subsidyAmt = 0;
   const assetInsurancePaid = summary?.assetInsPaidAmt ?? 0;
   const feePaidByCustomer = summary?.feePaidAmt ?? 0;
+  const balloonAmt = Number(summary?.balloonAmt) || 0;
+  const showBalloonAmt = balloonAmt > 0;
 
   const handleDownloadPdf = async () => {
     if (!summary) return;
@@ -209,6 +211,9 @@ export function SimulationSummaryModal({
     doc.text(`${t('tenor')}: ${t('tenorWithMonths', { tenor: summary.tenor })}`, left, (y += 5));
     doc.text(`${t('summaryFlatRatePercentLabel')}: ${summary.flatRatePrcnt}%`, left, (y += 5));
     doc.text(`${installLabel}: ${formatRp(summary.instAmt)}`, left, (y += 5));
+    if (showBalloonAmt) {
+      doc.text(`${t('balloonAmount')}: ${formatRp(balloonAmt)}`, left, (y += 5));
+    }
     doc.text(`${t('summaryTotalDownPaymentLabel')}: ${formatRp(summary.totalDownPaymentAmt)}`, left, (y += 5));
     doc.text(`${t('summaryTotalPaymentLabel')}: ${formatRp(summary.totalPaymentAmt)}`, left, (y += 5));
     y += 8;
@@ -361,6 +366,17 @@ export function SimulationSummaryModal({
                   <dd className="font-medium text-gray-900">{t('summaryInAdvanceValue')}</dd>
                   <dt className="text-gray-500">{installLabel}</dt>
                   <dd className="font-semibold text-gray-900">{formatRp(summary.instAmt)}</dd>
+                  {showBalloonAmt && (
+                    <>
+                      <dt className="text-gray-500">{t('balloonAmount')}</dt>
+                      <dd className="font-semibold text-[#002c5f]">
+                        <span className="block">{formatRp(balloonAmt)}</span>
+                        <span className="mt-0.5 block text-xs font-normal text-gray-500">
+                          {t('balloonAmountHint')}
+                        </span>
+                      </dd>
+                    </>
+                  )}
                   <dt className="text-gray-500">{t('summaryTotalDownPaymentLabel')}</dt>
                   <dd className="font-semibold text-gray-900">{formatRp(summary.totalDownPaymentAmt)}</dd>
                   <dt className="text-gray-500">{t('summaryTotalPaymentLabel')}</dt>

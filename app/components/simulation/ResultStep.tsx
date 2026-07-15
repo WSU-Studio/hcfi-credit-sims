@@ -213,7 +213,13 @@ export function ResultStep({
         if (data?.errorId) setFinalSummaryErrorId(String(data.errorId));
         throw new Error(data.error || data.message || t('summaryErrorFinal'));
       }
-      setFinalSummary(data.summary as FinalSummaryInfo);
+      const summary = data.summary as FinalSummaryInfo;
+      const rowBalloon = Number(highlightedRow?.BalloonAmt) || 0;
+      const summaryBalloon = Number(summary.balloonAmt) || 0;
+      setFinalSummary({
+        ...summary,
+        balloonAmt: summaryBalloon > 0 ? summaryBalloon : rowBalloon > 0 ? rowBalloon : 0,
+      });
       setFinalSummaryCacheKey(cacheKey);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
@@ -641,6 +647,15 @@ export function ResultStep({
                   <div className="text-gray-500">{t('effectiveRate')}</div>
                   <div className="font-semibold">{highlightedRow.EffRatePrcnt}%</div>
                 </div>
+                {Number(highlightedRow.BalloonAmt) > 0 && (
+                  <div className="col-span-2">
+                    <div className="text-gray-500">{t('balloonAmount')}</div>
+                    <div className="font-bold text-[#002c5f]">
+                      {formatCurrency(highlightedRow.BalloonAmt)}
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500">{t('balloonAmountHint')}</p>
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 {!isDealerSales && (
