@@ -35,6 +35,7 @@ type Lead = {
   hyundaiLeadNo?: string | null;
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
+  ocrSnapshot?: unknown;
   source?: string | null;
   salesUser?: { id: string; name: string; email: string } | null;
   createdAt: string;

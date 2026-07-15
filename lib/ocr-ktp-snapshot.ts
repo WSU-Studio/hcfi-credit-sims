@@ -4,7 +4,7 @@ import { cleanString } from '@/lib/security/sanitize';
 
 const optionalOcrText = (max: number) =>
   z
-    .union([z.string(), z.null(), z.undefined()])
+    .union([z.string(), z.number(), z.boolean(), z.null(), z.undefined()])
     .transform((v) => {
       if (v == null) return '';
       return cleanString(String(v)).slice(0, max);
@@ -100,8 +100,56 @@ export function snapshotToOcrRead(snapshot: OcrKtpSnapshot): OcrKtpRead {
 }
 
 export function parseOcrKtpSnapshot(raw: unknown): OcrKtpSnapshot | null {
-  const parsed = ocrKtpSnapshotSchema.safeParse(raw);
+  const parsed = ocrKtpSnapshotSchema.safeParse(unwrapOcrSnapshotRaw(raw));
   return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Parse defensif untuk form admin/edit: jangan return kosong hanya karena
+ * 1 field tipenya aneh (number) atau JSON tersimpan sebagai string.
+ */
+export function coerceOcrKtpSnapshot(raw: unknown): OcrKtpSnapshot {
+  const unwrapped = unwrapOcrSnapshotRaw(raw);
+  const parsed = ocrKtpSnapshotSchema.safeParse(unwrapped);
+  if (parsed.success) {
+    return sanitizeOcrKtpSnapshotDigits(parsed.data);
+  }
+
+  if (unwrapped && typeof unwrapped === 'object' && !Array.isArray(unwrapped)) {
+    const r = unwrapped as Record<string, unknown>;
+    const base = emptyOcrKtpSnapshot();
+    (Object.keys(base) as (keyof OcrKtpSnapshot)[]).forEach((key) => {
+      const v = r[key];
+      if (v == null) return;
+      base[key] = cleanString(String(v)).slice(0, 300);
+    });
+    return sanitizeOcrKtpSnapshotDigits(base);
+  }
+
+  return emptyOcrKtpSnapshot();
+}
+
+function unwrapOcrSnapshotRaw(raw: unknown): unknown {
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      return raw;
+    }
+  }
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const r = raw as Record<string, unknown>;
+    // Beberapa penyimpanan lama membungkus jadi { snapshot: {...} }
+    if (
+      r.snapshot &&
+      typeof r.snapshot === 'object' &&
+      !Array.isArray(r.snapshot) &&
+      (r.nik == null && r.nama == null)
+    ) {
+      return r.snapshot;
+    }
+  }
+  return raw;
 }
 
 /** Tanggal lahir: YYYY-MM-DD, DD-MM-YYYY, atau DD/MM/YYYY (tanggal kalender valid). */

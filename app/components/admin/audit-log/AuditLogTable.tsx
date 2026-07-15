@@ -35,6 +35,7 @@ const ACTION_OPTIONS = [
   'permission.update',
   'lead.statusChange',
   'lead.submitHyundai',
+  'lead.ocrSnapshotUpdate',
   'lead.runSlik',
   'settings.update',
 ];

@@ -18,10 +18,10 @@ type KtpOcrReviewFormProps = {
 };
 
 const inputClass =
-  'w-full px-3 h-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed';
+  'w-full px-3 h-10 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed';
 
 const inputErrorClass =
-  'w-full px-3 h-10 border border-red-400 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed';
+  'w-full px-3 h-10 border border-red-400 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none disabled:bg-gray-100 disabled:cursor-not-allowed';
 
 const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
 

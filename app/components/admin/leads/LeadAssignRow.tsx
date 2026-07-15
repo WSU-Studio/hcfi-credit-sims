@@ -7,6 +7,7 @@ import {
   resolveCmoAssignFields,
   type CmoSelectOption,
 } from '@/lib/hyundai-cmo-assign';
+import { EditLeadOcrSnapshotModal } from '@/app/components/admin/leads/EditLeadOcrSnapshotModal';
 import { BlockingProcessOverlay } from '@/app/components/ui/BlockingProcessOverlay';
 
 type LeadAssignState = {
@@ -18,6 +19,7 @@ type LeadAssignState = {
 
 export type LeadForAssign = {
   id: string;
+  name?: string | null;
   vendorCode?: string | null;
   vendorName?: string | null;
   vendorCity?: string | null;
@@ -26,6 +28,7 @@ export type LeadForAssign = {
   hyundaiLeadNo?: string | null;
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
+  ocrSnapshot?: unknown;
 };
 
 interface LeadAssignRowProps {
@@ -62,6 +65,12 @@ export function LeadAssignRow({
   const [cmoLoading, setCmoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(lead.hyundaiAssignError ?? null);
+  const [ocrEditOpen, setOcrEditOpen] = useState(false);
+  const [ocrSavedHint, setOcrSavedHint] = useState(false);
+
+  useEffect(() => {
+    setError(lead.hyundaiAssignError ?? null);
+  }, [lead.hyundaiAssignError]);
 
   const assignedVendor = useMemo(
     () => vendors.find((v) => v.VendorCode === (lead.vendorCode ?? selection.vendorCode)) ?? null,
@@ -189,6 +198,12 @@ export function LeadAssignRow({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleOcrSaved = () => {
+    setError(null);
+    setOcrSavedHint(true);
+    onSubmitted();
   };
 
   if (isSubmitted) {
@@ -336,7 +351,31 @@ export function LeadAssignRow({
         >
           {submitting ? '...' : 'SUBMIT'}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOcrSavedHint(false);
+            setOcrEditOpen(true);
+          }}
+          disabled={!canSubmit || submitting}
+          className="mt-1.5 w-full min-w-[5rem] px-2 py-1.5 border border-gray-300 bg-white text-gray-700 rounded-lg text-[10px] font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+        >
+          Edit Identitas
+        </button>
+        {ocrSavedHint && !error && (
+          <p className="text-[10px] text-green-700 mt-1 leading-tight">
+            Data Identitas (KTP) tersimpan. Silakan SUBMIT ulang.
+          </p>
+        )}
         {error && <p className="text-[10px] text-red-600 mt-1 leading-tight">{error}</p>}
+        <EditLeadOcrSnapshotModal
+          open={ocrEditOpen}
+          leadId={lead.id}
+          leadName={lead.name}
+          initialSnapshot={lead.ocrSnapshot}
+          onClose={() => setOcrEditOpen(false)}
+          onSaved={handleOcrSaved}
+        />
       </td>
     </>
   );
