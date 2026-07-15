@@ -129,6 +129,7 @@
     "dpPercentMinHint": "Minimum DP is {min}% based on the selected credit product rules.",
     "firstInstallmentType": "First Installment Type",
     "addmAddbHint": "ADDM = first installment paid in advance; ADDB = first installment paid in arrears",
+    "addmAddbFixedHint": "This product only supports {type} (per product rule)",
     "calculating": "Calculating simulation...",
     "resultPerTenor": "Result per Tenor",
     "tenor": "Tenor",

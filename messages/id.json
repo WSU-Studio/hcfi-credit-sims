@@ -129,6 +129,7 @@
     "dpPercentMinHint": "Minimum DP {min}% sesuai aturan produk kredit yang dipilih.",
     "firstInstallmentType": "Tipe Angsuran Pertama",
     "addmAddbHint": "ADDM = angsuran pertama dibayar di muka; ADDB = angsuran pertama dibayar belakang",
+    "addmAddbFixedHint": "Produk ini hanya mendukung {type} (sesuai setting product di rule)",
     "calculating": "Menghitung simulasi...",
     "resultPerTenor": "Hasil per Tenor",
     "tenor": "Tenor",

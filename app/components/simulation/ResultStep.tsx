@@ -14,11 +14,15 @@ import {
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 import { filterPromotionByPartnerCode, normalizePartnerCode } from '@/lib/hyundai-partner';
-import { filterProductRowsByFirstInstallment } from '@/lib/product-calculation-rows';
+import {
+  getAvailableFirstInstallments,
+  normalizeFirstInstallment,
+  pickAllowedFirstInstallment,
+  type FirstInstallmentType,
+} from '@/lib/product-calculation-rows';
 import Link from 'next/link';
 
 type TabKind = 'Standard' | 'Promotion';
-type FirstInstallment = 'ADDM' | 'ADDB';
 
 const DP_PRESET_OPTIONS = [10, 15, 20, 25, 30, 35, 50] as const;
 
@@ -70,7 +74,10 @@ export function ResultStep({
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [dpPercent, setDpPercent] = useState<number>(10);
-  const [firstInstallment, setFirstInstallment] = useState<FirstInstallment>('ADDM');
+  const [firstInstallment, setFirstInstallment] = useState<FirstInstallmentType>('ADDM');
+  const [availableFirstInstallments, setAvailableFirstInstallments] = useState<
+    FirstInstallmentType[]
+  >([]);
   const [selectedTenor, setSelectedTenor] = useState<number>(36);
 
   const [tableRows, setTableRows] = useState<ProductCalculation[]>([]);
@@ -94,6 +101,8 @@ export function ResultStep({
   const simulateAbortRef = useRef<AbortController | null>(null);
   const finalSummaryAbortRef = useRef<AbortController | null>(null);
   const finalSummaryGeneration = useRef(0);
+  /** Skip one auto-calculate setelah FI di-sync dari response API (hindari double-fetch). */
+  const skipNextCalculateRef = useRef(false);
 
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
@@ -141,6 +150,10 @@ export function ResultStep({
   // Stale response di-drop via generation counter di `handleCalculate`.
   useEffect(() => {
     if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode) {
+      if (skipNextCalculateRef.current) {
+        skipNextCalculateRef.current = false;
+        return;
+      }
       const timer = setTimeout(() => {
         handleCalculate();
       }, 100);
@@ -282,16 +295,21 @@ export function ResultStep({
       // cocok dengan partner code yang diinput customer. Kalau tidak cocok,
       // customer hanya melihat produk standard.
       const matchedPromo = filterPromotionByPartnerCode(rawPromo, partnerCode);
-      setListStandard(data.ListDefaultStandardProductObj ?? []);
+      const rawStandard: ProductCalculation[] = data.ListDefaultStandardProductObj ?? [];
+      const first = rawStandard[0];
+      setListStandard(rawStandard);
       setListPromo(matchedPromo);
       setPartnerCodeUnmatched(
         !!normalizePartnerCode(partnerCode ?? '') &&
           rawPromo.length > 0 &&
           matchedPromo.length === 0
       );
-      const first = data.ListDefaultStandardProductObj?.[0];
+
+      setSelectedProduct((prev) => {
+        if (prev || !first) return prev;
+        return first;
+      });
       if (first) {
-        setSelectedProduct((prev) => prev ?? first);
         setDpPercent((prev) => (prev === 10 ? resolveDefaultDpPercent(first) : prev));
       }
     } catch (e) {
@@ -340,10 +358,21 @@ export function ResultStep({
         if (data?.errorId) setErrorId(String(data.errorId));
         throw new Error(data.error || t('errorCalculate'));
       }
-      const rows = filterProductRowsByFirstInstallment(
-        data.ListProductObj ?? [],
-        firstInstallment
-      );
+      const rows: ProductCalculation[] = data.ListProductObj ?? [];
+      const available: FirstInstallmentType[] =
+        Array.isArray(data.availableFirstInstallments) && data.availableFirstInstallments.length > 0
+          ? (data.availableFirstInstallments as FirstInstallmentType[])
+          : getAvailableFirstInstallments(rows);
+      setAvailableFirstInstallments(available);
+
+      const resolved =
+        normalizeFirstInstallment(data.resolvedFirstInstallment) ??
+        pickAllowedFirstInstallment(available, firstInstallment);
+      if (resolved && resolved !== firstInstallment) {
+        skipNextCalculateRef.current = true;
+        setFirstInstallment(resolved);
+      }
+
       setTableRows(rows);
       const row36 = rows.find((r) => r.Tenor === 36);
       const first = rows[0];
@@ -366,6 +395,11 @@ export function ResultStep({
   const selectProduct = (product: ProductCalculation) => {
     setSelectedProduct(product);
     setDpPercent(resolveDefaultDpPercent(product));
+    const preferred =
+      normalizeFirstInstallment(product.FirstInstallment) ?? ('ADDB' as FirstInstallmentType);
+    setFirstInstallment(preferred);
+    // Optimistic: sampai CalculateProductFromRule jawab, batasi ke FI default produk.
+    setAvailableFirstInstallments([preferred]);
     setTableRows([]);
   };
 
@@ -527,31 +561,40 @@ export function ResultStep({
             </p>
           </div>
 
-          {/* ADDM / ADDB */}
+          {/* ADDM / ADDB — opsi dari CalculateProductFromRule (per setting product di rule) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{t('firstInstallmentType')}</label>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setFirstInstallment('ADDM')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-                  firstInstallment === 'ADDM' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]/50'
-                }`}
-              >
-                ADDM
-              </button>
-              <button
-                type="button"
-                onClick={() => setFirstInstallment('ADDB')}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer ${
-                  firstInstallment === 'ADDB' ? 'bg-[#002c5f] text-white' : 'bg-white border border-gray-300 hover:border-[#002c5f]/50'
-                }`}
-              >
-                ADDB
-              </button>
+              {(['ADDM', 'ADDB'] as const).map((opt) => {
+                const enabled = availableFirstInstallments.includes(opt);
+                const selected = firstInstallment === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => enabled && setFirstInstallment(opt)}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition ${
+                      !enabled
+                        ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                        : selected
+                          ? 'bg-[#002c5f] text-white cursor-pointer'
+                          : 'bg-white border border-gray-300 hover:border-[#002c5f]/50 cursor-pointer'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              {t('addmAddbHint')}
+              {availableFirstInstallments.length === 0
+                ? t('calculating')
+                : availableFirstInstallments.length === 1
+                  ? t('addmAddbFixedHint', {
+                      type: availableFirstInstallments[0] ?? firstInstallment,
+                    })
+                  : t('addmAddbHint')}
             </p>
           </div>
 

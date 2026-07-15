@@ -239,20 +239,49 @@ function buildProductRow(
 function getListDefaultProductsForCards(otrPrice: number): ProductCalculation[] {
   return STANDARD_PRODUCTS.map((p, i) => {
     const tenor = p.is5050 ? 12 : 36;
-    return buildProductRow(otrPrice, p.defaultDP, tenor, p, 'ADDB');
+    // Default FirstInstallment dari GetListDefaultProduct (Postman v1.8) — bukan daftar opsi lengkap.
+    const defaultFi = supportedFirstInstallments(p)[0] ?? 'ADDB';
+    // Urutan preferred default: pakai FirstInstallment yang sama dengan sample Postman.
+    const postmanDefault: 'ADDM' | 'ADDB' = p.is5050
+      ? 'ADDB'
+      : p.isBalloon
+        ? 'ADDM'
+        : p.ProductName === 'Product DP Ringan'
+          ? 'ADDB'
+          : p.ProductName === 'Product Bunga Murah'
+            ? 'ADDM'
+            : defaultFi;
+    return buildProductRow(otrPrice, p.defaultDP, tenor, p, postmanDefault);
   }).map((r, i) => ({ ...r, Default: i === 0 }));
 }
 
 /**
- * CalculateProductFromRule-style: returns rows per tenor (and FirstInstallment).
+ * CalculateProductFromRule-style: returns rows per tenor × allowed FirstInstallment.
  * ADDM vs ADDB: ADDM includes first installment in TDP.
+ * Opsi FI mengikuti setting product di rule (mirip response Hyundai).
  */
+function supportedFirstInstallments(
+  product: (typeof STANDARD_PRODUCTS)[number]
+): Array<'ADDM' | 'ADDB'> {
+  // Sumber kebenaran = CalculateProductFromRule.ListProductObj (Postman v1.8):
+  // - Product DP Ringan: 10 rows (5 tenor × ADDM+ADDB)
+  // - Promo "HYUNDAI Bunga 0% 1 Tahun": ADDM saja
+  // - Product 5050 default list: ADDB; Balloon/Bunga Murah default: ADDM
+  // Tidak ada sample Calculate untuk 5050/Balloon/Bunga Murah yang membuktikan keduanya,
+  // jadi mock ikut default FirstInstallment di GetListDefaultProduct + Richard (Low DP = both).
+  if (product.is5050) return ['ADDB'];
+  if (product.isBalloon) return ['ADDM'];
+  if (product.ProductName === 'Product DP Ringan') return ['ADDM', 'ADDB'];
+  if (product.ProductName === 'Product Bunga Murah') return ['ADDM', 'ADDB'];
+  return ['ADDB'];
+}
+
 function computeProductRows(params: {
   otrPrice: number;
   dpPrcnt: number;
   productCode: string;
   productName: string;
-  firstInstallment: 'ADDM' | 'ADDB';
+  firstInstallment?: 'ADDM' | 'ADDB';
 }): ProductCalculation[] {
   const product = STANDARD_PRODUCTS.find(
     (p) => p.ProductName === params.productName && p.ProductCode === params.productCode
@@ -261,8 +290,9 @@ function computeProductRows(params: {
     return [];
   }
   const tenors = product.is5050 ? ([12] as const) : TENORS;
-  return tenors.map((t) =>
-    buildProductRow(params.otrPrice, params.dpPrcnt, t, product, params.firstInstallment)
+  const installments = supportedFirstInstallments(product);
+  return installments.flatMap((fi) =>
+    tenors.map((t) => buildProductRow(params.otrPrice, params.dpPrcnt, t, product, fi))
   );
 }
 
@@ -494,15 +524,15 @@ export const mockApi = {
 
   /**
    * CalculateProductFromRule / SimulateFinancialCalculate style.
-   * Params: otrPrice, dpPrcnt, productCode, productName, firstInstallment (ADDM|ADDB).
-   * Returns ListProductObj per tenor (12,24,36,48,60; 5050 only 12).
+   * Returns full ListProductObj (semua tenor × FirstInstallment yang diizinkan rule).
+   * Filter ADDM/ADDB dilakukan di /api/simulation/simulate.
    */
   calculateProductFromRule(params: {
     otrPrice: number;
     dpPrcnt: number;
     productCode: string;
     productName: string;
-    firstInstallment: 'ADDM' | 'ADDB';
+    firstInstallment?: 'ADDM' | 'ADDB';
   }): { ListProductObj: ProductCalculation[] } {
     const rows = computeProductRows(params);
     return { ListProductObj: rows };
