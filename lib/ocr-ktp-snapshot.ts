@@ -220,9 +220,16 @@ export function normalizeOcrBirthDate(raw: string): string | null {
   return `${parts.year}-${mm}-${dd}`;
 }
 
-/** RT/RW Confins: hanya digit, 1–3 karakter. */
+/** RT/RW Confins: wajib tepat 3 digit (konfirmasi Richard Fam). */
 export function isValidOcrRtRw(raw: string): boolean {
-  return /^\d{1,3}$/.test(raw.trim());
+  return /^\d{3}$/.test(raw.trim());
+}
+
+/** Pad digit RT/RW menjadi 3 karakter (mis. "1" → "001"). */
+export function normalizeOcrRtRw(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 3);
+  if (!digits) return '';
+  return digits.padStart(3, '0');
 }
 
 export function isValidOcrZipcode(raw: string): boolean {
@@ -288,8 +295,8 @@ export function sanitizeOcrKtpSnapshotDigits(snapshot: OcrKtpSnapshot): OcrKtpSn
     ...snapshot,
     nik: snapshot.nik.replace(/\D/g, '').slice(0, 16),
     tanggalLahir: birth ?? snapshot.tanggalLahir.trim(),
-    Rt: snapshot.Rt.replace(/\D/g, '').slice(0, 3),
-    Rw: snapshot.Rw.replace(/\D/g, '').slice(0, 3),
+    Rt: normalizeOcrRtRw(snapshot.Rt),
+    Rw: normalizeOcrRtRw(snapshot.Rw),
     Zipcode: snapshot.Zipcode.replace(/\D/g, '').slice(0, 5),
     kelurahanDesa: snapshot.kelurahanDesa.trim().toUpperCase(),
     kecamatan: snapshot.kecamatan.trim().toUpperCase(),

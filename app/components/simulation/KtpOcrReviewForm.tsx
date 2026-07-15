@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   getOcrKtpFieldErrors,
   normalizeOcrBirthDate,
+  normalizeOcrRtRw,
   type OcrKtpFieldErrorKey,
   type OcrKtpSnapshot,
 } from '@/lib/ocr-ktp-snapshot';
@@ -257,10 +258,14 @@ export function KtpOcrReviewForm({
             inputMode="numeric"
             value={value.Rt}
             onChange={(e) => patch('Rt', e.target.value.replace(/\D/g, '').slice(0, 3))}
-            onBlur={() => markTouched('Rt')}
+            onBlur={() => {
+              patch('Rt', normalizeOcrRtRw(value.Rt));
+              markTouched('Rt');
+            }}
             disabled={disabled}
             className={inputCls('Rt')}
             placeholder="001"
+            maxLength={3}
             autoComplete="off"
           />
         </Field>
@@ -278,10 +283,14 @@ export function KtpOcrReviewForm({
             inputMode="numeric"
             value={value.Rw}
             onChange={(e) => patch('Rw', e.target.value.replace(/\D/g, '').slice(0, 3))}
-            onBlur={() => markTouched('Rw')}
+            onBlur={() => {
+              patch('Rw', normalizeOcrRtRw(value.Rw));
+              markTouched('Rw');
+            }}
             disabled={disabled}
             className={inputCls('Rw')}
             placeholder="002"
+            maxLength={3}
             autoComplete="off"
           />
         </Field>
