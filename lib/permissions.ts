@@ -97,3 +97,33 @@ export async function requirePermission(
   return true;
 }
 
+/** Activity codes yang disimpan di Role.activities (lihat RoleForm ACTIVITIES). */
+export async function userHasActivity(userId: string, activityId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      userRoles: {
+        include: { role: true },
+      },
+    },
+  });
+  if (!user) return false;
+  return user.userRoles.some((ur) =>
+    (ur.role.activities || []).includes(activityId)
+  );
+}
+
+export async function requireActivity(activityId: string) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized');
+  }
+
+  const allowed = await userHasActivity(session.user.id, activityId);
+  if (!allowed) {
+    throw new Error('Forbidden: Insufficient permissions');
+  }
+
+  return true;
+}
+

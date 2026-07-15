@@ -33,7 +33,11 @@ const ACTIVITIES: Activity[] = [
   },
   {
     id: 'leads.assignToCmo',
-    name: 'Boleh assign dealer & CMO lalu submit ke Hyundai',
+    name: 'Boleh assign dealer & CMO lalu submit ke Confins',
+  },
+  {
+    id: 'leads.editOcrSnapshot',
+    name: 'Boleh mengedit data identitas KTP (OCR snapshot) sebelum submit',
   },
 ];
 
