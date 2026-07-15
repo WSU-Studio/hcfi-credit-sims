@@ -73,7 +73,9 @@ export function ocrReadToSnapshot(read: OcrKtpRead | null | undefined): OcrKtpSn
     provinsi: read.provinsi,
     Zipcode: read.Zipcode,
   });
-  return parsed.success ? parsed.data : emptyOcrKtpSnapshot();
+  return sanitizeOcrKtpSnapshotDigits(
+    parsed.success ? parsed.data : emptyOcrKtpSnapshot()
+  );
 }
 
 export function snapshotToOcrRead(snapshot: OcrKtpSnapshot): OcrKtpRead {
@@ -102,29 +104,144 @@ export function parseOcrKtpSnapshot(raw: unknown): OcrKtpSnapshot | null {
   return parsed.success ? parsed.data : null;
 }
 
-const REQUIRED_SNAPSHOT_FIELDS: (keyof OcrKtpSnapshot)[] = [
-  'nik',
-  'nama',
-  'tempatLahir',
-  'tanggalLahir',
-  'jenisKelamin',
-  'statusPerkawinan',
-  'agama',
-  'mrNationalityCode',
-  'alamat',
-  'Rt',
-  'Rw',
-  'kecamatan',
-  'kelurahanDesa',
-  'kotaKabupaten',
-  'provinsi',
-  'Zipcode',
-];
+/** Tanggal lahir: YYYY-MM-DD, DD-MM-YYYY, atau DD/MM/YYYY (tanggal kalender valid). */
+export function parseOcrBirthDateParts(
+  raw: string
+): { year: number; month: number; day: number } | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const dmyDash = trimmed.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  const dmySlash = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (iso) {
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else if (dmyDash) {
+    day = Number(dmyDash[1]);
+    month = Number(dmyDash[2]);
+    year = Number(dmyDash[3]);
+  } else if (dmySlash) {
+    day = Number(dmySlash[1]);
+    month = Number(dmySlash[2]);
+    year = Number(dmySlash[3]);
+  } else {
+    return null;
+  }
+
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return null;
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const dt = new Date(Date.UTC(year, month - 1, day));
+  if (
+    dt.getUTCFullYear() !== year ||
+    dt.getUTCMonth() !== month - 1 ||
+    dt.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  if (year < 1900 || year > currentYear) return null;
+  if (dt.getTime() > Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) {
+    return null;
+  }
+
+  return { year, month, day };
+}
+
+export function isValidOcrBirthDate(raw: string): boolean {
+  return parseOcrBirthDateParts(raw) != null;
+}
+
+/** Normalisasi ke YYYY-MM-DD untuk payload downstream. */
+export function normalizeOcrBirthDate(raw: string): string | null {
+  const parts = parseOcrBirthDateParts(raw);
+  if (!parts) return null;
+  const mm = String(parts.month).padStart(2, '0');
+  const dd = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${mm}-${dd}`;
+}
+
+/** RT/RW Confins: hanya digit, 1–3 karakter. */
+export function isValidOcrRtRw(raw: string): boolean {
+  return /^\d{1,3}$/.test(raw.trim());
+}
+
+export function isValidOcrZipcode(raw: string): boolean {
+  return /^\d{5}$/.test(raw.trim());
+}
+
+export type OcrKtpFieldErrorKey =
+  | 'ocrNikInvalid'
+  | 'ocrBirthDateInvalid'
+  | 'ocrRtRwInvalid'
+  | 'ocrZipcodeInvalid'
+  | 'ocrFieldRequired';
+
+export type OcrKtpFieldErrors = Partial<
+  Record<keyof OcrKtpSnapshot, OcrKtpFieldErrorKey>
+>;
+
+export function getOcrKtpFieldErrors(snapshot: OcrKtpSnapshot): OcrKtpFieldErrors {
+  const errors: OcrKtpFieldErrors = {};
+  const nikDigits = snapshot.nik.replace(/\D/g, '');
+  if (!nikDigits) errors.nik = 'ocrFieldRequired';
+  else if (nikDigits.length !== 16) errors.nik = 'ocrNikInvalid';
+
+  if (!snapshot.nama.trim()) errors.nama = 'ocrFieldRequired';
+  if (!snapshot.tempatLahir.trim()) errors.tempatLahir = 'ocrFieldRequired';
+
+  if (!snapshot.tanggalLahir.trim()) errors.tanggalLahir = 'ocrFieldRequired';
+  else if (!isValidOcrBirthDate(snapshot.tanggalLahir)) {
+    errors.tanggalLahir = 'ocrBirthDateInvalid';
+  }
+
+  if (!snapshot.jenisKelamin.trim()) errors.jenisKelamin = 'ocrFieldRequired';
+  if (!snapshot.statusPerkawinan.trim()) errors.statusPerkawinan = 'ocrFieldRequired';
+  if (!snapshot.agama.trim()) errors.agama = 'ocrFieldRequired';
+  if (!snapshot.mrNationalityCode.trim()) errors.mrNationalityCode = 'ocrFieldRequired';
+  if (!snapshot.alamat.trim()) errors.alamat = 'ocrFieldRequired';
+
+  if (!snapshot.Rt.trim()) errors.Rt = 'ocrFieldRequired';
+  else if (!isValidOcrRtRw(snapshot.Rt)) errors.Rt = 'ocrRtRwInvalid';
+
+  if (!snapshot.Rw.trim()) errors.Rw = 'ocrFieldRequired';
+  else if (!isValidOcrRtRw(snapshot.Rw)) errors.Rw = 'ocrRtRwInvalid';
+
+  if (!snapshot.kelurahanDesa.trim()) errors.kelurahanDesa = 'ocrFieldRequired';
+  if (!snapshot.kecamatan.trim()) errors.kecamatan = 'ocrFieldRequired';
+  if (!snapshot.kotaKabupaten.trim()) errors.kotaKabupaten = 'ocrFieldRequired';
+  if (!snapshot.provinsi.trim()) errors.provinsi = 'ocrFieldRequired';
+
+  if (!snapshot.Zipcode.trim()) errors.Zipcode = 'ocrFieldRequired';
+  else if (!isValidOcrZipcode(snapshot.Zipcode)) errors.Zipcode = 'ocrZipcodeInvalid';
+
+  return errors;
+}
 
 export function isOcrKtpSnapshotComplete(snapshot: OcrKtpSnapshot): boolean {
-  const nikDigits = snapshot.nik.replace(/\D/g, '');
-  if (nikDigits.length !== 16) return false;
-  const zipDigits = snapshot.Zipcode.replace(/\D/g, '');
-  if (zipDigits.length !== 5) return false;
-  return REQUIRED_SNAPSHOT_FIELDS.every((key) => snapshot[key].trim().length > 0);
+  return Object.keys(getOcrKtpFieldErrors(snapshot)).length === 0;
+}
+
+/** Bersihkan RT/RW/kode pos dari hasil OCR yang sering ikut karakter sampah. */
+export function sanitizeOcrKtpSnapshotDigits(snapshot: OcrKtpSnapshot): OcrKtpSnapshot {
+  const birth = normalizeOcrBirthDate(snapshot.tanggalLahir);
+  return {
+    ...snapshot,
+    nik: snapshot.nik.replace(/\D/g, '').slice(0, 16),
+    tanggalLahir: birth ?? snapshot.tanggalLahir.trim(),
+    Rt: snapshot.Rt.replace(/\D/g, '').slice(0, 3),
+    Rw: snapshot.Rw.replace(/\D/g, '').slice(0, 3),
+    Zipcode: snapshot.Zipcode.replace(/\D/g, '').slice(0, 5),
+  };
 }

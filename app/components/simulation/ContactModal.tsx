@@ -10,6 +10,8 @@ import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
 import {
   emptyOcrKtpSnapshot,
   isOcrKtpSnapshotComplete,
+  normalizeOcrBirthDate,
+  sanitizeOcrKtpSnapshotDigits,
   type OcrKtpSnapshot,
 } from '@/lib/ocr-ktp-snapshot';
 import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
@@ -71,6 +73,7 @@ export function ContactModal({
   const [ktpError, setKtpError] = useState<string | null>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrDraftShowErrors, setOcrDraftShowErrors] = useState(false);
   const [ocrSnapshot, setOcrSnapshot] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
   const [ocrDraft, setOcrDraft] = useState<OcrKtpSnapshot>(emptyOcrKtpSnapshot);
   const [showOcrForm, setShowOcrForm] = useState(false);
@@ -138,6 +141,7 @@ export function ContactModal({
        setKtpError(null);
        setOcrLoading(false);
        setOcrError(null);
+       setOcrDraftShowErrors(false);
        setOcrSnapshot(emptyOcrKtpSnapshot());
        setOcrDraft(emptyOcrKtpSnapshot());
        setShowOcrForm(false);
@@ -189,9 +193,12 @@ export function ContactModal({
       }
 
       const category = String(data.category ?? '');
-      const snapshot = (data.snapshot as OcrKtpSnapshot | undefined) ?? emptyOcrKtpSnapshot();
+      const snapshot = sanitizeOcrKtpSnapshotDigits(
+        (data.snapshot as OcrKtpSnapshot | undefined) ?? emptyOcrKtpSnapshot()
+      );
       setOcrSnapshot(snapshot);
       setOcrDraft(snapshot);
+      setOcrDraftShowErrors(false);
       setShowOcrForm(true);
 
       if (category === 'SUCCESS' || category === 'EMPTY_READ') {
@@ -221,12 +228,28 @@ export function ContactModal({
   };
 
   const handleOpenOcrModal = () => {
-    setOcrDraft(ocrSnapshot);
+    setOcrDraft(sanitizeOcrKtpSnapshotDigits(ocrSnapshot));
+    setOcrDraftShowErrors(false);
     setShowOcrForm(true);
   };
 
   const handleSaveOcrDraft = () => {
-    setOcrSnapshot(ocrDraft);
+    const cleaned = sanitizeOcrKtpSnapshotDigits(ocrDraft);
+    const birthNormalized = normalizeOcrBirthDate(cleaned.tanggalLahir);
+    const next: OcrKtpSnapshot = {
+      ...cleaned,
+      tanggalLahir: birthNormalized ?? cleaned.tanggalLahir.trim(),
+    };
+
+    if (!isOcrKtpSnapshotComplete(next)) {
+      setOcrDraft(next);
+      setOcrDraftShowErrors(true);
+      return;
+    }
+
+    setOcrSnapshot(next);
+    setOcrDraft(next);
+    setOcrDraftShowErrors(false);
     setShowOcrForm(false);
   };
 
@@ -680,12 +703,19 @@ export function ContactModal({
                 value={ocrDraft}
                 onChange={setOcrDraft}
                 disabled={loading || success}
+                showErrors={ocrDraftShowErrors}
               />
+              {ocrDraftShowErrors && !isOcrKtpSnapshotComplete(ocrDraft) && (
+                <p className="mt-3 text-xs text-red-600">{t('ocrSaveBlocked')}</p>
+              )}
             </div>
             <div className="flex justify-end gap-2 border-t border-gray-200 px-4 py-3">
               <button
                 type="button"
-                onClick={() => setShowOcrForm(false)}
+                onClick={() => {
+                  setShowOcrForm(false);
+                  setOcrDraftShowErrors(false);
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
                 {t('cancel')}
