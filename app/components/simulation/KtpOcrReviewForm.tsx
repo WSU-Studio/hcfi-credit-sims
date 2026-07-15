@@ -296,10 +296,12 @@ export function KtpOcrReviewForm({
             id="ocr-kelurahan"
             type="text"
             value={value.kelurahanDesa}
-            onChange={(e) => patch('kelurahanDesa', e.target.value)}
+            onChange={(e) => patch('kelurahanDesa', e.target.value.toUpperCase())}
             onBlur={() => markTouched('kelurahanDesa')}
             disabled={disabled}
             className={inputCls('kelurahanDesa')}
+            style={{ textTransform: 'uppercase' }}
+            autoCapitalize="characters"
           />
         </Field>
 
@@ -313,10 +315,12 @@ export function KtpOcrReviewForm({
             id="ocr-kecamatan"
             type="text"
             value={value.kecamatan}
-            onChange={(e) => patch('kecamatan', e.target.value)}
+            onChange={(e) => patch('kecamatan', e.target.value.toUpperCase())}
             onBlur={() => markTouched('kecamatan')}
             disabled={disabled}
             className={inputCls('kecamatan')}
+            style={{ textTransform: 'uppercase' }}
+            autoCapitalize="characters"
           />
         </Field>
 
@@ -325,10 +329,12 @@ export function KtpOcrReviewForm({
             id="ocr-kota"
             type="text"
             value={value.kotaKabupaten}
-            onChange={(e) => patch('kotaKabupaten', e.target.value)}
+            onChange={(e) => patch('kotaKabupaten', e.target.value.toUpperCase())}
             onBlur={() => markTouched('kotaKabupaten')}
             disabled={disabled}
             className={inputCls('kotaKabupaten')}
+            style={{ textTransform: 'uppercase' }}
+            autoCapitalize="characters"
           />
         </Field>
 
@@ -337,10 +343,12 @@ export function KtpOcrReviewForm({
             id="ocr-provinsi"
             type="text"
             value={value.provinsi}
-            onChange={(e) => patch('provinsi', e.target.value)}
+            onChange={(e) => patch('provinsi', e.target.value.toUpperCase())}
             onBlur={() => markTouched('provinsi')}
             disabled={disabled}
             className={inputCls('provinsi')}
+            style={{ textTransform: 'uppercase' }}
+            autoCapitalize="characters"
           />
         </Field>
 

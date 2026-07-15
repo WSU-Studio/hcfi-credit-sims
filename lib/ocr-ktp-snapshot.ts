@@ -291,5 +291,9 @@ export function sanitizeOcrKtpSnapshotDigits(snapshot: OcrKtpSnapshot): OcrKtpSn
     Rt: snapshot.Rt.replace(/\D/g, '').slice(0, 3),
     Rw: snapshot.Rw.replace(/\D/g, '').slice(0, 3),
     Zipcode: snapshot.Zipcode.replace(/\D/g, '').slice(0, 5),
+    kelurahanDesa: snapshot.kelurahanDesa.trim().toUpperCase(),
+    kecamatan: snapshot.kecamatan.trim().toUpperCase(),
+    kotaKabupaten: snapshot.kotaKabupaten.trim().toUpperCase(),
+    provinsi: snapshot.provinsi.trim().toUpperCase(),
   };
 }
