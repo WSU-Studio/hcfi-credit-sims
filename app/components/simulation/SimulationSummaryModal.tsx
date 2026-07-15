@@ -129,10 +129,10 @@ export function SimulationSummaryModal({
   const installLabel =
     resolvedInstallment === 'ADDM' ? t('installmentAmountAddm') : t('installmentAmountAddb');
 
-  // Breakdown fee/insurance belum di-mapping Richard — tetap placeholder 0.
-  const assetInsurancePaid = 0;
-  const feePaidByCustomer = 0;
+  // Subsidy belum ada nama field dari Richard — tetap placeholder 0.
   const subsidyAmt = 0;
+  const assetInsurancePaid = summary?.assetInsPaidAmt ?? 0;
+  const feePaidByCustomer = summary?.feePaidAmt ?? 0;
 
   const handleDownloadPdf = async () => {
     if (!summary) return;
@@ -211,6 +211,18 @@ export function SimulationSummaryModal({
     doc.text(`${installLabel}: ${formatRp(summary.instAmt)}`, left, (y += 5));
     doc.text(`${t('summaryTotalDownPaymentLabel')}: ${formatRp(summary.totalDownPaymentAmt)}`, left, (y += 5));
     doc.text(`${t('summaryTotalPaymentLabel')}: ${formatRp(summary.totalPaymentAmt)}`, left, (y += 5));
+    y += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('summaryTotalDownPaymentSectionTitle'), left, y);
+    y += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${t('summaryDownPaymentLabel')}: ${formatRp(summary.downPaymentAmt)}`, left, (y += 5));
+    doc.text(`${t('summaryInstallmentAmountLabel')}: ${formatRp(summary.instAmt)}`, left, (y += 5));
+    doc.text(`${t('summaryAssetInsurancePaidLabel')}: ${formatRp(assetInsurancePaid)}`, left, (y += 5));
+    doc.text(`${t('summaryFeePaidByCustomerLabel')}: ${formatRp(feePaidByCustomer)}`, left, (y += 5));
+    doc.text(`${t('summarySubsidyAmountLabel')}: (${formatRp(subsidyAmt)})`, left, (y += 5));
+    doc.text(`${t('summaryTotalDownPaymentLabel')}: ${formatRp(summary.totalDownPaymentAmt)}`, left, (y += 5));
     y += 8;
 
     doc.setFont('helvetica', 'bold');

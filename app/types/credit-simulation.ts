@@ -132,6 +132,10 @@ export interface FinalSummaryInfo {
   ntfAmt: number;
   /** DP amount — turunan AssetPriceAmt - NtfAmt jika field amount tidak ada di response. */
   downPaymentAmt: number;
+  /** Asset Insurance Paid — SummaryInfoObj.AssetInsPaidAmt */
+  assetInsPaidAmt: number;
+  /** Fee Paid by Customer — SummaryInfoObj.FeePaidAmt */
+  feePaidAmt: number;
   firstInstallment?: 'ADDM' | 'ADDB';
 }
 

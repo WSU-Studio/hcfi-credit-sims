@@ -121,6 +121,13 @@ export function mapSummaryInfoToFinalSummary(
     assetPriceAmt,
     ntfAmt,
     downPaymentAmt,
+    assetInsPaidAmt: numField(
+      summary,
+      'AssetInsPaidAmt',
+      'assetInsPaidAmt',
+      'AssetInsurancePaidAmt'
+    ),
+    feePaidAmt: numField(summary, 'FeePaidAmt', 'feePaidAmt', 'FeePaidByCustomerAmt'),
     firstInstallment: fallbacks.firstInstallment,
   };
 }
@@ -530,8 +537,8 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   );
   if (!simulateRow) {
     throw new Error(
-      `SimulateFinancialCalculate tidak mengembalikan baris untuk tenor ${params.tenor} ` +
-        `(produk ${product.ProductName}). Cek dealer/asset rule di Hyundai.`
+      `Tenor ${params.tenor} untuk produk ${product.ProductName} tidak tersedia. ` +
+        `Silakan coba lagi, atau pilih produk/tenor lain.`
     );
   }
 

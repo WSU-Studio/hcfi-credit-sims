@@ -30,8 +30,12 @@ function buildMockFinalSummary(params: {
   const dpAmt = Math.round(params.otrPrice * (params.dpPercent / 100));
   const ntfAmt = params.otrPrice - dpAmt;
   const instAmt = Math.round(ntfAmt / Math.max(params.tenor, 1) / 1000) * 1000;
+  const assetInsPaidAmt = 2_000_000;
+  const feePaidAmt = 1_000_000;
   const totalDownPaymentAmt =
-    params.firstInstallment === 'ADDM' ? dpAmt + instAmt + 3_000_000 : dpAmt + 3_000_000;
+    params.firstInstallment === 'ADDM'
+      ? dpAmt + instAmt + assetInsPaidAmt + feePaidAmt
+      : dpAmt + assetInsPaidAmt + feePaidAmt;
   const totalPaymentAmt =
     params.firstInstallment === 'ADDM'
       ? totalDownPaymentAmt + instAmt * (params.tenor - 1)
@@ -49,6 +53,8 @@ function buildMockFinalSummary(params: {
     assetPriceAmt: params.otrPrice,
     ntfAmt,
     downPaymentAmt: dpAmt,
+    assetInsPaidAmt,
+    feePaidAmt,
     firstInstallment: params.firstInstallment,
   };
 }
