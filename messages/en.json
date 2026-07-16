@@ -320,7 +320,9 @@
     "homeOwnershipRent": "Rented",
     "homeOwnershipCompany": "Company facility",
     "homeOwnershipOther": "Other",
-    "consentLabel": "I agree that the data I provide (including ID card photo if uploaded) may be used by Hyundai Finance and/or authorized partners for credit simulation, creditworthiness assessment, and product offers in accordance with applicable data protection rules."
+    "consentLabel": "I agree that the data I provide (including ID card photo if uploaded) may be used by Hyundai Finance and/or authorized partners for credit simulation, creditworthiness assessment, and product offers in accordance with applicable data protection rules.",
+    "phoneRequired": "Phone number is required",
+    "emailRequired": "Email is required"
   },
   "notFound": {
     "title": "Page not found",

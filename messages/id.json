@@ -320,7 +320,9 @@
     "homeOwnershipRent": "Kontrak / sewa",
     "homeOwnershipCompany": "Fasilitas perusahaan",
     "homeOwnershipOther": "Lainnya",
-    "consentLabel": "Saya setuju data yang saya isi (termasuk foto KTP jika diunggah) digunakan oleh Hyundai Finance dan/atau partner resmi untuk proses simulasi kredit, analisa kelayakan kredit, dan penawaran produk sesuai ketentuan perlindungan data yang berlaku."
+    "consentLabel": "Saya setuju data yang saya isi (termasuk foto KTP jika diunggah) digunakan oleh Hyundai Finance dan/atau partner resmi untuk proses simulasi kredit, analisa kelayakan kredit, dan penawaran produk sesuai ketentuan perlindungan data yang berlaku.",
+    "phoneRequired": "Nomor telepon wajib diisi",
+    "emailRequired": "Email wajib diisi"
   },
   "notFound": {
     "title": "Halaman tidak ditemukan",

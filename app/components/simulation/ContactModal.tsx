@@ -84,6 +84,8 @@ export function ContactModal({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
   const [modalLocation, setModalLocation] = useState<UserLocation>(null);
   const [honeypot, setHoneypot] = useState<string>('');
 
@@ -151,20 +153,43 @@ export function ContactModal({
        setConsent(false);
       setSuccess(false);
       setError(null);
+      setPhoneTouched(false);
+      setEmailTouched(false);
       setModalLocation(null);
       setHoneypot('');
     }
   }, [open]);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[0-9+\-\s()]+$/;
   const phoneDigits = phone.replace(/\D/g, '');
+  const phoneTrimmed = phone.trim();
+  const emailTrimmed = email.trim();
+  const isPhoneValid = phoneRegex.test(phone) && phoneDigits.length >= 10;
+  const isEmailValid = emailRegex.test(email);
+  const phoneErrorText =
+    phoneTouched || phoneTrimmed.length > 0
+      ? phoneTrimmed.length === 0
+        ? t('phoneRequired')
+        : isPhoneValid
+          ? null
+          : t('invalidPhone')
+      : null;
+  const emailErrorText =
+    emailTouched || emailTrimmed.length > 0
+      ? emailTrimmed.length === 0
+        ? t('emailRequired')
+        : isEmailValid
+          ? null
+          : t('invalidEmail')
+      : null;
   const isOcrComplete = isOcrKtpSnapshotComplete(ocrSnapshot);
   const isFormComplete =
     name.trim().length > 0 &&
-    phone.trim().length > 0 &&
-    phoneDigits.length >= 10 &&
-    email.trim().length > 0 &&
-    emailRegex.test(email) &&
+    phoneTrimmed.length > 0 &&
+    isPhoneValid &&
+    emailTrimmed.length > 0 &&
+    isEmailValid &&
     Boolean(ktpUrl) &&
     !ktpUploading &&
     !ocrLoading &&
@@ -286,6 +311,8 @@ export function ContactModal({
     setError(null);
 
     if (!name.trim() || !phone.trim() || !email.trim() || !ktpUrl || !motherName.trim() || !homeOwnership) {
+      setPhoneTouched(true);
+      setEmailTouched(true);
       setError(t('pleaseFillAll'));
       return;
     }
@@ -297,14 +324,14 @@ export function ContactModal({
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isEmailValid) {
+      setEmailTouched(true);
       setError(t('invalidEmail'));
       return;
     }
 
-    const phoneRegex = /^[0-9+\-\s()]+$/;
-    if (!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 10) {
+    if (!isPhoneValid) {
+      setPhoneTouched(true);
       setError(t('invalidPhone'));
       return;
     }
@@ -448,11 +475,19 @@ export function ContactModal({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onBlur={() => setPhoneTouched(true)}
                 required
                 disabled={loading || success}
-                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  phoneErrorText
+                    ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]'
+                }`}
                 placeholder="081234567890"
               />
+              {phoneErrorText && (
+                <p className="mt-1 text-xs text-red-600">* {phoneErrorText}</p>
+              )}
             </div>
 
             <div>
@@ -464,11 +499,19 @@ export function ContactModal({
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setEmailTouched(true)}
                 required
                 disabled={loading || success}
-                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  emailErrorText
+                    ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]'
+                }`}
                 placeholder="nama@email.com"
               />
+              {emailErrorText && (
+                <p className="mt-1 text-xs text-red-600">* {emailErrorText}</p>
+              )}
             </div>
           </div>
 
