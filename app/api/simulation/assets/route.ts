@@ -85,7 +85,7 @@ async function fetchGlobalAssets(headers: Record<string, string>, getLatestAsset
         body: JSON.stringify(
           buildHyundaiVendorListBody({
             hasAvailableAssetOnly: true,
-            hasCmoAssignedOnly: true,
+            hasCmoAssignedOnly: false,
           })
         ),
         signal: controller.signal,

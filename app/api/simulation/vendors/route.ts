@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     try {
       const mockResponse = mockApi.getVendorsAndCities({
         hasAvailableAssetOnly: true,
-        hasCmoAssignedOnly: true,
+        hasCmoAssignedOnly: false,
       });
       return NextResponse.json(mockResponse);
     } catch (mockError) {

@@ -24,67 +24,80 @@ function sortDealers(dealers: Vendor[]) {
   return [...dealers].sort((a, b) => a.VendorName.localeCompare(b.VendorName));
 }
 
+/** API vendors bisa mengembalikan VendorCode yang sama berkali-kali (beda row office). */
+function uniqueDealersByCode(dealers: Vendor[]) {
+  return Array.from(new Map(dealers.map((v) => [v.VendorCode, v])).values());
+}
+
 export function DealerAssignFields({
   roleNames,
   value,
   onChange,
   disabled = false,
 }: DealerAssignFieldsProps) {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(false);
+  // null = belum selesai fetch; loading diturunkan dari state ini (bukan setState di effect).
+  const [vendors, setVendors] = useState<Vendor[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCity, setSelectedCity] = useState(value.vendorCity);
 
   const needsDealer =
     roleNames.includes(ROLE_NAMES.DEALER_ADMIN) ||
     roleNames.includes(ROLE_NAMES.SALESMAN);
 
   const isSalesman = roleNames.includes(ROLE_NAMES.SALESMAN);
+  const selectedCity = value.vendorCity;
+  const loading = needsDealer && vendors === null && error === null;
 
   useEffect(() => {
     if (!needsDealer) return;
 
-    setLoading(true);
-    setError(null);
+    const controller = new AbortController();
+
     fetch('/api/simulation/vendors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         hasAvailableAssetOnly: true,
-        hasCmoAssignedOnly: true,
+        hasCmoAssignedOnly: false,
       }),
+      signal: controller.signal,
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.ReturnObject) {
-          setVendors(data.ReturnObject as Vendor[]);
-        }
+        setVendors(
+          Array.isArray(data.ReturnObject) ? (data.ReturnObject as Vendor[]) : []
+        );
       })
-      .catch(() => setError('Gagal memuat daftar dealer'))
-      .finally(() => setLoading(false));
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setError('Gagal memuat daftar dealer');
+        setVendors([]);
+      });
+
+    return () => controller.abort();
   }, [needsDealer]);
 
-  useEffect(() => {
-    if (value.vendorCity) {
-      setSelectedCity(value.vendorCity);
-    }
-  }, [value.vendorCity]);
-
   const cities = useMemo(
-    () => Array.from(new Set(vendors.map((v) => v.City).filter(Boolean))).sort(),
+    () =>
+      Array.from(new Set((vendors ?? []).map((v) => v.City).filter(Boolean))).sort(),
     [vendors]
   );
 
   const dealersInCity = useMemo(
-    () => (selectedCity ? sortDealers(vendors.filter((v) => v.City === selectedCity)) : []),
+    () =>
+      selectedCity
+        ? sortDealers(
+            uniqueDealersByCode((vendors ?? []).filter((v) => v.City === selectedCity))
+          )
+        : [],
     [vendors, selectedCity]
   );
 
   if (!needsDealer) return null;
 
   const handleCityChange = (city: string) => {
-    setSelectedCity(city);
-    const first = sortDealers(vendors.filter((v) => v.City === city))[0];
+    const first = sortDealers(
+      uniqueDealersByCode((vendors ?? []).filter((v) => v.City === city))
+    )[0];
     if (first) {
       onChange({
         vendorCode: first.VendorCode,
