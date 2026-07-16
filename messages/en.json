@@ -110,6 +110,7 @@
     "categoryAll": "All",
     "noModelsInCategory": "No models in this category",
     "startingFrom": "Starting from",
+    "priceAvailableOnType": "Depends on type",
     "errorLoadModels": "Failed to load models",
     "specStepTitle": "Select Specification",
     "specStepDescription": "Choose production year, variant, and vehicle color",

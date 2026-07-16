@@ -192,12 +192,20 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
                         )}
                       </div>
                       <div className="pt-4 border-t border-[var(--border)]">
-                        <div className="text-xs text-[var(--muted)] uppercase tracking-wide">
-                          {t('startingFrom')}
-                        </div>
-                        <div className="mt-1 text-xl font-bold text-[#002c5f]">
-                          {formatPrice(asset.Price)}
-                        </div>
+                        {asset.Price > 0 ? (
+                          <>
+                            <div className="text-xs text-[var(--muted)] uppercase tracking-wide">
+                              {t('startingFrom')}
+                            </div>
+                            <div className="mt-1 text-xl font-bold text-[#002c5f]">
+                              {formatPrice(asset.Price)}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="mt-1 text-sm font-medium text-[var(--muted)]">
+                            {t('priceAvailableOnType')}
+                          </div>
+                        )}
                       </div>
                     </button>
                   );

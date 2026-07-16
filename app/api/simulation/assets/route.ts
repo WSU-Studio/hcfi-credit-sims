@@ -22,20 +22,87 @@ const hyundaiAgent = new Agent({
   connectTimeout: CONNECT_TIMEOUT_MS,
 });
 
-function deduplicateAssetsByCode(assets: AssetMaster[]): AssetMaster[] {
-  const byCode = new Map<string, AssetMaster>();
-  for (const item of assets) {
-    const existing = byCode.get(item.AssetCode);
+function isValidStartingPrice(price: number | null | undefined): boolean {
+  return typeof price === 'number' && Number.isFinite(price) && price > 0;
+}
+
+type AssetCandidate = {
+  asset: AssetMaster;
+  dealerCode: string;
+  preferred: boolean;
+};
+
+/**
+ * Merge model lists from multiple dealers:
+ * 1. Prefer selected dealer when its Price > 0
+ * 2. Never replace a valid price with Price: 0
+ * 3. Otherwise keep the lowest non-zero starting price
+ */
+function mergeAssetsPreferringDealer(
+  candidates: AssetCandidate[],
+  preferredDealerCode?: string
+): AssetMaster[] {
+  const preferred = (preferredDealerCode ?? '').trim();
+  const byCode = new Map<string, AssetCandidate>();
+
+  for (const candidate of candidates) {
+    const code = candidate.asset.AssetCode;
+    if (!code) continue;
+
+    const existing = byCode.get(code);
     if (!existing) {
-      byCode.set(item.AssetCode, item);
+      byCode.set(code, candidate);
       continue;
     }
-    // Keep the lowest starting price when same model exists in multiple dealers
-    if ((item.Price ?? Number.MAX_SAFE_INTEGER) < (existing.Price ?? Number.MAX_SAFE_INTEGER)) {
-      byCode.set(item.AssetCode, item);
+
+    const nextValid = isValidStartingPrice(candidate.asset.Price);
+    const existingValid = isValidStartingPrice(existing.asset.Price);
+    const nextPreferred = !!preferred && candidate.dealerCode === preferred;
+    const existingPreferred = !!preferred && existing.dealerCode === preferred;
+
+    // Selected dealer with a real price always wins.
+    if (nextPreferred && nextValid) {
+      byCode.set(code, candidate);
+      continue;
+    }
+    if (existingPreferred && existingValid) {
+      continue;
+    }
+
+    // Never overwrite a valid price with 0 / missing.
+    if (nextValid && !existingValid) {
+      byCode.set(code, candidate);
+      continue;
+    }
+    if (!nextValid && existingValid) {
+      continue;
+    }
+
+    // Both valid: keep lowest starting price.
+    if (nextValid && existingValid) {
+      if ((candidate.asset.Price as number) < (existing.asset.Price as number)) {
+        byCode.set(code, candidate);
+      }
+      continue;
+    }
+
+    // Both invalid: still prefer selected dealer entry for catalog completeness.
+    if (nextPreferred && !existingPreferred) {
+      byCode.set(code, candidate);
     }
   }
-  return Array.from(byCode.values());
+
+  return Array.from(byCode.values()).map((c) => c.asset);
+}
+
+function deduplicateAssetsByCode(assets: AssetMaster[]): AssetMaster[] {
+  return mergeAssetsPreferringDealer(
+    assets.map((asset) => ({
+      asset,
+      dealerCode: '',
+      preferred: false,
+    }))
+  );
 }
 
 async function fetchAssetsByDealer(
@@ -73,7 +140,11 @@ async function fetchAssetsByDealer(
   }
 }
 
-async function fetchGlobalAssets(headers: Record<string, string>, getLatestAsset: boolean): Promise<AssetMaster[]> {
+async function fetchGlobalAssets(
+  headers: Record<string, string>,
+  getLatestAsset: boolean,
+  preferredDealerCode?: string
+): Promise<AssetMaster[]> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -100,14 +171,27 @@ async function fetchGlobalAssets(headers: Record<string, string>, getLatestAsset
       .map((v) => v.VendorCode)
       .filter(Boolean);
 
-    if (vendors.length === 0) return [];
-
-    // Process a limited subset to keep response fast and stable.
-    const sampledVendors = vendors.slice(0, 8);
-    const allAssets = await Promise.all(
-      sampledVendors.map((dealerCode) => fetchAssetsByDealer(dealerCode, headers, getLatestAsset))
+    const preferred = (preferredDealerCode ?? '').trim();
+    const uniqueVendors = Array.from(
+      new Set([...(preferred ? [preferred] : []), ...vendors])
     );
-    return deduplicateAssetsByCode(allAssets.flat());
+
+    if (uniqueVendors.length === 0) return [];
+
+    // Always include selected dealer first, then sample others for catalog breadth.
+    const sampledVendors = uniqueVendors.slice(0, preferred ? 9 : 8);
+    const allAssets = await Promise.all(
+      sampledVendors.map(async (dealerCode) => {
+        const assets = await fetchAssetsByDealer(dealerCode, headers, getLatestAsset);
+        return assets.map((asset) => ({
+          asset,
+          dealerCode,
+          preferred: !!preferred && dealerCode === preferred,
+        }));
+      })
+    );
+
+    return mergeAssetsPreferringDealer(allAssets.flat(), preferred || undefined);
   } catch {
     return [];
   } finally {
@@ -152,7 +236,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (useGlobalCatalog) {
-      const assets = await fetchGlobalAssets(headers, payload.GetLatestAsset);
+      const assets = await fetchGlobalAssets(
+        headers,
+        payload.GetLatestAsset,
+        payload.DealerCode
+      );
       if (assets.length > 0) {
         return NextResponse.json({
           ListAssetMasterObj: assets,

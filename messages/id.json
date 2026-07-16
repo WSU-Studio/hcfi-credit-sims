@@ -110,6 +110,7 @@
     "categoryAll": "Semua",
     "noModelsInCategory": "Tidak ada model dalam kategori ini",
     "startingFrom": "Mulai dari",
+    "priceAvailableOnType": "Sesuai tipe",
     "errorLoadModels": "Gagal memuat model",
     "specStepTitle": "Pilih Spesifikasi",
     "specStepDescription": "Pilih tahun produksi, varian, dan warna kendaraan",
