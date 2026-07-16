@@ -166,11 +166,6 @@ export function DealerLeadsTable() {
                   <tr key={lead.id} className="hover:bg-gray-50/80">
                     <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                       {formatDate(lead.createdAt)}
-                      {lead.simulationLeadNo && (
-                        <div className="mt-1 font-mono text-[10px] text-gray-400">
-                          {lead.simulationLeadNo}
-                        </div>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-medium text-gray-900">{lead.name}</div>
@@ -192,6 +187,11 @@ export function DealerLeadsTable() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">
+                      {lead.simulationLeadNo && (
+                        <div className="font-mono text-[11px] text-gray-500 mb-0.5">
+                          {lead.simulationLeadNo}
+                        </div>
+                      )}
                       {lead.otrPrice && <div>OTR: {formatCurrency(lead.otrPrice)}</div>}
                       {lead.dpPercent != null && <div>DP: {lead.dpPercent}%</div>}
                       {lead.tenor != null && <div>Tenor: {lead.tenor} bln</div>}
