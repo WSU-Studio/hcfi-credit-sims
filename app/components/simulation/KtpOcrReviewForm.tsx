@@ -26,6 +26,16 @@ const inputErrorClass =
 
 const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
 
+const AGAMA_OPTIONS = [
+  { code: 'AGNOSTIK', label: 'AGNOSTIK' },
+  { code: 'BUDDHA', label: 'Buddha' },
+  { code: 'CATHOLIC', label: 'Katolik' },
+  { code: 'CHRISTIAN', label: 'Kristen' },
+  { code: 'HINDU', label: 'Hindu' },
+  { code: 'ISLAM', label: 'Islam' },
+  { code: 'KONGHUCU', label: 'Kong Hu Cu' },
+] as const;
+
 function Field({
   id,
   label,
@@ -131,10 +141,12 @@ export function KtpOcrReviewForm({
             id="ocr-tempat-lahir"
             type="text"
             value={value.tempatLahir}
-            onChange={(e) => patch('tempatLahir', e.target.value)}
+            onChange={(e) => patch('tempatLahir', e.target.value.toUpperCase())}
             onBlur={() => markTouched('tempatLahir')}
             disabled={disabled}
             className={inputCls('tempatLahir')}
+            style={{ textTransform: 'uppercase' }}
+            autoCapitalize="characters"
           />
         </Field>
 
@@ -200,15 +212,21 @@ export function KtpOcrReviewForm({
         </Field>
 
         <Field id="ocr-agama" label={t('ocrAgama')} required error={errorText('agama')}>
-          <input
+          <select
             id="ocr-agama"
-            type="text"
             value={value.agama}
-            onChange={(e) => patch('agama', e.target.value)}
+            onChange={(e) => patch('agama', e.target.value.toUpperCase())}
             onBlur={() => markTouched('agama')}
             disabled={disabled}
             className={inputCls('agama')}
-          />
+          >
+            <option value="">—</option>
+            {AGAMA_OPTIONS.map((opt) => (
+              <option key={opt.code} value={opt.code}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field
