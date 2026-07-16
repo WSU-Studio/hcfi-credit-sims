@@ -1,6 +1,7 @@
 {
   "nav": {
     "creditSimulation": "Credit Simulation",
+    "tracking": "Track Status",
     "promo": "Promotions",
     "products": "Products",
     "information": "Information"
@@ -52,6 +53,28 @@
     "pageDescription": "Offers and promotions from Hyundai Capital",
     "metaTitle": "Hyundai Capital - Promotions",
     "metaDescription": "View the latest promotions and offers from Hyundai Capital."
+  },
+  "tracking": {
+    "pageTitle": "Track Application Status",
+    "pageDescription": "Enter your Lead number (LeadNo) from your simulation or application to view the latest status in the Hyundai Finance system.",
+    "metaTitle": "Hyundai Capital - Track Status",
+    "metaDescription": "Track your Hyundai Finance credit application status with your LeadNo.",
+    "leadNoLabel": "Lead Number (LeadNo)",
+    "leadNoPlaceholder": "Example: 11STGLD20260500031",
+    "leadNoHint": "LeadNo is issued after you complete a credit simulation / submit a lead.",
+    "leadNoRequired": "LeadNo is required.",
+    "search": "Check Status",
+    "searching": "Searching...",
+    "notFound": "LeadNo was not found. Please double-check the number or contact customer care.",
+    "errorGeneric": "Unable to check status. Please try again.",
+    "resultLeadNo": "LeadNo",
+    "resultStep": "Stage",
+    "resultAsset": "Vehicle",
+    "resultCustomer": "Customer Name",
+    "resultChannel": "Channel",
+    "resultCreated": "Created",
+    "resultUpdated": "Last updated",
+    "resultApproval": "Approval Code"
   },
   "articles": {
     "pageTitle": "Articles",
