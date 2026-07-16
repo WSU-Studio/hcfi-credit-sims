@@ -151,7 +151,9 @@ export function LeadTrackingForm() {
             </div>
             <div>
               <dt className="text-gray-500">{t('resultCustomer')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">{result.CustName || '-'}</dd>
+              <dd className="mt-0.5 font-medium text-gray-900">
+                {result.CustName?.trim() || '-'}
+              </dd>
             </div>
             <div>
               <dt className="text-gray-500">{t('resultChannel')}</dt>

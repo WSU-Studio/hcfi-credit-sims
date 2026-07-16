@@ -15,6 +15,7 @@ import { getClientIp, leadTrackingLimiter, tooManyRequestsResponse } from '@/lib
 import { leadTrackingSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import type { WebsiteLeadStage } from '@/lib/lead-tracking';
+import { prisma } from '@/lib/prisma';
 
 function mockLeadStage(leadNo: string): WebsiteLeadStage {
   return {
@@ -34,6 +35,33 @@ function mockLeadStage(leadNo: string): WebsiteLeadStage {
     ChannelCode: 'WEBSITE',
     UserInputName: null,
   };
+}
+
+/**
+ * Hyundai GetPagingStageWebsiteLead often returns empty CustName at LEAD_INPUT
+ * (before AddLeadCust). Fall back to our local Lead.name when available.
+ */
+async function enrichCustName(rows: WebsiteLeadStage[]): Promise<WebsiteLeadStage[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      if (String(row.CustName ?? '').trim()) return row;
+
+      const leadNo = String(row.LeadNo ?? '').trim();
+      if (!leadNo) return row;
+
+      const local = await prisma.lead.findFirst({
+        where: {
+          OR: [{ simulationLeadNo: leadNo }, { hyundaiLeadNo: leadNo }],
+        },
+        select: { name: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const name = local?.name?.trim();
+      if (!name) return row;
+      return { ...row, CustName: name };
+    })
+  );
 }
 
 /**
@@ -101,9 +129,10 @@ export async function POST(request: NextRequest) {
     );
 
     const data = Array.isArray(envelope.Data) ? envelope.Data : [];
+    const enriched = data.length > 0 ? await enrichCustName(data) : data;
     return NextResponse.json({
-      data,
-      found: data.length > 0,
+      data: enriched,
+      found: enriched.length > 0,
     });
   } catch (error: unknown) {
     const errorId = extractHyundaiErrorId(error);
