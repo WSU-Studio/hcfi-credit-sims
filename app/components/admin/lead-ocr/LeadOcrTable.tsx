@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { JsonBlock } from '@/app/components/admin/lead-ocr/JsonBlock';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 type LeadSummary = {
   id: string;
@@ -124,22 +125,29 @@ export function LeadOcrTable() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const q = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : '';
-      const res = await fetch(`/api/admin/lead-ocr${q}`);
+      const params = new URLSearchParams();
+      if (statusFilter) params.set('status', statusFilter);
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
+      const res = await fetch(`/api/admin/lead-ocr?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal memuat data');
       setRows(data.results || []);
+      setTotalItems(Number(data?.pagination?.total || 0));
     } catch (err) {
       console.error(err);
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, page, pageSize]);
 
   useEffect(() => {
     fetchRows();
@@ -158,7 +166,10 @@ export function LeadOcrTable() {
       <div className="flex flex-wrap items-center gap-3">
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            setPage(1);
+            setStatusFilter(e.target.value);
+          }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white text-gray-700 cursor-pointer"
         >
           <option value="">Semua status</option>
@@ -362,6 +373,16 @@ export function LeadOcrTable() {
           </table>
         </div>
       )}
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }

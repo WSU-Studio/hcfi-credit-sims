@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import Image from 'next/image';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
 
@@ -27,6 +28,8 @@ export function BannersTable() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetch('/api/admin/banners')
@@ -43,6 +46,11 @@ export function BannersTable() {
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
+
+  const totalItems = banners.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedBanners = banners.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -83,12 +91,12 @@ export function BannersTable() {
           <tbody className="bg-white divide-y divide-gray-200">
             {banners.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
                   No banners found. Create your first banner to get started.
                 </td>
               </tr>
             ) : (
-              banners.map((banner) => (
+              paginatedBanners.map((banner) => (
                 <tr key={banner.id}>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                     {formatDate(banner.createdAt)}
@@ -180,6 +188,16 @@ export function BannersTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={safePage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }

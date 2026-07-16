@@ -5,6 +5,7 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
 
@@ -24,6 +25,8 @@ type Product = {
 export function ProductsTable() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetch('/api/admin/products')
@@ -40,6 +43,11 @@ export function ProductsTable() {
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
+
+  const totalItems = products.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedProducts = products.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -81,7 +89,7 @@ export function ProductsTable() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((product) => (
+            {paginatedProducts.map((product) => (
               <tr key={product.id}>
                 <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">
                   {formatDate(product.createdAt)}
@@ -157,6 +165,16 @@ export function ProductsTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={safePage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }

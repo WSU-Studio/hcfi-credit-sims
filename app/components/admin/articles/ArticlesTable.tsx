@@ -5,6 +5,7 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 type Article = {
   id: string;
@@ -35,6 +36,8 @@ type Article = {
 export function ArticlesTable() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetch('/api/admin/articles')
@@ -51,6 +54,11 @@ export function ArticlesTable() {
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
+
+  const totalItems = articles.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedArticles = articles.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -107,7 +115,7 @@ export function ArticlesTable() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {articles.map((article) => (
+            {paginatedArticles.map((article) => (
               <tr key={article.id}>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600 align-top">
                   {new Date(article.createdAt).toLocaleDateString()}
@@ -220,6 +228,16 @@ export function ArticlesTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={safePage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }

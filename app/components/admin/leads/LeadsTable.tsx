@@ -8,6 +8,7 @@ import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
 import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 type Lead = {
   id: string;
@@ -68,10 +69,13 @@ export function LeadsTable() {
   const [ktpPreviewLeadId, setKtpPreviewLeadId] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchLeads();
-  }, [statusFilter, sourceFilter]);
+  }, [statusFilter, sourceFilter, page, pageSize]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && setKtpPreviewLeadId(null);
@@ -116,11 +120,14 @@ export function LeadsTable() {
       const params = new URLSearchParams();
       if (statusFilter) params.set('status', statusFilter);
       if (sourceFilter) params.set('source', sourceFilter);
+      params.set('page', String(page));
+      params.set('limit', String(pageSize));
       const qs = params.toString();
       const url = qs ? `/api/admin/leads?${qs}` : '/api/admin/leads';
       const res = await fetch(url);
       const data = await res.json();
       setLeads(data.leads || []);
+      setTotalItems(Number(data?.pagination?.total || 0));
     } catch (err) {
       console.error('Error fetching leads:', err);
     } finally {
@@ -226,7 +233,10 @@ export function LeadsTable() {
           )}
           <select
             value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSourceFilter(e.target.value);
+            }}
             className="px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           >
             <option value="">Semua Sumber</option>
@@ -235,7 +245,10 @@ export function LeadsTable() {
           </select>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setStatusFilter(e.target.value);
+            }}
             className="px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
           >
             <option value="">All Status</option>
@@ -511,6 +524,16 @@ export function LeadsTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={page}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
 
       {/* KTP Preview Modal */}
       {ktpPreviewLeadId && (

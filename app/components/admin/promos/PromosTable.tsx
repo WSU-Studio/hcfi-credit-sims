@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLink } from '@tabler/icons-react';
 import Link from 'next/link';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
 
@@ -22,6 +23,8 @@ type Promo = {
 export function PromosTable() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetch('/api/admin/promos')
@@ -38,6 +41,11 @@ export function PromosTable() {
   if (loading) {
     return <div className="text-center py-8">Loading...</div>;
   }
+
+  const totalItems = promos.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedPromos = promos.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -76,7 +84,7 @@ export function PromosTable() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {promos.map((promo) => (
+            {paginatedPromos.map((promo) => (
               <tr key={promo.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
                   {formatDate(promo.createdAt)}
@@ -152,6 +160,16 @@ export function PromosTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={safePage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }

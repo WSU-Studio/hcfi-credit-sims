@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { IconEdit, IconTrash, IconPlus, IconLockOpen, IconLock } from '@tabler/icons-react';
+import { TablePagination } from '@/app/components/admin/TablePagination';
 
 type User = {
   id: string;
@@ -44,6 +45,8 @@ export function UsersTable() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [unlockingId, setUnlockingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const loadUsers = () => {
     return fetch('/api/admin/users')
@@ -90,6 +93,11 @@ export function UsersTable() {
     return <div className="text-center py-8">Loading...</div>;
   }
 
+  const totalItems = users.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedUsers = users.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -127,7 +135,7 @@ export function UsersTable() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr key={user.id}>
                 <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 align-top">
                   {user.name}
@@ -218,6 +226,16 @@ export function UsersTable() {
           </tbody>
         </table>
       </div>
+      <TablePagination
+        page={safePage}
+        pageSize={pageSize}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPage(1);
+          setPageSize(size);
+        }}
+      />
     </div>
   );
 }
