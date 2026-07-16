@@ -143,6 +143,26 @@ export function SimulationWizard({
     resetFromStep('model');
   };
 
+  const handleRestart = useCallback(() => {
+    setSelectedAsset(null);
+    setSpecs({});
+    setOtrPrice(null);
+    setDiscount(0);
+    setPartnerCode(null);
+    setLeadNo(null);
+    setLeadNoLoading(false);
+    setLeadNoError(null);
+    setLeadNoErrorId(null);
+    setDealerSelectNotice(null);
+    if (isDealerSales) {
+      setSelectedDealer(initialDealer);
+      setCurrentStepKey('model');
+    } else {
+      setSelectedDealer(null);
+      setCurrentStepKey('dealer');
+    }
+  }, [isDealerSales, initialDealer]);
+
   const handleAssetSelect = (asset: AssetMaster) => {
     setSelectedAsset(asset);
     setCurrentStepKey('spec');
@@ -471,6 +491,7 @@ export function SimulationWizard({
                   dealer={selectedDealer}
                   userLocation={userLocation}
                   leadSource={leadSource}
+                  onRestart={handleRestart}
                   vehicle={
                     specs.trimName || specs.exteriorColorName || specs.interiorColorName
                       ? {

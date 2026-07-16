@@ -6,7 +6,7 @@ import type { FinalSummaryInfo, ProductCalculation, Vendor } from '@/app/types/c
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
-import { IconBrandWhatsapp, IconFileDescription, IconSend } from '@tabler/icons-react';
+import { IconBrandWhatsapp, IconFileDescription, IconRefresh, IconSend } from '@tabler/icons-react';
 import {
   SimulationSummaryModal,
   type VehicleSummaryInfo,
@@ -49,6 +49,8 @@ interface ResultStepProps {
   userLocation?: UserLocation;
   leadSource?: LeadSource;
   onSelectProduct?: (product: ProductCalculation) => void;
+  /** Setelah lead tersubmit — reset wizard ke step awal. */
+  onRestart?: () => void;
 }
 
 export function ResultStep({
@@ -62,6 +64,7 @@ export function ResultStep({
   userLocation,
   leadSource = LEAD_SOURCES.WEBSITE,
   onSelectProduct,
+  onRestart,
 }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const isDealerSales = leadSource === LEAD_SOURCES.DEALER_SALES;
@@ -71,6 +74,7 @@ export function ResultStep({
   const [partnerCodeUnmatched, setPartnerCodeUnmatched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [leadSubmitted, setLeadSubmitted] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [dpPercent, setDpPercent] = useState<number>(10);
@@ -701,7 +705,7 @@ export function ResultStep({
                 )}
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                {!isDealerSales && (
+                {!isDealerSales && !leadSubmitted && (
                   <Link
                     href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
                       t('whatsappMessageTemplate', {
@@ -721,11 +725,28 @@ export function ResultStep({
                 )}
                 <button
                   type="button"
-                  onClick={() => setContactOpen(true)}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
+                  onClick={() => {
+                    if (leadSubmitted) {
+                      onRestart?.();
+                      return;
+                    }
+                    setContactOpen(true);
+                  }}
+                  disabled={leadSubmitted && !onRestart}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
+                    leadSubmitted
+                      ? 'bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                      : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
+                  }`}
                 >
-                  <IconSend size={20} />
-                  {isDealerSales ? t('dealerSubmitLead') : t('contact')}
+                  {leadSubmitted ? <IconRefresh size={20} /> : <IconSend size={20} />}
+                  {leadSubmitted
+                    ? isDealerSales
+                      ? t('dealerStartOver')
+                      : t('startOverSimulation')
+                    : isDealerSales
+                      ? t('dealerSubmitLead')
+                      : t('contact')}
                 </button>
                 <button
                   type="button"
@@ -736,6 +757,11 @@ export function ResultStep({
                   {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
                 </button>
               </div>
+              {leadSubmitted && (
+                <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+                  {t('leadSubmittedHint')}
+                </p>
+              )}
               <SimulationSummaryModal
                 open={summaryOpen}
                 onClose={() => setSummaryOpen(false)}
@@ -776,6 +802,9 @@ export function ResultStep({
                     : undefined
                 }
                 assetSnapshot={assetSnapshot}
+                onSubmit={() => {
+                  setLeadSubmitted(true);
+                }}
               />
             </div>
           )}
