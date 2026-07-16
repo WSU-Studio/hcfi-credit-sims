@@ -705,7 +705,7 @@ export function ResultStep({
                 )}
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                {!isDealerSales && !leadSubmitted && (
+                {!isDealerSales && (
                   <Link
                     href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
                       t('whatsappMessageTemplate', {
@@ -735,7 +735,7 @@ export function ResultStep({
                   disabled={leadSubmitted && !onRestart}
                   className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
                     leadSubmitted
-                      ? 'bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                      ? 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
                       : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
                   }`}
                 >
