@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { IconCheck, IconX } from '@tabler/icons-react';
 import type { UserLocation } from '@/app/components/simulation/ContactModal';
 import { Container } from '@/app/components/ui/Container';
 import { DealerStep } from '@/app/components/simulation/DealerStep';
@@ -55,6 +57,7 @@ export function SimulationWizard({
   leadSource = LEAD_SOURCES.WEBSITE,
   embedded = false,
 }: SimulationWizardProps) {
+  const t = useTranslations('creditSimulation');
   const steps = mode === 'dealer-sales' ? DEALER_STEPS : PUBLIC_STEPS;
   const isDealerSales = mode === 'dealer-sales';
 
@@ -64,6 +67,7 @@ export function SimulationWizard({
   const [selectedDealer, setSelectedDealer] = useState<Vendor | null>(
     isDealerSales ? initialDealer : null
   );
+  const [dealerSelectNotice, setDealerSelectNotice] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<AssetMaster | null>(null);
   const [specs, setSpecs] = useState<{
     manufacturingYear?: number;
@@ -104,6 +108,12 @@ export function SimulationWizard({
     );
   }, []);
 
+  useEffect(() => {
+    if (!dealerSelectNotice) return;
+    const timer = window.setTimeout(() => setDealerSelectNotice(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [dealerSelectNotice]);
+
   const resetFromStep = (fromKey: StepKey) => {
     const fromIdx = steps.indexOf(fromKey);
     if (fromIdx <= steps.indexOf('model')) {
@@ -126,6 +136,9 @@ export function SimulationWizard({
 
   const handleDealerSelect = (dealer: Vendor) => {
     setSelectedDealer(dealer);
+    setDealerSelectNotice(
+      t('dealerSelectSuccess', { dealerName: dealer.VendorName })
+    );
     setCurrentStepKey('model');
     resetFromStep('model');
   };
@@ -323,6 +336,24 @@ export function SimulationWizard({
           </p>
         )}
       </div>
+
+      {dealerSelectNotice && (
+        <div
+          role="status"
+          className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900"
+        >
+          <IconCheck size={20} className="mt-0.5 shrink-0 text-emerald-600" aria-hidden />
+          <p className="flex-1 text-sm font-medium">{dealerSelectNotice}</p>
+          <button
+            type="button"
+            onClick={() => setDealerSelectNotice(null)}
+            className="shrink-0 rounded-lg p-1 text-emerald-700/70 hover:bg-emerald-100 hover:text-emerald-900 transition cursor-pointer"
+            aria-label={t('close')}
+          >
+            <IconX size={16} />
+          </button>
+        </div>
+      )}
 
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
