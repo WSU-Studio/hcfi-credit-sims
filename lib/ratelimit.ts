@@ -68,6 +68,9 @@ export const leadsLimiter = createLimiter(10, 60 * 1000);
 /** Public Hyundai AddLeadAsset draft — 5 per minute per IP (creates a Hyundai LOS lead per call). */
 export const leadAssetDraftLimiter = createLimiter(5, 60 * 1000);
 
+/** Public lead status inquiry — POST /api/public/lead-tracking. */
+export const leadTrackingLimiter = createLimiter(20, 60 * 1000);
+
 // ---------- Authenticated-user limiters (key = user id) ----------
 
 /** Admin media upload — 30 per minute. Admins legitimately upload many files. */

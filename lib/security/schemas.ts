@@ -244,3 +244,20 @@ export const leadAssetDraftSchema = z
   .strip();
 
 export type LeadAssetDraftInput = z.infer<typeof leadAssetDraftSchema>;
+
+/** Public lead status inquiry (POST /api/public/lead-tracking). */
+export const leadTrackingSchema = z
+  .object({
+    leadNo: z
+      .string({ message: 'LeadNo wajib diisi' })
+      .max(64, 'max 64 karakter')
+      .transform(cleanString)
+      .refine((v) => v.length > 0, { message: 'LeadNo wajib diisi' })
+      .refine((v) => /^[A-Za-z0-9_-]+$/.test(v), {
+        message: 'LeadNo hanya boleh huruf/angka/-/_',
+      }),
+    [HONEYPOT_FIELD]: z.string().optional(),
+  })
+  .strip();
+
+export type LeadTrackingInput = z.infer<typeof leadTrackingSchema>;
