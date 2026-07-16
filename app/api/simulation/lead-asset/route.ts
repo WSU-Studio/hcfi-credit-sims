@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
-  isMockModeEnabled,
+  isMockApiActive,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
   simulateDelay,
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   const userAgent = request.headers.get('user-agent');
 
   const siteMock = await getMockApiSettings();
-  const useMock = siteMock.enabled || isMockModeEnabled();
+  const useMock = isMockApiActive(siteMock.enabled);
 
   if (useMock) {
     await simulateDelay(600);

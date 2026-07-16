@@ -2,7 +2,7 @@ import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   mockApi,
-  isMockModeEnabled,
+  isMockApiActive,
   simulateDelay,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const siteMock = await getMockApiSettings();
   // Mock dari Site Settings (centang "Aktifkan Mock API") atau dari env
-  if (siteMock.enabled || isMockModeEnabled()) {
+  if (isMockApiActive(siteMock.enabled)) {
     await simulateDelay(300);
     const mockResponse = mockApi.getVendorsAndCities({
       hasAvailableAssetOnly: body.hasAvailableAssetOnly ?? true,

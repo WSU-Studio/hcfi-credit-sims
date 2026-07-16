@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   mockApi,
-  isMockModeEnabled,
+  isMockApiActive,
   simulateDelay,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       normalizeFirstInstallment(firstInstallment) ?? ('ADDM' as FirstInstallmentType);
 
     const siteMock = await getMockApiSettings();
-    const mockEnabled = siteMock.enabled || isMockModeEnabled();
+    const mockEnabled = isMockApiActive(siteMock.enabled);
 
     if (mockEnabled || isMockLeadNo(leadNo)) {
       await simulateDelay(400);

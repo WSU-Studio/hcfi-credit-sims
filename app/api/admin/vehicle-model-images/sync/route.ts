@@ -9,7 +9,7 @@ import { adminSyncLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
 import {
   mockApi,
-  isMockModeEnabled,
+  isMockApiActive,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
 } from '@/lib/mock-api';
@@ -44,7 +44,7 @@ async function fetchMasterAssets(): Promise<{
   error: string;
 }> {
   const siteMock = await getMockApiSettings();
-  if (siteMock.enabled || isMockModeEnabled()) {
+  if (isMockApiActive(siteMock.enabled)) {
     const mockResponse = mockApi.getAssetMasters({
       AssetHierarchyLv1Code: 'HYUNDAI',
       CmoEmpNo: '',

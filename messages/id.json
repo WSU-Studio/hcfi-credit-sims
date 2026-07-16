@@ -78,6 +78,7 @@
     "selectCityFirst": "Pilih kota terlebih dahulu untuk melihat daftar dealer",
     "dealerAutoSelectedHint": "Dealer pertama sudah dipilih. Anda bisa mengganti jika perlu.",
     "continueToModel": "Lanjut Pilih Model",
+    "dealerSelectSuccess": "Dealer berhasil dipilih: {dealerName}. Lanjut pilih model kendaraan.",
     "modelStepTitle": "Pilih Model Mobil",
     "modelStepDescription": "Pilih tipe kendaraan, lalu model yang ingin Anda simulasi",
     "loadingModels": "Memuat model mobil...",

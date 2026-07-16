@@ -78,6 +78,7 @@
     "selectCityFirst": "Select a city first to see available dealers",
     "dealerAutoSelectedHint": "The first dealer is pre-selected. You can change it if needed.",
     "continueToModel": "Continue to Select Model",
+    "dealerSelectSuccess": "Dealer selected: {dealerName}. Continue to choose a vehicle model.",
     "modelStepTitle": "Select Vehicle Model",
     "modelStepDescription": "Choose a vehicle type, then the model you want to simulate",
     "loadingModels": "Loading vehicle models...",

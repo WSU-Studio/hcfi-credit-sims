@@ -2,7 +2,7 @@ import { Agent, fetch as undiciFetch } from 'undici';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   mockApi,
-  isMockModeEnabled,
+  isMockApiActive,
   simulateDelay,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   };
 
   const siteMock = await getMockApiSettings();
-  if (siteMock.enabled || isMockModeEnabled()) {
+  if (isMockApiActive(siteMock.enabled)) {
     await simulateDelay(200);
     const mockResponse = mockApi.getInteriorColors(payload);
     return NextResponse.json(mockResponse);

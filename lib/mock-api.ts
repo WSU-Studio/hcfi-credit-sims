@@ -565,7 +565,7 @@ export function shouldNotUseMockFallback(): boolean {
 }
 
 /**
- * Check if mock mode is enabled.
+ * Check if mock mode is enabled (env / NODE_ENV only).
  * - Production: never mock.
  * - USE_MOCK_API='false': never mock (termasuk saat npm run dev yang set NODE_ENV=development).
  * - USE_MOCK_API='true': selalu mock.
@@ -576,6 +576,17 @@ export function isMockModeEnabled(): boolean {
   if (process.env.USE_MOCK_API === 'true') return true;
   if (process.env.USE_MOCK_API === 'false') return false;
   return process.env.NODE_ENV === 'development';
+}
+
+/**
+ * Apakah route simulation boleh pakai mock sekarang.
+ * CMS `mockApiEnabled` tidak boleh mengalahkan USE_MOCK_API=false / production —
+ * kalau tidak, AddLeadAsset bisa mengembalikan `MOCK-LEAD-*` padahal env sudah
+ * memaksa hit Hyundai (format TrxNo asli: 11STGLD…).
+ */
+export function isMockApiActive(siteMockEnabled = false): boolean {
+  if (shouldNotUseMockFallback()) return false;
+  return siteMockEnabled || isMockModeEnabled();
 }
 
 /**

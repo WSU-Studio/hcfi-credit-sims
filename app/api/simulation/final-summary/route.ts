@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  isMockModeEnabled,
+  isMockApiActive,
   simulateDelay,
   shouldNotUseMockFallback,
   PRODUCTION_DATA_ERROR_MESSAGE,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     const siteMock = await getMockApiSettings();
-    const mockEnabled = siteMock.enabled || isMockModeEnabled();
+    const mockEnabled = isMockApiActive(siteMock.enabled);
 
     if (mockEnabled || isMockLeadNo(leadNo)) {
       await simulateDelay(600);
