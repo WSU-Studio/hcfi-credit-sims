@@ -34,10 +34,11 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
       const response = await fetch('/api/simulation/assets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Katalog dealer terpilih saja (tanpa GlobalCatalog): model dari dealer
+        // lain tidak punya tahun/varian saat step spesifikasi memakai dealer ini.
         body: JSON.stringify({
           DealerCode: dealerCode,
           GetLatestAsset: true,
-          GlobalCatalog: true,
         }),
       });
 
