@@ -156,6 +156,7 @@
     "addmAddbHint": "ADDM = angsuran pertama dibayar di muka; ADDB = angsuran pertama dibayar belakang",
     "addmAddbFixedHint": "Produk ini hanya mendukung {type} (sesuai setting product di rule)",
     "calculating": "Menghitung simulasi...",
+    "emptyTenorResult": "Tidak ada pilihan tenor untuk DP {dp}% pada produk ini. Coba turunkan DP atau pilih produk lain.",
     "resultPerTenor": "Hasil per Tenor",
     "tenor": "Tenor",
     "totalDp": "Total DP",

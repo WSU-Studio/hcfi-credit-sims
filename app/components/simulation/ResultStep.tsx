@@ -89,6 +89,9 @@ export function ResultStep({
   const [selectedTenor, setSelectedTenor] = useState<number>(36);
 
   const [tableRows, setTableRows] = useState<ProductCalculation[]>([]);
+  // Hyundai bisa jawab sukses dengan 0 tenor (mis. DP terlalu tinggi untuk
+  // produk balloon) — tanpa flag ini UI terlihat "menghitung" selamanya.
+  const [emptyResult, setEmptyResult] = useState(false);
   const [simulateLoading, setSimulateLoading] = useState(false);
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
@@ -116,7 +119,9 @@ export function ResultStep({
   const products = tab === 'Standard' ? listStandard : listPromo;
   const minDpPercent = resolveMinDpPercent(selectedProduct);
   const dpFloor = Math.max(5, minDpPercent);
-  const DP_MAX = 80;
+  // Hyundai tidak mengirim rule max DP, jadi jangan batasi di UI.
+  // 100% tetap mustahil secara matematis (DP melebihi harga kendaraan).
+  const DP_MAX = 99;
 
   // Sinkronkan teks input saat dpPercent berubah dari preset/produk.
   useEffect(() => {
@@ -360,6 +365,7 @@ export function ResultStep({
     setSimulateLoading(true);
     setSimulateError(null);
     setErrorId(null);
+    setEmptyResult(false);
     try {
       const res = await fetch('/api/simulation/simulate', {
         method: 'POST',
@@ -400,6 +406,7 @@ export function ResultStep({
       }
 
       setTableRows(rows);
+      setEmptyResult(rows.length === 0);
       const row36 = rows.find((r) => r.Tenor === 36);
       const first = rows[0];
       setSelectedTenor(row36?.Tenor ?? first?.Tenor ?? 36);
@@ -427,6 +434,7 @@ export function ResultStep({
     // Optimistic: sampai CalculateProductFromRule jawab, batasi ke FI default produk.
     setAvailableFirstInstallments([preferred]);
     setTableRows([]);
+    setEmptyResult(false);
   };
 
   const selectTab = (next: TabKind) => {
@@ -623,7 +631,9 @@ export function ResultStep({
             </div>
             <p className="mt-1 text-xs text-gray-500">
               {availableFirstInstallments.length === 0
-                ? t('calculating')
+                ? simulateLoading
+                  ? t('calculating')
+                  : '\u2014'
                 : availableFirstInstallments.length === 1
                   ? t('addmAddbFixedHint', {
                       type: availableFirstInstallments[0] ?? firstInstallment,
@@ -658,6 +668,21 @@ export function ResultStep({
               retrying={simulateLoading}
               errorId={errorId}
             />
+          )}
+
+          {/* Hyundai sukses tapi 0 tenor — beri tahu user, jangan diam seperti loading. */}
+          {!simulateLoading && !simulateError && emptyResult && (
+            <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800 space-y-2">
+              <p>{t('emptyTenorResult', { dp: dpPercent })}</p>
+              <button
+                type="button"
+                onClick={handleCalculate}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-amber-300 text-amber-900 font-medium hover:bg-amber-100 transition cursor-pointer"
+              >
+                <IconRefresh size={16} />
+                {t('retryCalculate')}
+              </button>
+            </div>
           )}
 
           {/* Table */}

@@ -156,6 +156,7 @@
     "addmAddbHint": "ADDM = first installment paid in advance; ADDB = first installment paid in arrears",
     "addmAddbFixedHint": "This product only supports {type} (per product rule)",
     "calculating": "Calculating simulation...",
+    "emptyTenorResult": "No tenor options are available for a {dp}% down payment on this product. Try a lower DP or a different product.",
     "resultPerTenor": "Result per Tenor",
     "tenor": "Tenor",
     "totalDp": "Total DP",
