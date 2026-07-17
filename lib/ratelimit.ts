@@ -56,8 +56,13 @@ function createLimiter(max: number, windowMs: number): Limiter {
 
 // ---------- Public-facing limiters (key = client IP) ----------
 
-/** Login attempts per IP — 5 per 15 minutes. */
-export const loginLimiter = createLimiter(5, 15 * 60 * 1000);
+/**
+ * Login attempts per IP — 20 per 15 minutes.
+ * Sengaja longgar: satu kantor/NAT (atau proxy yang tidak meneruskan
+ * X-Forwarded-For) berbagi satu bucket, dan brute-force per akun sudah
+ * ditangani limiter per-email + DB lockout di `lib/nextauth.ts`.
+ */
+export const loginLimiter = createLimiter(20, 15 * 60 * 1000);
 
 /** Login attempts per email — 10 per 15 minutes (botnet-spread defence). */
 export const loginEmailLimiter = createLimiter(10, 15 * 60 * 1000);

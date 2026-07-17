@@ -123,7 +123,12 @@ export async function middleware(request: NextRequest) {
     request.method === "POST"
   ) {
     const ip = getClientIp(request);
-    const rl = loginLimiter.limit(ip);
+    // Tanpa IP asli (proxy tidak meneruskan XFF), semua user berbagi satu
+    // bucket — limiter per-IP jadi denial-of-service massal. Lewati; layer
+    // per-email + DB lockout di nextauth tetap aktif.
+    const rl = ip === "unknown"
+      ? { success: true as const, retryAfterSec: 0 }
+      : loginLimiter.limit(ip);
     if (!rl.success) {
       return withCors(
         tooManyRequestsResponse(
