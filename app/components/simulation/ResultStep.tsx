@@ -78,6 +78,10 @@ export function ResultStep({
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [dpPercent, setDpPercent] = useState<number>(10);
+  // Teks input DP manual, terpisah dari dpPercent: kalau langsung dikontrol
+  // dpPercent, ketikan di bawah minimum (mis. "5" saat mengetik "55" dengan
+  // min 50) tidak memicu re-render sehingga tampilan dan state diam-diam beda.
+  const [dpInput, setDpInput] = useState<string>('10');
   const [firstInstallment, setFirstInstallment] = useState<FirstInstallmentType>('ADDM');
   const [availableFirstInstallments, setAvailableFirstInstallments] = useState<
     FirstInstallmentType[]
@@ -111,6 +115,24 @@ export function ResultStep({
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
   const minDpPercent = resolveMinDpPercent(selectedProduct);
+  const dpFloor = Math.max(5, minDpPercent);
+  const DP_MAX = 80;
+
+  // Sinkronkan teks input saat dpPercent berubah dari preset/produk.
+  useEffect(() => {
+    setDpInput(String(dpPercent));
+  }, [dpPercent]);
+
+  const commitDpInput = (raw: string) => {
+    const v = Number(raw);
+    if (raw.trim() === '' || Number.isNaN(v)) {
+      setDpInput(String(dpPercent));
+      return;
+    }
+    const clamped = Math.min(Math.max(Math.round(v), dpFloor), DP_MAX);
+    setDpPercent(clamped);
+    setDpInput(String(clamped));
+  };
   // Hyundai: IsPromotion wajib true untuk produk dari tab Promotion (CalculateProductFromRule).
   const isPromotion = tab === 'Promotion';
   const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
@@ -543,13 +565,21 @@ export function ResultStep({
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                min={Math.max(5, minDpPercent)}
-                max={80}
-                value={dpPercent}
+                min={dpFloor}
+                max={DP_MAX}
+                value={dpInput}
                 onChange={(e) => {
-                  const v = Number(e.target.value);
-                  const floor = Math.max(5, minDpPercent);
-                  if (!Number.isNaN(v) && v >= floor && v <= 80) setDpPercent(v);
+                  const raw = e.target.value;
+                  setDpInput(raw);
+                  // Commit langsung hanya kalau sudah valid; sisanya di-clamp saat blur.
+                  const v = Number(raw);
+                  if (raw.trim() !== '' && !Number.isNaN(v) && v >= dpFloor && v <= DP_MAX) {
+                    setDpPercent(Math.round(v));
+                  }
+                }}
+                onBlur={(e) => commitDpInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitDpInput(e.currentTarget.value);
                 }}
                 className="w-24 px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm"
               />
