@@ -121,7 +121,7 @@ export function ResultStep({
   const dpFloor = Math.max(5, minDpPercent);
   // Hyundai tidak mengirim rule max DP, jadi jangan batasi di UI.
   // 100% tetap mustahil secara matematis (DP melebihi harga kendaraan).
-  const DP_MAX = 99;
+  const DP_MAX = 95;
 
   // Sinkronkan teks input saat dpPercent berubah dari preset/produk.
   useEffect(() => {
