@@ -29,12 +29,23 @@ const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * HTML date input mengizinkan tahun sampai 6 digit (spec: max 275760), jadi
+ * Firefox membiarkan user mengetik "202020". Potong ke 4 digit supaya value
+ * selalu ISO normal — value non-ISO akan gagal normalisasi dan mereset dd/mm.
+ */
+function clampIsoYear(raw: string): string {
+  const m = raw.match(/^(\d{4,})(-\d{2}-\d{2})$/);
+  if (!m) return raw;
+  return m[1].slice(0, 4) + m[2];
+}
+
+/**
  * Nilai untuk <input type="date"> yang dikontrol. Nilai ISO diteruskan apa adanya
  * (termasuk nilai antara saat user mengetik tahun, mis. "0002-07-17") agar browser
  * tidak mereset segmen dd/mm; normalisasi hanya untuk format OCR (DD-MM-YYYY dll).
  */
 function birthDateInputValue(raw: string): string {
-  const trimmed = raw.trim();
+  const trimmed = clampIsoYear(raw.trim());
   if (ISO_DATE_RE.test(trimmed)) return trimmed;
   return normalizeOcrBirthDate(trimmed) ?? '';
 }
@@ -174,7 +185,7 @@ export function KtpOcrReviewForm({
             id="ocr-tanggal-lahir"
             type="date"
             value={birthDateInputValue(value.tanggalLahir)}
-            onChange={(e) => patch('tanggalLahir', e.target.value)}
+            onChange={(e) => patch('tanggalLahir', clampIsoYear(e.target.value))}
             onBlur={() => markTouched('tanggalLahir')}
             disabled={disabled}
             className={inputCls('tanggalLahir')}
