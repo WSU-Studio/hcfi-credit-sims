@@ -26,6 +26,19 @@ const inputErrorClass =
 
 const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Nilai untuk <input type="date"> yang dikontrol. Nilai ISO diteruskan apa adanya
+ * (termasuk nilai antara saat user mengetik tahun, mis. "0002-07-17") agar browser
+ * tidak mereset segmen dd/mm; normalisasi hanya untuk format OCR (DD-MM-YYYY dll).
+ */
+function birthDateInputValue(raw: string): string {
+  const trimmed = raw.trim();
+  if (ISO_DATE_RE.test(trimmed)) return trimmed;
+  return normalizeOcrBirthDate(trimmed) ?? '';
+}
+
 const AGAMA_OPTIONS = [
   { code: 'AGNOSTIK', label: 'AGNOSTIK' },
   { code: 'BUDDHA', label: 'Buddha' },
@@ -160,7 +173,7 @@ export function KtpOcrReviewForm({
           <input
             id="ocr-tanggal-lahir"
             type="date"
-            value={normalizeOcrBirthDate(value.tanggalLahir) ?? ''}
+            value={birthDateInputValue(value.tanggalLahir)}
             onChange={(e) => patch('tanggalLahir', e.target.value)}
             onBlur={() => markTouched('tanggalLahir')}
             disabled={disabled}
