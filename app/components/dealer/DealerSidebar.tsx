@@ -74,7 +74,7 @@ export function DealerSidebar() {
 
         <div className="absolute bottom-0 w-64 p-4 border-t border-white/10 bg-blue-950">
           <DealerLink
-            href="/auth/logout"
+            href="/auth/logout?redirect=dealer"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:bg-white/10 hover:text-white transition-colors"
           >
             <IconLogout size={20} />

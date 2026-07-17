@@ -76,7 +76,7 @@ export function DealerTopbar() {
                 Ubah Password
               </button>
               <DealerLink
-                href="/auth/logout"
+                href="/auth/logout?redirect=dealer"
                 className="flex items-center gap-2 px-4 h-10 text-sm text-gray-700 hover:bg-gray-50"
                 onClick={() => setOpen(false)}
               >

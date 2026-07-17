@@ -1,17 +1,29 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LogoutPage() {
+// Whitelist tujuan redirect setelah logout supaya param query tidak bisa
+// dipakai sebagai open redirect ke domain/path sembarangan.
+const LOGOUT_REDIRECTS: Record<string, string> = {
+  admin: '/auth/login',
+  dealer: '/dealer/login',
+};
+
+function LogoutHandler() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
+    const target =
+      LOGOUT_REDIRECTS[searchParams.get('redirect') ?? ''] ??
+      LOGOUT_REDIRECTS.admin;
+
     signOut({ redirect: false }).then(() => {
-      router.push('/auth/login');
+      router.push(target);
     });
-  }, [router]);
+  }, [router, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -20,4 +32,16 @@ export default function LogoutPage() {
   );
 }
 
-
+export default function LogoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p>Signing out...</p>
+        </div>
+      }
+    >
+      <LogoutHandler />
+    </Suspense>
+  );
+}
