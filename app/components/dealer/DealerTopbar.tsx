@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { IconLock, IconLogout } from '@tabler/icons-react';
+import { IconLock, IconLogout, IconMenu2 } from '@tabler/icons-react';
 import { DealerLink } from '@/app/components/dealer/DealerLink';
 import { ChangePasswordModal } from '@/app/components/admin/ChangePasswordModal';
 import { USER_TYPES } from '@/lib/user-types';
@@ -12,7 +12,12 @@ const USER_TYPE_LABELS: Record<string, string> = {
   [USER_TYPES.SALESMAN]: 'Salesman',
 };
 
-export function DealerTopbar() {
+export type DealerTopbarProps = {
+  /** Buka drawer menu di layar mobile. */
+  onMenuClick?: () => void;
+};
+
+export function DealerTopbar({ onMenuClick }: DealerTopbarProps) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -33,17 +38,29 @@ export function DealerTopbar() {
     : '';
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-gray-900">Dealer Portal</h2>
-          {session.user.vendorName && (
-            <p className="text-sm text-gray-500 truncate">
-              {session.user.vendorName}
-              {session.user.vendorCity ? ` · ${session.user.vendorCity}` : ''}
-              {session.user.oriOfficeName ? ` · ${session.user.oriOfficeName}` : ''}
-            </p>
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          {onMenuClick && (
+            <button
+              type="button"
+              onClick={onMenuClick}
+              aria-label="Buka menu"
+              className="lg:hidden shrink-0 -ml-1 p-2.5 rounded-full border border-slate-300 text-gray-700 hover:bg-slate-200/50 transition-colors"
+            >
+              <IconMenu2 size={22} />
+            </button>
           )}
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-gray-900">Dealer Portal</h2>
+            {session.user.vendorName && (
+              <p className="text-sm text-gray-500 truncate">
+                {session.user.vendorName}
+                {session.user.vendorCity ? ` · ${session.user.vendorCity}` : ''}
+                {session.user.oriOfficeName ? ` · ${session.user.oriOfficeName}` : ''}
+              </p>
+            )}
+          </div>
         </div>
         <div className="relative shrink-0" ref={ref}>
           <button

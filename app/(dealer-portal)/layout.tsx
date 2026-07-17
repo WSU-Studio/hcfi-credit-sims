@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { Providers } from '../providers';
 import { requireDealerPortalSession } from '@/lib/dealer-auth-server';
-import { DealerSidebar } from '@/app/components/dealer/DealerSidebar';
-import { DealerTopbar } from '@/app/components/dealer/DealerTopbar';
+import { DealerPortalShell } from '@/app/components/dealer/DealerPortalShell';
 import idMessages from '@/messages/id.json';
 
 export const metadata: Metadata = {
@@ -21,13 +20,7 @@ export default async function DealerPortalLayout({
   return (
     <Providers>
       <NextIntlClientProvider locale="id" messages={idMessages}>
-        <div className="flex min-h-screen bg-gray-50 text-gray-900">
-          <DealerSidebar />
-          <div className="flex-1 flex flex-col min-w-0">
-            <DealerTopbar />
-            <main className="flex-1 p-6 min-w-0">{children}</main>
-          </div>
-        </div>
+        <DealerPortalShell>{children}</DealerPortalShell>
       </NextIntlClientProvider>
     </Providers>
   );
