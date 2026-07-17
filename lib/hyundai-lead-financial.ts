@@ -96,6 +96,21 @@ export function mapSummaryInfoToFinalSummary(
     numField(summary, 'AssetDownPaymentAmt', 'DownPaymentAmt', 'dpAmt', 'DpAmt') ||
     (assetPriceAmt > 0 && ntfAmt > 0 ? Math.max(0, assetPriceAmt - ntfAmt) : 0);
 
+  // Hyundai kadang mengembalikan AssetDownPaymentPrcnt dari default rule produk
+  // (mis. 10) padahal seluruh amount dihitung dengan DP request user (mis. 60%).
+  // Kalau persen API tidak konsisten dengan amount-nya sendiri, pakai persen
+  // turunan dari downPaymentAmt / assetPriceAmt.
+  const apiDpPrcnt = numField(summary, 'AssetDownPaymentPrcnt', 'assetDownPaymentPrcnt');
+  const derivedDpPrcnt =
+    assetPriceAmt > 0 && downPaymentAmt > 0
+      ? (downPaymentAmt / assetPriceAmt) * 100
+      : 0;
+  let assetDownPaymentPrcnt = apiDpPrcnt;
+  if (derivedDpPrcnt > 0 && Math.abs(apiDpPrcnt - derivedDpPrcnt) > 0.5) {
+    assetDownPaymentPrcnt = Math.round(derivedDpPrcnt * 100) / 100;
+  }
+  if (!assetDownPaymentPrcnt) assetDownPaymentPrcnt = fallbacks.dpPercent ?? 0;
+
   return {
     productName:
       strField(summary, 'ProductName', 'productName') ||
@@ -105,9 +120,7 @@ export function mapSummaryInfoToFinalSummary(
       strField(summary, 'ProductCode', 'productCode') ||
       fallbacks.productCode?.trim() ||
       null,
-    assetDownPaymentPrcnt:
-      numField(summary, 'AssetDownPaymentPrcnt', 'assetDownPaymentPrcnt') ||
-      (fallbacks.dpPercent ?? 0),
+    assetDownPaymentPrcnt,
     tenor: numField(summary, 'Tenor', 'tenor') || (fallbacks.tenor ?? 0),
     flatRatePrcnt: numField(summary, 'FlatRatePrcnt', 'flatRatePrcnt'),
     instAmt: numField(summary, 'InstAmt', 'instAmt', 'InstallmentAmt'),
