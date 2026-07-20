@@ -6,6 +6,7 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
+import { formatAdminApiError } from '@/lib/security/format-admin-api-error';
 
 const BANNER_RATIO_OPTIONS = [
   { value: 'default', label: 'Default (rasio asli)' },
@@ -193,13 +194,7 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
 
       const data = await res.json();
       if (!res.ok) {
-        const detail =
-          typeof data.message === 'string' && data.message
-            ? data.field
-              ? `${data.field}: ${data.message}`
-              : data.message
-            : data.error || 'Failed to save article';
-        throw new Error(detail);
+        throw new Error(formatAdminApiError(data, 'Failed to save article'));
       }
 
       if (redirectAfterSave) {

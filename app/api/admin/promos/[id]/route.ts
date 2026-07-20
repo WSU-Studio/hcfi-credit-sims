@@ -5,7 +5,11 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
-import { sanitizeCmsHtml, sanitizeLayoutHtml } from '@/lib/security/cms-html';
+import {
+  invalidAdminInputResponse,
+  promoWriteSchema,
+} from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   _request: NextRequest,
@@ -53,21 +57,22 @@ export async function PUT(
     await requirePermission('PROMOS', 'edit');
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, titleEn, slug, description, descriptionEn, imageUrl, content, contentEn, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
 
-    if (!title || typeof title !== 'string') {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
-      return NextResponse.json(
-        { error: 'Invalid layout structure' },
-        { status: 400 }
-      );
+    const parsed = promoWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
     }
 
     const existing = await prisma.promo.findUnique({
@@ -77,66 +82,48 @@ export async function PUT(
       return NextResponse.json({ error: 'Promo not found' }, { status: 404 });
     }
 
-    const existingFields = existing as typeof existing & {
-      slug?: string | null;
-      description?: string | null;
-      descriptionEn?: string | null;
-      imageUrl?: string | null;
-      content?: string | null;
-      contentEn?: string | null;
-      titleEn?: string | null;
-      layout?: unknown;
-      bannerImageRatio?: string | null;
-      bannerUseContainer?: boolean;
-      showBannerImage?: boolean;
-    };
-    const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : existingFields.slug;
-    if (slugTrimmed && slugTrimmed !== existingFields.slug) {
+    if (input.slug && input.slug !== existing.slug) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed } as unknown as Prisma.PromoWhereUniqueInput,
+        where: { slug: input.slug } as unknown as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
-        return NextResponse.json(
-          { error: 'Slug already in use' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Slug already in use' }, { status: 400 });
       }
     }
 
     const updateData = {
-      title: title.trim(),
-      titleEn: titleEn !== undefined ? (titleEn === null || titleEn === '' ? null : String(titleEn).trim()) : existingFields.titleEn,
-      slug: slugTrimmed ?? undefined,
-      description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existingFields.description,
-      descriptionEn: descriptionEn !== undefined ? (descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn)) : existingFields.descriptionEn,
-      imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existingFields.imageUrl,
-      content:
-        content !== undefined
-          ? sanitizeCmsHtml(content === null || content === '' ? null : String(content))
-          : existingFields.content,
-      contentEn:
-        contentEn !== undefined
-          ? sanitizeCmsHtml(contentEn === null || contentEn === '' ? null : String(contentEn))
-          : existingFields.contentEn,
-      layout:
-        layout !== undefined
-          ? layout === null
-            ? null
-            : sanitizeLayoutHtml(layout)
-          : existingFields.layout,
-      isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
-      isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,
-      order: order !== undefined ? Number(order) : existing.order,
-      startDate: startDate !== undefined ? (startDate === null || startDate === '' ? null : new Date(startDate)) : existing.startDate,
-      endDate: endDate !== undefined ? (endDate === null || endDate === '' ? null : new Date(endDate)) : existing.endDate,
-      bannerImageRatio: bannerImageRatio !== undefined ? bannerImageRatio : existingFields.bannerImageRatio,
-      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : existingFields.bannerUseContainer,
-      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : existingFields.showBannerImage,
+      title: input.title,
+      titleEn: input.titleEn,
+      slug: input.slug,
+      description: input.description,
+      descriptionEn: input.descriptionEn,
+      imageUrl: input.imageUrl,
+      content: input.content,
+      contentEn: input.contentEn,
+      layout: input.layout ?? null,
+      isActive: input.isActive !== undefined ? Boolean(input.isActive) : existing.isActive,
+      isHighlight:
+        input.isHighlight !== undefined ? Boolean(input.isHighlight) : existing.isHighlight,
+      order: input.order ?? existing.order,
+      startDate: input.startDate ? new Date(input.startDate) : null,
+      endDate: input.endDate ? new Date(input.endDate) : null,
+      bannerImageRatio: input.bannerImageRatio,
+      bannerUseContainer: input.bannerUseContainer,
+      showBannerImage: input.showBannerImage,
     } as unknown as Prisma.PromoUpdateInput;
 
     const promo = await prisma.promo.update({
       where: { id },
       data: updateData,
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PROMO_UPDATE,
+      resourceType: 'Promo',
+      resourceId: promo.id,
+      metadata: { title: promo.title, slug: promo.slug },
+      request,
     });
 
     return NextResponse.json({ promo });
@@ -165,8 +152,25 @@ export async function DELETE(
     await requirePermission('PROMOS', 'delete');
 
     const { id } = await params;
+    const existing = await prisma.promo.findUnique({
+      where: { id },
+      select: { id: true, title: true, slug: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Promo not found' }, { status: 404 });
+    }
+
     await prisma.promo.delete({
       where: { id },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PROMO_DELETE,
+      resourceType: 'Promo',
+      resourceId: id,
+      metadata: { title: existing.title, slug: existing.slug },
+      request,
     });
 
     return NextResponse.json({ success: true });
@@ -181,5 +185,3 @@ export async function DELETE(
     );
   }
 }
-
-

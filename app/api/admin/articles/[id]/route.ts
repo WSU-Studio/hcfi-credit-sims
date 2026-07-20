@@ -9,6 +9,7 @@ import {
   articleUpdateSchema,
   invalidAdminInputResponse,
 } from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   request: NextRequest,
@@ -116,6 +117,19 @@ export async function PUT(
       },
     });
 
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ARTICLE_UPDATE,
+      resourceType: 'Article',
+      resourceId: article.id,
+      metadata: {
+        title: article.title,
+        slug: article.slug,
+        isPublished: article.isPublished,
+      },
+      request,
+    });
+
     return NextResponse.json({ article });
   } catch (error: unknown) {
     console.error('Error updating article:', error);
@@ -142,8 +156,25 @@ export async function DELETE(
     await requirePermission('ARTICLES', 'delete');
 
     const { id } = await params;
+    const existing = await prisma.article.findUnique({
+      where: { id },
+      select: { id: true, title: true, slug: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    }
+
     await prisma.article.delete({
       where: { id },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ARTICLE_DELETE,
+      resourceType: 'Article',
+      resourceId: id,
+      metadata: { title: existing.title, slug: existing.slug },
+      request,
     });
 
     return NextResponse.json({ success: true });

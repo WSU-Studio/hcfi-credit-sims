@@ -232,6 +232,98 @@ export const pageWriteSchema = z
 
 export type PageWriteInput = z.infer<typeof pageWriteSchema>;
 
+/** Media / cover URL — length-capped; rejects javascript: / data:html probes. */
+const mediaUrlSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null) return null;
+    const s = String(v).trim();
+    return s.length > 0 ? s.slice(0, 2048) : null;
+  })
+  .refine((v) => v == null || !/^\s*javascript\s*:/i.test(v), {
+    message: 'URL tidak valid',
+  })
+  .refine((v) => v == null || !/^\s*data\s*:\s*text\/html/i.test(v), {
+    message: 'URL tidak valid',
+  });
+
+const optionalDateIsoSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null || v === '') return null;
+    const d = new Date(String(v));
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+  });
+
+const orderSchema = z
+  .union([z.number(), z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null || v === '') return 0;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.trunc(n) : 0;
+  });
+
+export const promoWriteSchema = z
+  .object({
+    title: safeText(MAX_TITLE).refine((v) => v.length > 0, { message: 'title wajib diisi' }),
+    titleEn: optionalSafeText(MAX_TITLE),
+    slug: slugSchema.transform((v) => (v === '' ? null : v)),
+    description: optionalSafeText(MAX_EXCERPT),
+    descriptionEn: optionalSafeText(MAX_EXCERPT),
+    imageUrl: mediaUrlSchema,
+    content: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => sanitizeCmsHtml(typeof v === 'string' ? v : null)),
+    contentEn: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => sanitizeCmsHtml(typeof v === 'string' ? v : null)),
+    layout: optionalLayoutSchema,
+    isActive: z.boolean().optional(),
+    isHighlight: z.boolean().optional(),
+    order: orderSchema.optional(),
+    startDate: optionalDateIsoSchema.optional(),
+    endDate: optionalDateIsoSchema.optional(),
+    bannerImageRatio: optionalSafeText(40),
+    bannerUseContainer: z.boolean().optional(),
+    showBannerImage: z.boolean().optional(),
+  })
+  .strip();
+
+export type PromoWriteInput = z.infer<typeof promoWriteSchema>;
+
+export const productWriteSchema = z
+  .object({
+    title: safeText(MAX_TITLE).refine((v) => v.length > 0, { message: 'title wajib diisi' }),
+    titleEn: optionalSafeText(MAX_TITLE),
+    subtitle: optionalSafeText(MAX_TITLE),
+    subtitleEn: optionalSafeText(MAX_TITLE),
+    imageUrl: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => {
+        if (v == null || v === '') return '';
+        return String(v).trim().slice(0, 2048);
+      })
+      .refine((v) => v === '' || !/^\s*javascript\s*:/i.test(v), {
+        message: 'URL tidak valid',
+      }),
+    order: orderSchema.optional(),
+    content: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => sanitizeCmsHtml(typeof v === 'string' ? v : null)),
+    contentEn: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((v) => sanitizeCmsHtml(typeof v === 'string' ? v : null)),
+    layout: optionalLayoutSchema,
+    isFeatured: z.boolean().optional(),
+  })
+  .strip();
+
+export type ProductWriteInput = z.infer<typeof productWriteSchema>;
+
+export const productUpdateSchema = productWriteSchema.partial().strip();
+
+export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+
 export const passwordFieldSchema = z
   .string()
   .transform((v, ctx) => {

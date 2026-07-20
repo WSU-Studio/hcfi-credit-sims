@@ -9,6 +9,7 @@ import {
   invalidAdminInputResponse,
   pageWriteSchema,
 } from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -83,6 +84,15 @@ export async function POST(request: NextRequest) {
     } as unknown as Prisma.StaticPageCreateInput;
 
     const page = await prisma.staticPage.create({ data: createData });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PAGE_CREATE,
+      resourceType: 'StaticPage',
+      resourceId: page.id,
+      metadata: { title: page.title, slug: page.slug },
+      request,
+    });
 
     return NextResponse.json({ page });
   } catch (error: unknown) {

@@ -9,6 +9,7 @@ import {
   invalidAdminInputResponse,
   pageWriteSchema,
 } from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   _request: NextRequest,
@@ -105,6 +106,15 @@ export async function PUT(
 
     const page = await prisma.staticPage.update({ where: { id }, data: updateData });
 
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PAGE_UPDATE,
+      resourceType: 'StaticPage',
+      resourceId: page.id,
+      metadata: { title: page.title, slug: page.slug },
+      request,
+    });
+
     return NextResponse.json({ page });
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('Forbidden')) {
@@ -118,7 +128,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -130,8 +140,25 @@ export async function DELETE(
     await requirePermission('PAGES', 'delete');
 
     const { id } = await params;
+    const existing = await prisma.staticPage.findUnique({
+      where: { id },
+      select: { id: true, title: true, slug: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 });
+    }
+
     await prisma.staticPage.delete({
       where: { id },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PAGE_DELETE,
+      resourceType: 'StaticPage',
+      resourceId: id,
+      metadata: { title: existing.title, slug: existing.slug },
+      request,
     });
 
     return NextResponse.json({ success: true });

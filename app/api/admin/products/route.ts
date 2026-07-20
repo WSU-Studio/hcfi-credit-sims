@@ -5,6 +5,11 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import {
+  invalidAdminInputResponse,
+  productWriteSchema,
+} from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -43,30 +48,46 @@ export async function POST(request: NextRequest) {
 
     await requirePermission('PRODUCTS', 'create');
 
-    const body = await request.json();
-    const { title, titleEn, subtitle, subtitleEn, imageUrl, order, content, contentEn, layout, isFeatured } = body;
-
-    if (!title || typeof title !== 'string') {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
+    const parsed = productWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
       return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
     }
 
     const createData = {
-      title: String(title).trim(),
-      titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim(),
-      subtitle: subtitle === null || subtitle === '' ? null : String(subtitle).trim(),
-      subtitleEn: subtitleEn === null || subtitleEn === '' ? null : String(subtitleEn).trim(),
-      imageUrl: imageUrl == null || imageUrl === '' ? '' : String(imageUrl),
-      order: Number(order) ?? 0,
-      content: content === null || content === '' ? null : String(content),
-      contentEn: contentEn === null || contentEn === '' ? null : String(contentEn),
-      layout: layout ?? undefined,
-      isFeatured: Boolean(isFeatured ?? false),
+      title: input.title,
+      titleEn: input.titleEn,
+      subtitle: input.subtitle,
+      subtitleEn: input.subtitleEn,
+      imageUrl: input.imageUrl,
+      order: input.order ?? 0,
+      content: input.content,
+      contentEn: input.contentEn,
+      layout: input.layout ?? undefined,
+      isFeatured: Boolean(input.isFeatured ?? false),
     } as unknown as Prisma.ProductCreateInput;
+
     const product = await prisma.product.create({ data: createData });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PRODUCT_CREATE,
+      resourceType: 'Product',
+      resourceId: product.id,
+      metadata: { title: product.title },
+      request,
+    });
 
     return NextResponse.json({ product });
   } catch (error: unknown) {
@@ -80,5 +101,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

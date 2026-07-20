@@ -5,6 +5,12 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import {
+  invalidAdminInputResponse,
+  productUpdateSchema,
+  productWriteSchema,
+} from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET(
   request: NextRequest,
@@ -53,32 +59,51 @@ export async function PUT(
     await requirePermission('PRODUCTS', 'edit');
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, titleEn, subtitle, subtitleEn, imageUrl, order, content, contentEn, layout, isFeatured } = body;
 
-    if (title !== undefined && (!title || typeof title !== 'string')) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
+    // Product form always sends a full payload; prefer full schema, fall back to partial.
+    const full = productWriteSchema.safeParse(rawBody);
+    const parsed = full.success ? full : productUpdateSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
       return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
     }
 
     const updateData = {
-      ...(title !== undefined && { title: String(title).trim() }),
-      ...(titleEn !== undefined && { titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim() }),
-      ...(subtitle !== undefined && { subtitle: subtitle === null || subtitle === '' ? null : String(subtitle).trim() }),
-      ...(subtitleEn !== undefined && { subtitleEn: subtitleEn === null || subtitleEn === '' ? null : String(subtitleEn).trim() }),
-      ...(imageUrl !== undefined && { imageUrl: imageUrl == null || imageUrl === '' ? '' : String(imageUrl) }),
-      ...(order !== undefined && { order: Number(order) ?? 0 }),
-      ...(content !== undefined && { content: content === null || content === '' ? null : String(content) }),
-      ...(contentEn !== undefined && { contentEn: contentEn === null || contentEn === '' ? null : String(contentEn) }),
-      ...(layout !== undefined && { layout: layout ?? null }),
-      ...(isFeatured !== undefined && { isFeatured: Boolean(isFeatured) }),
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.titleEn !== undefined && { titleEn: input.titleEn }),
+      ...(input.subtitle !== undefined && { subtitle: input.subtitle }),
+      ...(input.subtitleEn !== undefined && { subtitleEn: input.subtitleEn }),
+      ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
+      ...(input.order !== undefined && { order: input.order }),
+      ...(input.content !== undefined && { content: input.content }),
+      ...(input.contentEn !== undefined && { contentEn: input.contentEn }),
+      ...(input.layout !== undefined && { layout: input.layout ?? null }),
+      ...(input.isFeatured !== undefined && { isFeatured: Boolean(input.isFeatured) }),
     } as unknown as Prisma.ProductUpdateInput;
+
     const product = await prisma.product.update({
       where: { id },
       data: updateData,
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PRODUCT_UPDATE,
+      resourceType: 'Product',
+      resourceId: product.id,
+      metadata: { title: product.title },
+      request,
     });
 
     return NextResponse.json({ product });
@@ -107,8 +132,25 @@ export async function DELETE(
     await requirePermission('PRODUCTS', 'delete');
 
     const { id } = await params;
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, title: true },
+    });
+    if (!existing) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
+
     await prisma.product.delete({
       where: { id },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PRODUCT_DELETE,
+      resourceType: 'Product',
+      resourceId: id,
+      metadata: { title: existing.title },
+      request,
     });
 
     return NextResponse.json({ success: true });
@@ -123,5 +165,3 @@ export async function DELETE(
     );
   }
 }
-
-

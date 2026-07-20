@@ -35,8 +35,20 @@ export const AUDIT_ACTIONS = {
   LEAD_DOWNLOAD_PDF: 'lead.downloadPdf',
 
   // Content
+  ARTICLE_CREATE: 'article.create',
+  ARTICLE_UPDATE: 'article.update',
+  ARTICLE_DELETE: 'article.delete',
   ARTICLE_PUBLISH: 'article.publish',
   ARTICLE_UNPUBLISH: 'article.unpublish',
+  PAGE_CREATE: 'page.create',
+  PAGE_UPDATE: 'page.update',
+  PAGE_DELETE: 'page.delete',
+  PROMO_CREATE: 'promo.create',
+  PROMO_UPDATE: 'promo.update',
+  PROMO_DELETE: 'promo.delete',
+  PRODUCT_CREATE: 'product.create',
+  PRODUCT_UPDATE: 'product.update',
+  PRODUCT_DELETE: 'product.delete',
 
   // Settings / system
   SETTINGS_UPDATE: 'settings.update',

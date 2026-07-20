@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
+import { formatAdminApiError } from '@/lib/security/format-admin-api-error';
 
 type StaticPage = {
   id: string;
@@ -111,7 +112,7 @@ export function PageForm({ pageId }: PageFormProps) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save page');
+      if (!res.ok) throw new Error(formatAdminApiError(data, 'Failed to save page'));
       if (redirectAfterSave) {
         router.push('/admin/pages');
         router.refresh();

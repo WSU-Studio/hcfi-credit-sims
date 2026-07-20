@@ -5,7 +5,11 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
-import { sanitizeCmsHtml, sanitizeLayoutHtml } from '@/lib/security/cms-html';
+import {
+  invalidAdminInputResponse,
+  promoWriteSchema,
+} from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -44,59 +48,62 @@ export async function POST(request: NextRequest) {
 
     await requirePermission('PROMOS', 'create');
 
-    const body = await request.json();
-    const { title, titleEn, slug, description, descriptionEn, imageUrl, content, contentEn, layout, isActive, isHighlight, order, startDate, endDate, bannerImageRatio, bannerUseContainer, showBannerImage } = body;
-
-    if (!title || typeof title !== 'string') {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (layout !== undefined && layout !== null && !validateLayout(layout)) {
-      return NextResponse.json(
-        { error: 'Invalid layout structure' },
-        { status: 400 }
-      );
+    const parsed = promoWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
     }
 
-    const slugTrimmed = typeof slug === 'string' ? slug.trim() || null : null;
-    if (slugTrimmed) {
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
+    }
+
+    if (input.slug) {
       const slugTaken = await prisma.promo.findUnique({
-        where: { slug: slugTrimmed } as unknown as Prisma.PromoWhereUniqueInput,
+        where: { slug: input.slug } as unknown as Prisma.PromoWhereUniqueInput,
       });
       if (slugTaken) {
-        return NextResponse.json(
-          { error: 'Slug already in use' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Slug already in use' }, { status: 400 });
       }
     }
 
-    const sanitizedLayout =
-      layout !== undefined && layout !== null ? sanitizeLayoutHtml(layout) : layout;
-
     const createData = {
-      title: title.trim(),
-      titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim(),
-      slug: slugTrimmed ?? undefined,
-      description: description === null || description === '' ? null : (description ?? undefined),
-      descriptionEn: descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn).trim(),
-      imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
-      content: sanitizeCmsHtml(content === null || content === '' ? null : content),
-      contentEn: sanitizeCmsHtml(contentEn === null || contentEn === '' ? null : String(contentEn)),
-      layout: sanitizedLayout ?? undefined,
-      isActive: isActive !== undefined ? Boolean(isActive) : true,
-      isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,
-      order: order !== undefined ? Number(order) : 0,
-      startDate: startDate === null || startDate === '' ? null : (startDate ? new Date(startDate) : undefined),
-      endDate: endDate === null || endDate === '' ? null : (endDate ? new Date(endDate) : undefined),
-      bannerImageRatio: bannerImageRatio ?? undefined,
-      bannerUseContainer: bannerUseContainer !== undefined ? Boolean(bannerUseContainer) : undefined,
-      showBannerImage: showBannerImage !== undefined ? Boolean(showBannerImage) : undefined,
+      title: input.title,
+      titleEn: input.titleEn,
+      slug: input.slug ?? undefined,
+      description: input.description,
+      descriptionEn: input.descriptionEn,
+      imageUrl: input.imageUrl,
+      content: input.content,
+      contentEn: input.contentEn,
+      layout: input.layout ?? undefined,
+      isActive: input.isActive !== undefined ? Boolean(input.isActive) : true,
+      isHighlight: input.isHighlight !== undefined ? Boolean(input.isHighlight) : false,
+      order: input.order ?? 0,
+      startDate: input.startDate ? new Date(input.startDate) : null,
+      endDate: input.endDate ? new Date(input.endDate) : null,
+      bannerImageRatio: input.bannerImageRatio ?? undefined,
+      bannerUseContainer: input.bannerUseContainer,
+      showBannerImage: input.showBannerImage,
     } as unknown as Prisma.PromoCreateInput;
+
     const promo = await prisma.promo.create({ data: createData });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.PROMO_CREATE,
+      resourceType: 'Promo',
+      resourceId: promo.id,
+      metadata: { title: promo.title, slug: promo.slug },
+      request,
+    });
 
     return NextResponse.json({ promo });
   } catch (error: unknown) {
@@ -110,5 +117,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

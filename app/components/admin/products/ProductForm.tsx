@@ -6,6 +6,7 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
+import { formatAdminApiError } from '@/lib/security/format-admin-api-error';
 
 type Product = {
   id: string;
@@ -119,7 +120,7 @@ export function ProductForm({ productId }: ProductFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save product');
+        throw new Error(formatAdminApiError(data, 'Failed to save product'));
       }
 
       router.push('/admin/products');

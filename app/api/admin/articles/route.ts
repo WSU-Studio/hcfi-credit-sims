@@ -9,6 +9,7 @@ import {
   articleCreateSchema,
   invalidAdminInputResponse,
 } from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 export async function GET() {
   try {
@@ -109,6 +110,19 @@ export async function POST(request: NextRequest) {
           select: { id: true, name: true, email: true },
         },
       },
+    });
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.ARTICLE_CREATE,
+      resourceType: 'Article',
+      resourceId: article.id,
+      metadata: {
+        title: article.title,
+        slug: article.slug,
+        isPublished: article.isPublished,
+      },
+      request,
     });
 
     return NextResponse.json({ article });

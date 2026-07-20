@@ -6,6 +6,7 @@ import {
   invalidAdminInputResponse,
   siteSettingsWriteSchema,
 } from '@/lib/security/admin-schemas';
+import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
 
 const KEYS = [
   'gtmId',
@@ -92,6 +93,20 @@ export async function POST(request: NextRequest) {
         create: { key, value },
       });
     }
+
+    await recordAudit({
+      actor: actorFromSession(session),
+      action: AUDIT_ACTIONS.SETTINGS_UPDATE,
+      resourceType: 'SiteSetting',
+      metadata: {
+        keys: [...KEYS],
+        gtmIdSet: Boolean(parsed.data.gtmId),
+        gaMeasurementIdSet: Boolean(parsed.data.gaMeasurementId),
+        mockApiEnabled: parsed.data.mockApiEnabled,
+      },
+      request,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : '';

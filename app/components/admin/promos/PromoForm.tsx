@@ -6,6 +6,7 @@ import { AdminLink } from '@/app/components/admin/AdminLink';
 import { MediaPicker } from '@/app/components/admin/media/MediaPicker';
 import { LayoutBuilderSection } from '@/app/components/admin/LayoutBuilderSection';
 import type { PageLayout } from '@/app/types';
+import { formatAdminApiError } from '@/lib/security/format-admin-api-error';
 
 const BANNER_RATIO_OPTIONS = [
   { value: 'default', label: 'Default (rasio asli)' },
@@ -162,7 +163,7 @@ export function PromoForm({ promoId }: PromoFormProps) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save promo');
+      if (!res.ok) throw new Error(formatAdminApiError(data, 'Failed to save promo'));
       if (redirectAfterSave) {
         router.push('/admin/promos');
         router.refresh();
