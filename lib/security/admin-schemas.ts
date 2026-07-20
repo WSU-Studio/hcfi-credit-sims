@@ -12,8 +12,8 @@ import { isSafeGaMeasurementId, isSafeGtmId } from './analytics-ids';
 
 const MAX_TITLE = 200;
 const MAX_SLUG = 120;
-const MAX_EXCERPT = 2000;
-const MAX_META = 500;
+const MAX_EXCERPT = 5000;
+const MAX_META = 2000;
 const MAX_SETTING_TEXT = 500;
 const MAX_MOCK_JSON = 500_000;
 

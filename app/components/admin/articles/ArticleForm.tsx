@@ -192,7 +192,15 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save article');
+      if (!res.ok) {
+        const detail =
+          typeof data.message === 'string' && data.message
+            ? data.field
+              ? `${data.field}: ${data.message}`
+              : data.message
+            : data.error || 'Failed to save article';
+        throw new Error(detail);
+      }
 
       if (redirectAfterSave) {
         router.push('/admin/articles');
