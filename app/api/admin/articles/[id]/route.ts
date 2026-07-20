@@ -5,6 +5,10 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import {
+  articleUpdateSchema,
+  invalidAdminInputResponse,
+} from '@/lib/security/admin-schemas';
 
 export async function GET(
   request: NextRequest,
@@ -58,38 +62,50 @@ export async function PUT(
     await requirePermission('ARTICLES', 'edit');
 
     const { id } = await params;
-    const body = await request.json();
-    if (body.layout !== undefined && body.layout !== null && !validateLayout(body.layout)) {
-      return NextResponse.json(
-        { error: 'Invalid layout structure' },
-        { status: 400 }
-      );
+
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    const { authorId: _omit, ...rest } = body;
-    const tags =
-      rest.tags !== undefined
-        ? Array.isArray(rest.tags)
-          ? rest.tags.filter(Boolean).map((t: string) => String(t).trim())
-          : String(rest.tags)
-              .split(',')
-              .map((t: string) => t.trim())
-              .filter(Boolean)
-        : undefined;
-    const data = {
-      ...rest,
-      ...(tags !== undefined && { tags }),
-      ...(rest.readingTime != null && { readingTime: Number(rest.readingTime) }),
-      ...(rest.featured !== undefined && { featured: Boolean(rest.featured) }),
-      ...(rest.layout !== undefined && { layout: rest.layout }),
-      ...(rest.bannerImageRatio !== undefined && { bannerImageRatio: rest.bannerImageRatio }),
-      ...(rest.bannerUseContainer !== undefined && { bannerUseContainer: Boolean(rest.bannerUseContainer) }),
-      ...(rest.showBannerImage !== undefined && { showBannerImage: Boolean(rest.showBannerImage) }),
-      ...(rest.titleEn !== undefined && { titleEn: rest.titleEn && String(rest.titleEn).trim() ? String(rest.titleEn).trim() : null }),
-      ...(rest.subtitleEn !== undefined && { subtitleEn: rest.subtitleEn && String(rest.subtitleEn).trim() ? String(rest.subtitleEn).trim() : null }),
-      ...(rest.excerptEn !== undefined && { excerptEn: rest.excerptEn && String(rest.excerptEn).trim() ? String(rest.excerptEn).trim() : null }),
-      ...(rest.contentEn !== undefined && { contentEn: rest.contentEn && String(rest.contentEn).trim() ? String(rest.contentEn).trim() : null }),
-      ...(rest.metaDescriptionEn !== undefined && { metaDescriptionEn: rest.metaDescriptionEn && String(rest.metaDescriptionEn).trim() ? String(rest.metaDescriptionEn).trim() : null }),
-    };
+
+    const parsed = articleUpdateSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
+    }
+
+    const data: Record<string, unknown> = {};
+    if (input.title !== undefined) data.title = input.title;
+    if (input.slug !== undefined && input.slug !== '') data.slug = input.slug;
+    if (input.subtitle !== undefined) data.subtitle = input.subtitle;
+    if (input.excerpt !== undefined) data.excerpt = input.excerpt;
+    if (input.content !== undefined) data.content = input.content;
+    if (input.contentEn !== undefined) data.contentEn = input.contentEn;
+    if (input.titleEn !== undefined) data.titleEn = input.titleEn;
+    if (input.subtitleEn !== undefined) data.subtitleEn = input.subtitleEn;
+    if (input.excerptEn !== undefined) data.excerptEn = input.excerptEn;
+    if (input.metaDescription !== undefined) data.metaDescription = input.metaDescription;
+    if (input.metaDescriptionEn !== undefined) data.metaDescriptionEn = input.metaDescriptionEn;
+    if (input.category !== undefined) data.category = input.category;
+    if (input.tags !== undefined) data.tags = input.tags;
+    if (input.readingTime !== undefined) data.readingTime = input.readingTime;
+    if (input.featured !== undefined) data.featured = input.featured;
+    if (input.isPublished !== undefined) data.isPublished = input.isPublished;
+    if (input.publishedAt !== undefined) {
+      data.publishedAt = input.publishedAt ? new Date(input.publishedAt) : null;
+    }
+    if (input.imageUrl !== undefined) data.imageUrl = input.imageUrl;
+    if (input.layout !== undefined) data.layout = input.layout;
+    if (input.bannerImageRatio !== undefined) data.bannerImageRatio = input.bannerImageRatio;
+    if (input.bannerUseContainer !== undefined) data.bannerUseContainer = input.bannerUseContainer;
+    if (input.showBannerImage !== undefined) data.showBannerImage = input.showBannerImage;
+
     const article = await prisma.article.update({
       where: { id },
       data: data as unknown as Prisma.ArticleUpdateInput,

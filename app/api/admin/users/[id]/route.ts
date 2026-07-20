@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
+import { validatePasswordPolicy } from '@/lib/security/password-policy';
 import {
   buildUserDealerData,
   parseDealerProfileInput,
@@ -136,7 +137,11 @@ export async function PUT(
     };
 
     if (typeof password === 'string' && password.trim().length > 0) {
-      updateData.password = await hashPassword(password.trim());
+      const passwordCheck = validatePasswordPolicy(password);
+      if (!passwordCheck.ok) {
+        return NextResponse.json({ error: passwordCheck.error }, { status: 400 });
+      }
+      updateData.password = await hashPassword(passwordCheck.password);
     }
 
     await prisma.$transaction([

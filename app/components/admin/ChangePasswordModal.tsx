@@ -39,8 +39,12 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
     setError('');
     setSuccess(false);
 
-    if (newPassword.length < 6) {
-      setError('Password baru minimal 6 karakter');
+    if (newPassword.length < 12) {
+      setError('Password baru minimal 12 karakter, termasuk huruf besar, kecil, dan angka');
+      return;
+    }
+    if (!/[a-z]/.test(newPassword) || !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setError('Password harus mengandung huruf besar, huruf kecil, dan angka');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -133,10 +137,10 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={12}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
             />
-            <p className="mt-1 text-xs text-gray-500">Minimal 6 karakter</p>
+            <p className="mt-1 text-xs text-gray-500">Minimal 12 karakter, huruf besar, kecil, dan angka</p>
           </div>
 
           <div>
@@ -149,7 +153,7 @@ export function ChangePasswordModal({ open, onClose }: ChangePasswordModalProps)
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={12}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
             />
           </div>

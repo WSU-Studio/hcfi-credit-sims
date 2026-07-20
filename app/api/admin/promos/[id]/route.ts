@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import { sanitizeCmsHtml, sanitizeLayoutHtml } from '@/lib/security/cms-html';
 
 export async function GET(
   _request: NextRequest,
@@ -109,9 +110,20 @@ export async function PUT(
       description: description !== undefined ? (description === null || description === '' ? null : String(description)) : existingFields.description,
       descriptionEn: descriptionEn !== undefined ? (descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn)) : existingFields.descriptionEn,
       imageUrl: imageUrl !== undefined ? (imageUrl === null || imageUrl === '' ? null : String(imageUrl)) : existingFields.imageUrl,
-      content: content !== undefined ? (content === null || content === '' ? null : String(content)) : existingFields.content,
-      contentEn: contentEn !== undefined ? (contentEn === null || contentEn === '' ? null : String(contentEn)) : existingFields.contentEn,
-      layout: layout !== undefined ? layout : existingFields.layout,
+      content:
+        content !== undefined
+          ? sanitizeCmsHtml(content === null || content === '' ? null : String(content))
+          : existingFields.content,
+      contentEn:
+        contentEn !== undefined
+          ? sanitizeCmsHtml(contentEn === null || contentEn === '' ? null : String(contentEn))
+          : existingFields.contentEn,
+      layout:
+        layout !== undefined
+          ? layout === null
+            ? null
+            : sanitizeLayoutHtml(layout)
+          : existingFields.layout,
       isActive: isActive !== undefined ? Boolean(isActive) : existing.isActive,
       isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : existing.isHighlight,
       order: order !== undefined ? Number(order) : existing.order,

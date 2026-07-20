@@ -129,6 +129,11 @@ export function UserForm({ userId }: UserFormProps) {
       };
       if (userId) {
         if (password.trim().length > 0) {
+          if (password.trim().length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+            setError('Password minimal 12 karakter, termasuk huruf besar, kecil, dan angka');
+            setSaving(false);
+            return;
+          }
           if (password !== confirmPassword) {
             setError('Password dan konfirmasi password tidak sama.');
             setSaving(false);
@@ -137,8 +142,8 @@ export function UserForm({ userId }: UserFormProps) {
           payload.password = password.trim();
         }
       } else {
-        if (password.trim().length < 6) {
-          setError('Password minimal 6 karakter');
+        if (password.trim().length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+          setError('Password minimal 12 karakter, termasuk huruf besar, kecil, dan angka');
           setSaving(false);
           return;
         }
@@ -231,7 +236,7 @@ export function UserForm({ userId }: UserFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC]"
               placeholder={userId ? 'Kosongkan jika tidak ubah' : 'Minimal 6 karakter'}
-              minLength={userId ? undefined : 6}
+              minLength={userId ? undefined : 12}
             />
             {userId && (
               <p className="mt-1 text-xs text-gray-500">Kosongkan jika tidak ingin mengubah password.</p>

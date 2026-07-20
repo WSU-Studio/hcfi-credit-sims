@@ -9,8 +9,8 @@ const DEFAULT_ALLOWED_ATTR = ['href', 'target', 'rel'];
 
 type SanitizedHtmlProps = {
   html: string;
-  allowedTags?: string[];
-  allowedAttr?: string[];
+  allowedTags?: readonly string[];
+  allowedAttr?: readonly string[];
   className?: string;
 };
 
@@ -28,7 +28,10 @@ export function SanitizedHtml({
       const DOMPurify = mod.default;
       if (!cancelled) {
         setSanitized(
-          DOMPurify.sanitize(html, { ALLOWED_TAGS: allowedTags, ALLOWED_ATTR: allowedAttr })
+          DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [...allowedTags],
+            ALLOWED_ATTR: [...allowedAttr],
+          })
         );
       }
     });

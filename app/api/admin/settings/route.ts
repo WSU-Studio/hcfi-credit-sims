@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import {
+  invalidAdminInputResponse,
+  siteSettingsWriteSchema,
+} from '@/lib/security/admin-schemas';
 
 const KEYS = [
   'gtmId',
@@ -68,14 +72,24 @@ export async function POST(request: NextRequest) {
     }
     await requirePermission('SETTINGS', 'edit');
 
-    const body = (await request.json()) as Record<string, unknown>;
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const parsed = siteSettingsWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
     for (const key of KEYS) {
-      const value = body[key];
-      const str = value == null ? '' : typeof value === 'string' ? value : String(value);
+      const value = parsed.data[key] ?? '';
       await prisma.siteSetting.upsert({
         where: { key },
-        update: { value: str.trim() },
-        create: { key, value: str.trim() },
+        update: { value },
+        create: { key, value },
       });
     }
     return NextResponse.json({ success: true });

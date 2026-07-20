@@ -4,6 +4,11 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import { validateLayout } from '@/lib/validate-layout';
+import {
+  invalidAdminInputResponse,
+  pageWriteSchema,
+} from '@/lib/security/admin-schemas';
 
 export async function GET() {
   try {
@@ -21,8 +26,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ pages });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -41,52 +46,47 @@ export async function POST(request: NextRequest) {
 
     await requirePermission('PAGES', 'create');
 
-    const body = await request.json();
-    const { title, titleEn, slug, content, contentEn, layout, showInMenu, menuOrder, showBasicContent } = body;
-    if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
-      return NextResponse.json(
-        { error: 'Title and slug are required' },
-        { status: 400 }
-      );
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
+
+    const parsed = pageWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && input.layout !== null && !validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
+    }
+
     const slugTaken = await prisma.staticPage.findUnique({
-      where: { slug: String(slug).trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
+      where: { slug: input.slug } as unknown as Prisma.StaticPageWhereUniqueInput,
     });
     if (slugTaken) {
-      return NextResponse.json(
-        { error: 'Slug already in use' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Slug already in use' }, { status: 400 });
     }
-    if (layout !== undefined && layout !== null) {
-      const valid =
-        typeof layout === 'object' &&
-        layout !== null &&
-        'rows' in layout &&
-        Array.isArray((layout as { rows: unknown[] }).rows);
-      if (!valid) {
-        return NextResponse.json(
-          { error: 'Invalid layout structure' },
-          { status: 400 }
-        );
-      }
-    }
+
     const createData = {
-      title: String(title).trim(),
-      titleEn: titleEn && String(titleEn).trim() ? String(titleEn).trim() : null,
-      slug: String(slug).trim(),
-      content: content ?? null,
-      contentEn: contentEn && String(contentEn).trim() ? String(contentEn).trim() : null,
-      layout: layout ?? undefined,
-      showInMenu: Boolean(showInMenu ?? false),
-      menuOrder: Number(menuOrder ?? 0),
-      showBasicContent: showBasicContent !== undefined ? Boolean(showBasicContent) : true,
+      title: input.title,
+      titleEn: input.titleEn,
+      slug: input.slug,
+      content: input.content,
+      contentEn: input.contentEn,
+      layout: input.layout ?? undefined,
+      showInMenu: Boolean(input.showInMenu ?? false),
+      menuOrder: input.menuOrder ?? 0,
+      showBasicContent: input.showBasicContent !== undefined ? Boolean(input.showBasicContent) : true,
     } as unknown as Prisma.StaticPageCreateInput;
+
     const page = await prisma.staticPage.create({ data: createData });
 
     return NextResponse.json({ page });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -95,5 +95,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyPassword, hashPassword } from '@/lib/auth';
 import { passwordChangeLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
+import { validatePasswordPolicy } from '@/lib/security/password-policy';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -26,11 +27,9 @@ export async function PUT(request: NextRequest) {
     if (!currentPassword || typeof currentPassword !== 'string') {
       return NextResponse.json({ error: 'Current password is required' }, { status: 400 });
     }
-    if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length < 6) {
-      return NextResponse.json(
-        { error: 'New password must be at least 6 characters' },
-        { status: 400 }
-      );
+    const passwordCheck = validatePasswordPolicy(newPassword);
+    if (!passwordCheck.ok) {
+      return NextResponse.json({ error: passwordCheck.error }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -46,7 +45,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 });
     }
 
-    const hashed = await hashPassword(newPassword.trim());
+    const hashed = await hashPassword(passwordCheck.password);
     await prisma.user.update({
       where: { id: session.user.id },
       data: { password: hashed },

@@ -5,6 +5,10 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import {
+  invalidAdminInputResponse,
+  pageWriteSchema,
+} from '@/lib/security/admin-schemas';
 
 export async function GET(
   _request: NextRequest,
@@ -52,21 +56,22 @@ export async function PUT(
     await requirePermission('PAGES', 'edit');
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, titleEn, slug, content, contentEn, layout, showInMenu, menuOrder, showBasicContent } = body;
 
-    if (!title || typeof title !== 'string' || !slug || typeof slug !== 'string') {
-      return NextResponse.json(
-        { error: 'Title and slug are required' },
-        { status: 400 }
-      );
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    if (!validateLayout(layout)) {
-      return NextResponse.json(
-        { error: 'Invalid layout structure' },
-        { status: 400 }
-      );
+    const parsed = pageWriteSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (!validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
     }
 
     const existing = await prisma.staticPage.findUnique({
@@ -76,39 +81,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    const existingFields = existing as typeof existing & {
-      slug?: string;
-      content?: string | null;
-      contentEn?: string | null;
-      titleEn?: string | null;
-      layout?: unknown;
-      showInMenu?: boolean;
-      menuOrder?: number;
-      showBasicContent?: boolean;
-    };
-    if (slug !== existingFields.slug) {
+    if (input.slug !== existing.slug) {
       const slugTaken = await prisma.staticPage.findUnique({
-        where: { slug: slug.trim() } as unknown as Prisma.StaticPageWhereUniqueInput,
+        where: { slug: input.slug } as unknown as Prisma.StaticPageWhereUniqueInput,
       });
       if (slugTaken) {
-        return NextResponse.json(
-          { error: 'Slug already in use' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Slug already in use' }, { status: 400 });
       }
     }
 
     const updateData = {
-      title: title.trim(),
-      titleEn: titleEn !== undefined ? (titleEn && String(titleEn).trim() ? String(titleEn).trim() : null) : existingFields.titleEn,
-      slug: slug.trim(),
-      content: content ?? existingFields.content,
-      contentEn: contentEn !== undefined ? (contentEn && String(contentEn).trim() ? String(contentEn).trim() : null) : existingFields.contentEn,
-      layout: layout ?? existingFields.layout,
-      showInMenu: showInMenu !== undefined ? Boolean(showInMenu) : existingFields.showInMenu,
-      menuOrder: menuOrder !== undefined ? Number(menuOrder) : existingFields.menuOrder,
-      showBasicContent: showBasicContent !== undefined ? Boolean(showBasicContent) : existingFields.showBasicContent ?? true,
+      title: input.title,
+      titleEn: input.titleEn,
+      slug: input.slug,
+      content: input.content,
+      contentEn: input.contentEn,
+      layout: input.layout ?? null,
+      showInMenu: Boolean(input.showInMenu ?? false),
+      menuOrder: input.menuOrder ?? 0,
+      showBasicContent:
+        input.showBasicContent !== undefined ? Boolean(input.showBasicContent) : true,
     } as unknown as Prisma.StaticPageUpdateInput;
+
     const page = await prisma.staticPage.update({ where: { id }, data: updateData });
 
     return NextResponse.json({ page });

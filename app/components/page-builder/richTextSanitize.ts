@@ -1,29 +1,9 @@
 /** Allowed HTML tags/attrs for rich text widget output (Tiptap). */
 
-export const RICH_TEXT_ALLOWED_TAGS = [
-  'p',
-  'br',
-  'strong',
-  'em',
-  'u',
-  'ul',
-  'ol',
-  'li',
-  'a',
-  'h2',
-  'h3',
-  'blockquote',
-  'img',
-  'table',
-  'thead',
-  'tbody',
-  'tr',
-  'th',
-  'td',
-  'span',
-];
-
-export const RICH_TEXT_ALLOWED_ATTR = ['href', 'target', 'rel', 'src', 'alt', 'colspan', 'rowspan'];
+export {
+  CMS_HTML_ALLOWED_TAGS as RICH_TEXT_ALLOWED_TAGS,
+  CMS_HTML_ALLOWED_ATTR as RICH_TEXT_ALLOWED_ATTR,
+} from '@/lib/security/cms-html-allowlist';
 
 export const RICH_TEXT_PROSE_CLASSES = [
   '[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6',

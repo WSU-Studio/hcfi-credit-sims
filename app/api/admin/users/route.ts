@@ -4,6 +4,7 @@ import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { AUDIT_ACTIONS, actorFromSession, recordAudit } from '@/lib/security/audit-log';
+import { validatePasswordPolicy } from '@/lib/security/password-policy';
 import {
   buildUserDealerData,
   parseDealerProfileInput,
@@ -71,11 +72,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!password || typeof password !== 'string' || password.trim().length < 6) {
+    if (!password || typeof password !== 'string') {
       return NextResponse.json(
-        { error: 'Password is required (min 6 characters)' },
+        { error: 'Password is required' },
         { status: 400 }
       );
+    }
+    const passwordCheck = validatePasswordPolicy(password);
+    if (!passwordCheck.ok) {
+      return NextResponse.json({ error: passwordCheck.error }, { status: 400 });
     }
 
     const emailTrimmed = email.trim().toLowerCase();
@@ -101,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: dealerError }, { status: 400 });
     }
 
-    const hashed = await hashPassword(password.trim());
+    const hashed = await hashPassword(passwordCheck.password);
 
     const user = await prisma.user.create({
       data: {

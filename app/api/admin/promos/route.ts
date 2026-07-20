@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import { sanitizeCmsHtml, sanitizeLayoutHtml } from '@/lib/security/cms-html';
 
 export async function GET() {
   try {
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const sanitizedLayout =
+      layout !== undefined && layout !== null ? sanitizeLayoutHtml(layout) : layout;
+
     const createData = {
       title: title.trim(),
       titleEn: titleEn === null || titleEn === '' ? null : String(titleEn).trim(),
@@ -80,9 +84,9 @@ export async function POST(request: NextRequest) {
       description: description === null || description === '' ? null : (description ?? undefined),
       descriptionEn: descriptionEn === null || descriptionEn === '' ? null : String(descriptionEn).trim(),
       imageUrl: imageUrl === null || imageUrl === '' ? null : (imageUrl ?? undefined),
-      content: content === null || content === '' ? null : (content ?? undefined),
-      contentEn: contentEn === null || contentEn === '' ? null : String(contentEn),
-      layout: layout ?? undefined,
+      content: sanitizeCmsHtml(content === null || content === '' ? null : content),
+      contentEn: sanitizeCmsHtml(contentEn === null || contentEn === '' ? null : String(contentEn)),
+      layout: sanitizedLayout ?? undefined,
       isActive: isActive !== undefined ? Boolean(isActive) : true,
       isHighlight: isHighlight !== undefined ? Boolean(isHighlight) : false,
       order: order !== undefined ? Number(order) : 0,

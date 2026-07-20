@@ -5,6 +5,10 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { validateLayout } from '@/lib/validate-layout';
+import {
+  articleCreateSchema,
+  invalidAdminInputResponse,
+} from '@/lib/security/admin-schemas';
 
 export async function GET() {
   try {
@@ -48,44 +52,56 @@ export async function POST(request: NextRequest) {
 
     await requirePermission('ARTICLES', 'create');
 
-    const body = await request.json();
-    if (body.layout !== undefined && body.layout !== null && !validateLayout(body.layout)) {
-      return NextResponse.json(
-        { error: 'Invalid layout structure' },
-        { status: 400 }
-      );
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
+
+    const parsed = articleCreateSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
+
+    const input = parsed.data;
+    if (input.layout !== undefined && !validateLayout(input.layout)) {
+      return NextResponse.json({ error: 'Invalid layout structure' }, { status: 400 });
+    }
+
     const slug =
-      body.slug?.trim() ||
-      (body.title || '')
+      input.slug ||
+      input.title
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
-    const tags = Array.isArray(body.tags)
-      ? body.tags.filter(Boolean).map((t: string) => String(t).trim())
-      : typeof body.tags === 'string'
-        ? body.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-        : [];
+
     const data = {
-      ...body,
+      title: input.title,
       slug: slug || `article-${Date.now()}`,
       authorId: session.user.id,
-      content: typeof body.content === 'string' ? body.content : '',
-      metaDescription: body.metaDescription || null,
-      titleEn: body.titleEn && String(body.titleEn).trim() ? String(body.titleEn).trim() : null,
-      subtitleEn: body.subtitleEn && String(body.subtitleEn).trim() ? String(body.subtitleEn).trim() : null,
-      excerptEn: body.excerptEn && String(body.excerptEn).trim() ? String(body.excerptEn).trim() : null,
-      contentEn: body.contentEn && String(body.contentEn).trim() ? String(body.contentEn).trim() : null,
-      metaDescriptionEn: body.metaDescriptionEn && String(body.metaDescriptionEn).trim() ? String(body.metaDescriptionEn).trim() : null,
-      category: body.category || null,
-      tags,
-      readingTime: body.readingTime != null ? Number(body.readingTime) : null,
-      featured: Boolean(body.featured),
-      layout: body.layout ?? undefined,
-      bannerImageRatio: body.bannerImageRatio ?? undefined,
-      bannerUseContainer: body.bannerUseContainer !== undefined ? Boolean(body.bannerUseContainer) : undefined,
-      showBannerImage: body.showBannerImage !== undefined ? Boolean(body.showBannerImage) : undefined,
+      content: input.content,
+      subtitle: input.subtitle,
+      excerpt: input.excerpt,
+      metaDescription: input.metaDescription,
+      titleEn: input.titleEn,
+      subtitleEn: input.subtitleEn,
+      excerptEn: input.excerptEn,
+      contentEn: input.contentEn,
+      metaDescriptionEn: input.metaDescriptionEn,
+      category: input.category,
+      tags: input.tags ?? [],
+      readingTime: input.readingTime,
+      featured: Boolean(input.featured),
+      isPublished: Boolean(input.isPublished),
+      publishedAt: input.publishedAt ? new Date(input.publishedAt) : null,
+      imageUrl: input.imageUrl,
+      layout: input.layout ?? undefined,
+      bannerImageRatio: input.bannerImageRatio ?? undefined,
+      bannerUseContainer: input.bannerUseContainer,
+      showBannerImage: input.showBannerImage,
     };
+
     const article = await prisma.article.create({
       data: data as unknown as Prisma.ArticleCreateInput,
       include: {
@@ -107,5 +123,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
