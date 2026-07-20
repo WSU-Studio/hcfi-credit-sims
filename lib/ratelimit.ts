@@ -73,6 +73,13 @@ export const leadsLimiter = createLimiter(10, 60 * 1000);
 /** Public Hyundai AddLeadAsset draft — 5 per minute per IP (creates a Hyundai LOS lead per call). */
 export const leadAssetDraftLimiter = createLimiter(5, 60 * 1000);
 
+/**
+ * Public simulation catalog / calculate endpoints — 60 per minute per IP.
+ * Wizard flow fires ~8–12 requests; 60 leaves headroom for NAT/office while
+ * still blocking scrapers that hammer Hyundai-backed routes.
+ */
+export const simulationLimiter = createLimiter(60, 60 * 1000);
+
 /** Public lead status inquiry — POST /api/public/lead-tracking. */
 export const leadTrackingLimiter = createLimiter(20, 60 * 1000);
 

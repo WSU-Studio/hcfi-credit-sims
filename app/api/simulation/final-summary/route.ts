@@ -13,6 +13,11 @@ import {
 import { resolveIsPartner } from '@/lib/hyundai-partner';
 import { finalizeSimulationSummary } from '@/lib/hyundai-lead-financial';
 import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  finalSummaryBodySchema,
+  invalidInputResponse,
+} from '@/lib/security/simulation-schemas';
 
 function isMockLeadNo(leadNo?: string | null): boolean {
   if (!leadNo) return false;
@@ -71,41 +76,42 @@ function buildMockFinalSummary(params: {
  * → FinalCalculateByLeadNo → SaveFinalCalculateResult
  */
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const leadNo: string | undefined = body.leadNo || body.LeadNo;
-    const otrPrice = Number(body.otrPrice);
-    const dpPercent = Number(body.dpPercent ?? body.dpPrcnt);
-    const tenor = Number(body.tenor);
-    const productCode = String(body.productCode ?? '').trim();
-    const productName = String(body.productName ?? '').trim();
-    const firstInstallment: 'ADDM' | 'ADDB' =
-      body.firstInstallment === 'ADDB' ? 'ADDB' : 'ADDM';
-    const isPromotion = Boolean(body.isPromotion);
-    const partnerCode =
-      typeof body.partnerCode === 'string' ? body.partnerCode : null;
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
 
-    if (!leadNo?.trim()) {
-      return NextResponse.json(
-        { error: 'LeadNo wajib untuk final summary.' },
-        { status: 400 }
-      );
+  try {
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    if (!Number.isFinite(otrPrice) || otrPrice <= 0) {
-      return NextResponse.json({ error: 'otrPrice wajib diisi.' }, { status: 400 });
+
+    const parsed = finalSummaryBodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidInputResponse(parsed.error);
     }
-    if (!Number.isFinite(dpPercent) || dpPercent < 0 || dpPercent > 100) {
-      return NextResponse.json({ error: 'dpPercent tidak valid.' }, { status: 400 });
-    }
-    if (!Number.isFinite(tenor) || tenor < 1) {
-      return NextResponse.json({ error: 'tenor wajib diisi.' }, { status: 400 });
-    }
-    if (!productCode || !productName) {
-      return NextResponse.json(
-        { error: 'productCode dan productName wajib diisi.' },
-        { status: 400 }
-      );
-    }
+
+    const {
+      leadNo,
+      otrPrice,
+      tenor,
+      productCode,
+      productName,
+      firstInstallment,
+      isPromotion,
+      partnerCode,
+    } = parsed.data;
+    const dpPercent =
+      parsed.data.dpPercent != null && Number.isFinite(parsed.data.dpPercent)
+        ? parsed.data.dpPercent
+        : parsed.data.dpPrcnt!;
 
     const siteMock = await getMockApiSettings();
     const mockEnabled = isMockApiActive(siteMock.enabled);
@@ -134,7 +140,7 @@ export async function POST(request: NextRequest) {
         productCode,
         productName,
         firstInstallment,
-        isPromotion,
+        isPromotion: Boolean(isPromotion),
         isPartner: resolveIsPartner({ partnerCode }),
       });
 

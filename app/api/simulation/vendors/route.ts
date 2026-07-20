@@ -13,6 +13,11 @@ import {
   HYUNDAI_VENDOR_LIST_PATH,
   buildHyundaiVendorListBody,
 } from '@/lib/hyundai-vendor-list';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  invalidInputResponse,
+  vendorsBodySchema,
+} from '@/lib/security/simulation-schemas';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -23,7 +28,22 @@ const hyundaiAgent = new Agent({
 
 // Get List Vendor And Vendor City
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
+
+  const rawBody = await request.json().catch(() => ({}));
+  const parsed = vendorsBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return invalidInputResponse(parsed.error);
+  }
+  const body = parsed.data;
+
   const siteMock = await getMockApiSettings();
   // Mock dari Site Settings (centang "Aktifkan Mock API") atau dari env
   if (isMockApiActive(siteMock.enabled)) {
@@ -58,7 +78,7 @@ export async function POST(request: NextRequest) {
           buildHyundaiVendorListBody({
             hasAvailableAssetOnly: body.hasAvailableAssetOnly,
             hasCmoAssignedOnly: body.hasCmoAssignedOnly,
-            supplierBrandCode: body.supplierBrandCode,
+            supplierBrandCode: body.supplierBrandCode || undefined,
           })
         ),
         signal: controller.signal,

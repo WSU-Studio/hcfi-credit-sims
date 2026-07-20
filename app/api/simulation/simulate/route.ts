@@ -21,6 +21,11 @@ import {
   type FirstInstallmentType,
 } from '@/lib/product-calculation-rows';
 import type { ProductCalculation } from '@/app/types/credit-simulation';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  invalidInputResponse,
+  simulateBodySchema,
+} from '@/lib/security/simulation-schemas';
 
 function buildSimulatePayload(
   fullList: ProductCalculation[],
@@ -68,8 +73,28 @@ function isMockLeadNo(leadNo?: string | null): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
+
   try {
-    const body = await request.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const parsed = simulateBodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidInputResponse(parsed.error);
+    }
+
     const {
       otrPrice,
       dpPrcnt,
@@ -78,23 +103,10 @@ export async function POST(request: NextRequest) {
       firstInstallment,
       isPromotion,
       partnerCode,
-    } = body;
-    const leadNo: string | undefined = body.leadNo || body.LeadNo;
+      leadNo: parsedLeadNo,
+    } = parsed.data;
+    const leadNo = parsedLeadNo || undefined;
 
-    if (!otrPrice || dpPrcnt == null || !productCode || !productName) {
-      return NextResponse.json(
-        {
-          error: 'otrPrice, dpPrcnt, productCode, dan productName wajib diisi.',
-        },
-        { status: 400 }
-      );
-    }
-    if (firstInstallment && !['ADDM', 'ADDB'].includes(firstInstallment)) {
-      return NextResponse.json(
-        { error: 'firstInstallment must be ADDM or ADDB' },
-        { status: 400 }
-      );
-    }
     const preferredFirstInstallment =
       normalizeFirstInstallment(firstInstallment) ?? ('ADDM' as FirstInstallmentType);
 

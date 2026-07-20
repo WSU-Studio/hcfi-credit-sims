@@ -14,6 +14,11 @@ import {
   buildHyundaiVendorListBody,
 } from '@/lib/hyundai-vendor-list';
 import type { AssetMaster, Vendor } from '@/app/types/credit-simulation';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  assetsBodySchema,
+  invalidInputResponse,
+} from '@/lib/security/simulation-schemas';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -201,12 +206,26 @@ async function fetchGlobalAssets(
 
 // Get All Asset Master Lv2 with Starting Price
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
+
+  const rawBody = await request.json().catch(() => ({}));
+  const parsed = assetsBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return invalidInputResponse(parsed.error);
+  }
+  const body = parsed.data;
   const useGlobalCatalog = body.GlobalCatalog === true;
   const payload = {
     AssetHierarchyLv1Code: 'HYUNDAI' as const,
     CmoEmpNo: body.CmoEmpNo || '',
-    DealerCode: body.DealerCode as string,
+    DealerCode: body.DealerCode,
     GetLatestAsset: body.GetLatestAsset ?? true,
   };
 

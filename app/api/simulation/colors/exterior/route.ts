@@ -9,6 +9,11 @@ import {
 } from '@/lib/mock-api';
 import { getMockApiSettings } from '@/lib/site-settings';
 import { getHyundaiRequestHeaders, API_BASE_URL } from '@/lib/hyundai-api-client';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  exteriorColorsBodySchema,
+  invalidInputResponse,
+} from '@/lib/security/simulation-schemas';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -19,10 +24,23 @@ const hyundaiAgent = new Agent({
 
 // Get List Exterior Color By FSC Code and Manufacturing Year
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
+
+  const rawBody = await request.json().catch(() => ({}));
+  const parsed = exteriorColorsBodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return invalidInputResponse(parsed.error);
+  }
   const payload = {
-    FscCode: body.FscCode as string,
-    ManufYear: body.ManufYear as number,
+    FscCode: parsed.data.FscCode,
+    ManufYear: parsed.data.ManufYear,
   };
 
   const siteMock = await getMockApiSettings();

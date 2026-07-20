@@ -14,6 +14,11 @@ import {
   toUserFacingHyundaiError,
 } from '@/lib/hyundai-known-errors';
 import { applyPartnerFields } from '@/lib/hyundai-partner';
+import { getClientIp, simulationLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
+import {
+  calculateBodySchema,
+  invalidInputResponse,
+} from '@/lib/security/simulation-schemas';
 
 const CONNECT_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -33,18 +38,34 @@ function isMockLeadNo(leadNo?: string | null): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const leadNo: string | undefined = body.LeadNo || body.leadNo;
-    const otrPrice: number | undefined = body.otrPrice;
-    const partnerCode: string | null | undefined = body.partnerCode;
+  const ip = getClientIp(request);
+  const rl = simulationLimiter.limit(ip);
+  if (!rl.success) {
+    return tooManyRequestsResponse(
+      'Terlalu banyak permintaan. Silakan coba lagi sebentar.',
+      rl.retryAfterSec
+    );
+  }
 
-    if (!leadNo && !otrPrice) {
-      return NextResponse.json(
-        { error: 'LeadNo or otrPrice is required for calculation' },
-        { status: 400 }
-      );
+  try {
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
+
+    const parsed = calculateBodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return invalidInputResponse(parsed.error);
+    }
+
+    const leadNo = parsed.data.leadNo || undefined;
+    const otrPrice =
+      parsed.data.otrPrice != null && Number.isFinite(parsed.data.otrPrice)
+        ? parsed.data.otrPrice
+        : undefined;
+    const partnerCode = parsed.data.partnerCode;
 
     const siteMock = await getMockApiSettings();
     const mockEnabled = isMockApiActive(siteMock.enabled);
