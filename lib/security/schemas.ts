@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { HONEYPOT_FIELD } from './honeypot';
 import { cleanString, looksMalicious } from './sanitize';
+import { normalizePartnerCode } from '@/lib/hyundai-partner';
 
 const MAX_NAME = 100;
 const MAX_EMAIL = 254; // RFC 5321
@@ -237,7 +238,8 @@ export const leadAssetDraftSchema = z
       .union([z.string(), z.null(), z.undefined()])
       .transform((v) => {
         if (v == null || v === '') return null;
-        return String(v).trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || null;
+        const code = normalizePartnerCode(String(v));
+        return code || null;
       }),
     [HONEYPOT_FIELD]: z.string().optional(),
   })

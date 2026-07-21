@@ -10,6 +10,7 @@ interface PriceStepProps {
   modelName: string;
   suggestedPrice?: number;
   assetCode?: string;
+  initialPartnerCode?: string | null;
   /** Prefill from dealer promotion (nominal) */
   promotionDiscount?: number;
   /** When true, discount field is read-only (dealer-sales mode) */
@@ -25,13 +26,16 @@ export function PriceStep({
   modelName,
   suggestedPrice,
   assetCode,
+  initialPartnerCode = null,
   promotionDiscount: promotionDiscountProp,
   lockPromotionDiscount = false,
   onComplete,
 }: PriceStepProps) {
   const t = useTranslations('creditSimulation');
   const [manualDiscount, setManualDiscount] = useState<number | ''>(0);
-  const [partnerCode, setPartnerCode] = useState('');
+  const [partnerCode, setPartnerCode] = useState<string>(
+    () => initialPartnerCode ?? ''
+  );
   const [error, setError] = useState<string | null>(null);
 
   const otrPrice = suggestedPrice ?? 0;
@@ -135,7 +139,7 @@ export function PriceStep({
           )}
         </div>
 
-        <div>
+        {/* <div>
           <label htmlFor="discount" className="block text-sm font-medium mb-2">
             {t('discountLabel')}{' '}
             {!discountLocked && showManualInput && (
@@ -172,7 +176,7 @@ export function PriceStep({
               }`}
             />
           )}
-        </div>
+        </div> */}
 
         <div>
           <label htmlFor="partnerCode" className="block text-sm font-medium mb-2">

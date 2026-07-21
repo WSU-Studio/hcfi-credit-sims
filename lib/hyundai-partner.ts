@@ -2,9 +2,12 @@
  * Konteks partner Hyundai (Postman v1.4).
  *
  * `IsPartner` dipakai di product-rule APIs untuk user perusahaan partner —
- * nantinya mengaktifkan produk/diskon khusus (field `PartnerCode` di response).
- * Fitur bisnis partner belum diimplementasi di sisi kita maupun Hyundai QA;
- * semua call default ke `false` sampai ada sumber kebenaran (mis. flag di Lead).
+ * mengaktifkan filter produk di sisi Hyundai (field `PartnerCode` di response).
+ *
+ * Alur UI:
+ * 1. Partner code kosong → IsPartner=false (daftar penuh).
+ * 2. Partner code terisi → fetch IsPartner=true, lalu cocokkan PartnerCode
+ *    di response. Kalau tidak ada yang match → fallback IsPartner=false.
  */
 
 export const DEFAULT_IS_PARTNER = false;
@@ -34,40 +37,35 @@ export function normalizePartnerCode(value: string): string {
     .slice(0, MAX_PARTNER_CODE_LENGTH);
 }
 
+/**
+ * Partner code kosong / placeholder Hyundai ("-") dianggap tidak punya partner.
+ */
+export function hasMeaningfulPartnerCode(value: string | null | undefined): boolean {
+  const code = normalizePartnerCode(value ?? '');
+  return !!code && code !== '-';
+}
+
 /** Resolve flag partner untuk payload Hyundai (`IsPartner`). */
 export function resolveIsPartner(ctx?: HyundaiPartnerContext): boolean {
   if (ctx?.isPartner === true) return true;
-  return !!normalizePartnerCode(ctx?.partnerCode ?? '');
+  return hasMeaningfulPartnerCode(ctx?.partnerCode);
 }
 
 /**
- * Cek apakah `PartnerCode` sebuah produk cocok dengan partner code yang diinput
- * customer. Aturan (per tim Hyundai, WA 2026-07):
- *   - Produk tanpa PartnerCode (null/kosong) = promo publik → selalu cocok.
- *   - Produk dengan PartnerCode → cocok hanya jika sama (setelah normalisasi)
- *     dengan partner code yang diinput. Kalau tidak cocok → produk di-drop
- *     (customer cuma lihat standard).
+ * True jika ada produk di response yang PartnerCode-nya sama dengan input user.
+ * Dipakai untuk memutuskan apakah hasil IsPartner=true valid, atau harus
+ * fallback ke IsPartner=false.
  */
-export function matchesPartnerCode(
-  productPartnerCode: string | null | undefined,
+export function responseMatchesPartnerCode(
+  products: Array<{ PartnerCode?: string | null } | null | undefined>,
   inputPartnerCode: string | null | undefined
 ): boolean {
-  const product = normalizePartnerCode(productPartnerCode ?? '');
-  if (!product) return true;
-  return product === normalizePartnerCode(inputPartnerCode ?? '');
-}
-
-/**
- * Saring daftar produk promosi berdasarkan pencocokan `PartnerCode`. Dipakai
- * untuk menentukan produk promotion mana yang boleh tampil sesuai partner code
- * yang diinput. Generic supaya reusable untuk tipe produk apa pun yang punya
- * field `PartnerCode`.
- */
-export function filterPromotionByPartnerCode<
-  T extends { PartnerCode?: string | null }
->(products: T[], inputPartnerCode: string | null | undefined): T[] {
-  return products.filter((product) =>
-    matchesPartnerCode(product.PartnerCode, inputPartnerCode)
+  const input = normalizePartnerCode(inputPartnerCode ?? '');
+  if (!input || input === '-') return false;
+  return products.some(
+    (product) =>
+      hasMeaningfulPartnerCode(product?.PartnerCode) &&
+      normalizePartnerCode(product?.PartnerCode ?? '') === input
   );
 }
 
@@ -77,7 +75,7 @@ export function applyPartnerFields(
   partnerCode?: string | null
 ): Record<string, unknown> {
   const code = normalizePartnerCode(partnerCode ?? '');
-  if (!code) {
+  if (!code || code === '-') {
     return { ...fields, IsPartner: false };
   }
   return {

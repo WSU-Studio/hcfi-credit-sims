@@ -13,7 +13,6 @@ import {
 } from '@/app/components/simulation/SimulationSummaryModal';
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
-import { filterPromotionByPartnerCode, normalizePartnerCode } from '@/lib/hyundai-partner';
 import {
   getAvailableFirstInstallments,
   normalizeFirstInstallment,
@@ -142,8 +141,8 @@ export function ResultStep({
   const isPromotion = tab === 'Promotion';
   const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
 
-  // Tab promotion hanya relevan saat ada produk promo yang cocok partner code.
-  // Kalau promo kosong (mis. partner code tidak cocok), balik ke tab Standard.
+  // Tab promotion hanya relevan saat API mengirim produk promo.
+  // Kalau promo kosong, balik ke tab Standard.
   useEffect(() => {
     if (!hasPromo && tab === 'Promotion') setTab('Standard');
   }, [hasPromo, tab]);
@@ -321,24 +320,29 @@ export function ResultStep({
         if (data?.errorId) setListErrorId(String(data.errorId));
         throw new Error(data.error || t('errorLoadProducts'));
       }
-      const rawPromo: ProductCalculation[] = data.ListDefaultPromotionProductObj ?? [];
-      // Per tim Hyundai: produk promotion hanya ditampilkan jika PartnerCode-nya
-      // cocok dengan partner code yang diinput customer. Kalau tidak cocok,
-      // customer hanya melihat produk standard.
-      const matchedPromo = filterPromotionByPartnerCode(rawPromo, partnerCode);
+      // Hyundai sudah memfilter daftar di sisi API berdasarkan IsPartner.
+      // Kalau partner code user tidak cocok dengan PartnerCode di response,
+      // route calculate fallback ke IsPartner=false (daftar penuh) + flag unmatched.
       const rawStandard: ProductCalculation[] = data.ListDefaultStandardProductObj ?? [];
-      const first = rawStandard[0];
+      const rawPromo: ProductCalculation[] = data.ListDefaultPromotionProductObj ?? [];
+      const first = rawStandard[0] ?? rawPromo[0];
       setListStandard(rawStandard);
-      setListPromo(matchedPromo);
-      setPartnerCodeUnmatched(
-        !!normalizePartnerCode(partnerCode ?? '') &&
-          rawPromo.length > 0 &&
-          matchedPromo.length === 0
-      );
+      setListPromo(rawPromo);
+      setPartnerCodeUnmatched(data.partnerCodeUnmatched === true);
+
+      if (tab === 'Standard' && rawStandard.length === 0 && rawPromo.length > 0) {
+        setTab('Promotion');
+      }
 
       setSelectedProduct((prev) => {
-        if (prev || !first) return prev;
-        return first;
+        if (!first) return null;
+        if (!prev) return first;
+        const currentProducts = [...rawStandard, ...rawPromo];
+        const stillExists = currentProducts.some(
+          (product) =>
+            product.ProductCode === prev.ProductCode && product.ProductName === prev.ProductName
+        );
+        return stillExists ? prev : first;
       });
       if (first) {
         setDpPercent((prev) => (prev === 10 ? resolveDefaultDpPercent(first) : prev));
@@ -487,7 +491,7 @@ export function ResultStep({
         </p>
       )}
 
-      {/* Tabs — tab Promotion hanya tampil saat ada produk promo yang cocok. */}
+      {/* Tabs — tab Promotion tampil jika API mengirim ListDefaultPromotionProductObj. */}
       {hasPromo && (
         <div className="flex gap-2 p-1 rounded-xl bg-gray-100 border border-gray-200">
           <button

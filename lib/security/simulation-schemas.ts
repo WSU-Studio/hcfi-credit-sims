@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { cleanString, looksMalicious } from './sanitize';
+import { normalizePartnerCode } from '@/lib/hyundai-partner';
 
 const MAX_CODE = 64;
 const MAX_NAME = 200;
@@ -36,11 +37,13 @@ const hyundaiCode = (max: number, label: string, required = true) =>
       message: `${label} tidak valid`,
     });
 
+/** Partner code boleh berisi spasi (mis. "CPP SINARMAS") — jangan strip spasi. */
 const optionalPartnerCode = z
   .union([z.string(), z.null(), z.undefined()])
   .transform((v) => {
     if (v == null || v === '') return null;
-    return String(v).trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32) || null;
+    const code = normalizePartnerCode(String(v));
+    return code || null;
   });
 
 const leadNoSchema = z
