@@ -57,7 +57,10 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 200);
 }
 
 export function ArticleForm({ articleId }: ArticleFormProps) {
@@ -152,8 +155,9 @@ export function ArticleForm({ articleId }: ArticleFormProps) {
     setError('');
     setSaving(true);
     try {
-      const slug =
-        formData.slug?.trim() || (formData.title ? slugify(formData.title) : `article-${Date.now()}`);
+      const slug = (
+        formData.slug?.trim() || (formData.title ? slugify(formData.title) : `article-${Date.now()}`)
+      ).slice(0, 200);
       const tags = (formData.tagsInput ?? '')
         .split(',')
         .map((t) => t.trim())

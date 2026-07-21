@@ -11,7 +11,7 @@ export { isSafeGaMeasurementId, isSafeGtmId } from './analytics-ids';
 import { isSafeGaMeasurementId, isSafeGtmId } from './analytics-ids';
 
 const MAX_TITLE = 200;
-const MAX_SLUG = 120;
+const MAX_SLUG = 200;
 const MAX_EXCERPT = 5000;
 const MAX_META = 2000;
 const MAX_SETTING_TEXT = 500;

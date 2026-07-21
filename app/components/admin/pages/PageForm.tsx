@@ -81,7 +81,10 @@ export function PageForm({ pageId }: PageFormProps) {
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 200);
 
   const handleTitleChange = (v: string) => {
     setTitle(v);
