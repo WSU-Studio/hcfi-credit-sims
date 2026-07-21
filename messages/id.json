@@ -158,6 +158,7 @@
     "otr": "OTR",
     "dpPercent": "DP %",
     "dpPercentMinHint": "Minimum DP {min}% sesuai aturan produk kredit yang dipilih.",
+    "dpPercentMaxHint": "Maksimum DP {max}% untuk produk Balloon.",
     "firstInstallmentType": "Tipe Angsuran Pertama",
     "addmAddbHint": "ADDM = angsuran pertama dibayar di muka; ADDB = angsuran pertama dibayar belakang",
     "addmAddbFixedHint": "Produk ini hanya mendukung {type} (sesuai setting product di rule)",

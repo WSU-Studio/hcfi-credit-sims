@@ -24,6 +24,14 @@ import Link from 'next/link';
 type TabKind = 'Standard' | 'Promotion';
 
 const DP_PRESET_OPTIONS = [10, 15, 20, 25, 30, 35, 50] as const;
+/** Max DP untuk produk Balloon (InstallmentSchemeCode BL) — konfirmasi Hyundai. */
+const BALLOON_DP_MAX_PERCENT = 49;
+const DEFAULT_DP_MAX_PERCENT = 95;
+
+function isBalloonProduct(product: ProductCalculation | null): boolean {
+  if (!product) return false;
+  return (product.InstallmentSchemeCode ?? '').trim().toUpperCase() === 'BL';
+}
 
 function resolveMinDpPercent(product: ProductCalculation | null): number {
   if (!product) return 0;
@@ -31,10 +39,16 @@ function resolveMinDpPercent(product: ProductCalculation | null): number {
   return Number(product.DPPrcnt) || 0;
 }
 
+function resolveMaxDpPercent(product: ProductCalculation | null): number {
+  if (isBalloonProduct(product)) return BALLOON_DP_MAX_PERCENT;
+  return DEFAULT_DP_MAX_PERCENT;
+}
+
 function resolveDefaultDpPercent(product: ProductCalculation): number {
   const min = resolveMinDpPercent(product);
+  const max = resolveMaxDpPercent(product);
   const ruleDp = Number(product.DPPrcnt) || 10;
-  return Math.max(min, ruleDp);
+  return Math.min(max, Math.max(min, ruleDp));
 }
 
 interface ResultStepProps {
@@ -117,10 +131,11 @@ export function ResultStep({
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
   const minDpPercent = resolveMinDpPercent(selectedProduct);
+  const maxDpPercent = resolveMaxDpPercent(selectedProduct);
   const dpFloor = Math.max(5, minDpPercent);
-  // Hyundai tidak mengirim rule max DP, jadi jangan batasi di UI.
+  // Hyundai: produk Balloon (BL) max DP 49%; selain itu tidak ada rule max eksplisit.
   // 100% tetap mustahil secara matematis (DP melebihi harga kendaraan).
-  const DP_MAX = 95;
+  const DP_MAX = maxDpPercent;
 
   // Sinkronkan teks input saat dpPercent berubah dari preset/produk.
   useEffect(() => {
@@ -171,7 +186,8 @@ export function ResultStep({
     if (!selectedProduct) return;
     setDpPercent((prev) => {
       const min = resolveMinDpPercent(selectedProduct);
-      if (prev < min) return resolveDefaultDpPercent(selectedProduct);
+      const max = resolveMaxDpPercent(selectedProduct);
+      if (prev < min || prev > max) return resolveDefaultDpPercent(selectedProduct);
       return prev;
     });
   }, [selectedProduct]);
@@ -555,14 +571,16 @@ export function ResultStep({
             <div className="flex flex-wrap gap-2 mb-2">
               {DP_PRESET_OPTIONS.map((pct) => {
                 const belowMin = pct < minDpPercent;
+                const aboveMax = pct > maxDpPercent;
+                const disabled = belowMin || aboveMax;
                 return (
                   <button
                     key={pct}
                     type="button"
                     onClick={() => setDpPercent(pct)}
-                    disabled={belowMin}
+                    disabled={disabled}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      belowMin
+                      disabled
                         ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
                         : dpPercent === pct
                           ? 'bg-[#002c5f] text-white cursor-pointer'
@@ -600,6 +618,11 @@ export function ResultStep({
             {minDpPercent > 0 && (
               <p className="mt-1 text-xs text-gray-500">
                 {t('dpPercentMinHint', { min: minDpPercent })}
+              </p>
+            )}
+            {isBalloonProduct(selectedProduct) && (
+              <p className="mt-1 text-xs text-gray-500">
+                {t('dpPercentMaxHint', { max: maxDpPercent })}
               </p>
             )}
             <p className="mt-1 text-xs text-gray-500">
