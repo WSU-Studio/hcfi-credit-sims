@@ -87,6 +87,8 @@ export interface ProductCalculation {
   FirstInstallment: string; // First installment behavior
   EffRatePrcnt: number; // Effective rate percentage
   EffRateBhv: string;
+  /** Flat rate dari CalculateProductFromRule / product list (bukan bunga efektif). */
+  FlatRatePrcnt?: number;
   BalloonAmt: number;
   DefermentPeriod: number;
   DefermentRatePrcnt: number;

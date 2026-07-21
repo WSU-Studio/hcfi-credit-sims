@@ -750,8 +750,13 @@ export function ResultStep({
                   <div className="font-semibold">{highlightedRow.Tenor} {t('months')}</div>
                 </div>
                 <div>
-                  <div className="text-gray-500">{t('effectiveRate')}</div>
-                  <div className="font-semibold">{highlightedRow.EffRatePrcnt}%</div>
+                  <div className="text-gray-500">{t('summaryFlatRatePercentLabel')}</div>
+                  <div className="font-semibold">
+                    {highlightedRow.FlatRatePrcnt != null &&
+                    Number.isFinite(Number(highlightedRow.FlatRatePrcnt))
+                      ? Number(highlightedRow.FlatRatePrcnt)
+                      : '—'}
+                  </div>
                 </div>
                 {Number(highlightedRow.BalloonAmt) > 0 && (
                   <div className="col-span-2">
