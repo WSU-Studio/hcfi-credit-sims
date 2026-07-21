@@ -56,7 +56,7 @@
   },
   "tracking": {
     "pageTitle": "Track Application Status",
-    "pageDescription": "Enter your Lead number (LeadNo) from your simulation or application to view the latest status in the Hyundai Finance system.",
+    "pageDescription": "Enter your Lead number (LeadNo) from your simulation or application to view the process history from the website through Confins.",
     "metaTitle": "Hyundai Capital - Track Status",
     "metaDescription": "Track your Hyundai Finance credit application status with your LeadNo.",
     "leadNoLabel": "Lead Number (LeadNo)",
@@ -68,13 +68,16 @@
     "notFound": "LeadNo was not found. Please double-check the number or contact customer care.",
     "errorGeneric": "Unable to check status. Please try again.",
     "resultLeadNo": "LeadNo",
-    "resultStep": "Stage",
+    "resultConsent": "Consent Status",
     "resultAsset": "Vehicle",
     "resultCustomer": "Customer Name",
-    "resultChannel": "Channel",
-    "resultCreated": "Created",
-    "resultUpdated": "Last updated",
-    "resultApproval": "Approval Code"
+    "historyTitle": "Process History",
+    "historyHint": "Sequence of events from the website application through Confins processing.",
+    "historyEmpty": "No process history is available for this LeadNo yet.",
+    "historyStarted": "Started",
+    "historyEnded": "Ended",
+    "historyAssignee": "Assignee",
+    "historyTrxNo": "TrxNo"
   },
   "articles": {
     "pageTitle": "Articles",

@@ -56,7 +56,7 @@
   },
   "tracking": {
     "pageTitle": "Lacak Status Pengajuan",
-    "pageDescription": "Masukkan nomor Lead (LeadNo) dari simulasi atau pengajuan Anda untuk melihat status terkini di sistem Hyundai Finance.",
+    "pageDescription": "Masukkan nomor Lead (LeadNo) dari simulasi atau pengajuan Anda untuk melihat riwayat status dari website hingga Confins.",
     "metaTitle": "Hyundai Capital - Lacak Status",
     "metaDescription": "Lacak status pengajuan kredit Hyundai Finance dengan nomor LeadNo.",
     "leadNoLabel": "Nomor Lead (LeadNo)",
@@ -68,13 +68,16 @@
     "notFound": "LeadNo tidak ditemukan. Periksa kembali nomor Anda atau hubungi customer care.",
     "errorGeneric": "Gagal memeriksa status. Silakan coba lagi.",
     "resultLeadNo": "LeadNo",
-    "resultStep": "Tahap",
+    "resultConsent": "Status Consent",
     "resultAsset": "Kendaraan",
     "resultCustomer": "Nama Customer",
-    "resultChannel": "Channel",
-    "resultCreated": "Dibuat",
-    "resultUpdated": "Terakhir diperbarui",
-    "resultApproval": "Kode Approval"
+    "historyTitle": "Riwayat Proses",
+    "historyHint": "Urutan peristiwa dari pengajuan website hingga proses di Confins.",
+    "historyEmpty": "Belum ada riwayat proses untuk LeadNo ini.",
+    "historyStarted": "Mulai",
+    "historyEnded": "Selesai",
+    "historyAssignee": "PIC",
+    "historyTrxNo": "TrxNo"
   },
   "articles": {
     "pageTitle": "Artikel",

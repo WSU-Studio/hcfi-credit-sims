@@ -3,31 +3,93 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconSearch, IconLoader2 } from '@tabler/icons-react';
-import type { WebsiteLeadStage } from '@/lib/lead-tracking';
+import {
+  consentStatusTone,
+  type LeadMonitoringResult,
+  type LeadTaskHistoryItem,
+} from '@/lib/lead-tracking';
 import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import { HoneypotField } from '@/app/components/security/HoneypotField';
 
-function formatDateTime(iso: string) {
+function formatDateTime(iso: string | null | undefined) {
+  if (!iso) return '-';
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso || '-';
+  if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString('id-ID', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 }
 
-function statusTone(statCode: string, statDescr: string) {
-  const code = `${statCode} ${statDescr}`.toUpperCase();
-  if (code.includes('APPROV') || code.includes('DONE') || code.includes('COMPLETE')) {
-    return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+function TaskHistoryTimeline({
+  items,
+  labels,
+}: {
+  items: LeadTaskHistoryItem[];
+  labels: {
+    empty: string;
+    started: string;
+    ended: string;
+    assignee: string;
+    trxNo: string;
+  };
+}) {
+  if (items.length === 0) {
+    return (
+      <p className="text-sm text-gray-500 px-5 py-4">{labels.empty}</p>
+    );
   }
-  if (code.includes('REJECT') || code.includes('CANCEL')) {
-    return 'bg-red-50 text-red-800 border-red-200';
-  }
-  if (code.includes('PROGRESS') || code.includes('PRP') || code.includes('INPUT')) {
-    return 'bg-amber-50 text-amber-900 border-amber-200';
-  }
-  return 'bg-slate-50 text-slate-800 border-slate-200';
+
+  return (
+    <ol className="relative space-y-0 px-5 py-5">
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+        return (
+          <li key={`${item.Name}-${item.StartTime ?? index}`} className="relative flex gap-4 pb-6 last:pb-0">
+            {!isLast && (
+              <span
+                className="absolute left-[9px] top-5 bottom-0 w-px bg-gray-500"
+                aria-hidden
+              />
+            )}
+            <span
+              className={`relative z-[1] mt-1.5 h-[18px] w-[18px] shrink-0 rounded-full border-2 ${
+                isLast
+                  ? 'border-[#002c5f] bg-[#002c5f]'
+                  : 'border-[#002c5f] bg-[#002c5f]/40'
+              }`}
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-gray-900">{item.Name}</p>
+              <dl className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                <div>
+                  <dt className="inline text-gray-500">{labels.started}: </dt>
+                  <dd className="inline">{formatDateTime(item.StartTime)}</dd>
+                </div>
+                <div>
+                  <dt className="inline text-gray-500">{labels.ended}: </dt>
+                  <dd className="inline">{formatDateTime(item.EndTime)}</dd>
+                </div>
+                {item.Assignee && (
+                  <div>
+                    <dt className="inline text-gray-500">{labels.assignee}: </dt>
+                    <dd className="inline">{item.Assignee}</dd>
+                  </div>
+                )}
+                {item.TrxNo && (
+                  <div>
+                    <dt className="inline text-gray-500">{labels.trxNo}: </dt>
+                    <dd className="inline font-mono">{item.TrxNo}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 export function LeadTrackingForm() {
@@ -37,7 +99,7 @@ export function LeadTrackingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [result, setResult] = useState<WebsiteLeadStage | null>(null);
+  const [result, setResult] = useState<LeadMonitoringResult | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,11 +127,11 @@ export function LeadTrackingForm() {
       if (!res.ok) {
         throw new Error(data.message || data.error || t('errorGeneric'));
       }
-      if (!data.found || !Array.isArray(data.data) || data.data.length === 0) {
+      if (!data.found || !data.data) {
         setNotFound(true);
         return;
       }
-      setResult(data.data[0] as WebsiteLeadStage);
+      setResult(data.data as LeadMonitoringResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errorGeneric'));
     } finally {
@@ -128,52 +190,49 @@ export function LeadTrackingForm() {
               <p className="text-xs text-gray-500 uppercase tracking-wide">{t('resultLeadNo')}</p>
               <p className="font-mono text-base font-semibold text-gray-900">{result.LeadNo}</p>
             </div>
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${statusTone(
-                result.LeadStatCode,
-                result.LeadStatDescr
-              )}`}
-            >
-              {result.LeadStatDescr || result.LeadStatCode || '-'}
-            </span>
+            {result.CustConsentStatus ? (
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${consentStatusTone(
+                  result.CustConsentStatus
+                )}`}
+              >
+                {t('resultConsent')}: {result.CustConsentStatus}
+              </span>
+            ) : null}
           </div>
 
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 px-5 py-5 text-sm">
-            <div>
-              <dt className="text-gray-500">{t('resultStep')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">
-                {result.LeadStepDescr || result.LeadStepCode || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">{t('resultAsset')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">{result.AssetName || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">{t('resultCustomer')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">
-                {result.CustName?.trim() || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">{t('resultChannel')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">{result.ChannelCode || '-'}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">{t('resultCreated')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">{formatDateTime(result.CreatedDt)}</dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">{t('resultUpdated')}</dt>
-              <dd className="mt-0.5 font-medium text-gray-900">{formatDateTime(result.LastUpdDt)}</dd>
-            </div>
-            {result.ApprovalCode && (
-              <div>
-                <dt className="text-gray-500">{t('resultApproval')}</dt>
-                <dd className="mt-0.5 font-medium text-gray-900">{result.ApprovalCode}</dd>
-              </div>
-            )}
-          </dl>
+          {(result.CustName || result.VehicleSummary) && (
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 px-5 py-4 text-sm border-b border-gray-100">
+              {result.CustName ? (
+                <div>
+                  <dt className="text-gray-500">{t('resultCustomer')}</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{result.CustName}</dd>
+                </div>
+              ) : null}
+              {result.VehicleSummary ? (
+                <div>
+                  <dt className="text-gray-500">{t('resultAsset')}</dt>
+                  <dd className="mt-0.5 font-medium text-gray-900">{result.VehicleSummary}</dd>
+                </div>
+              ) : null}
+            </dl>
+          )}
+
+          <div className="px-5 pt-4">
+            <h2 className="text-sm font-semibold text-gray-900">{t('historyTitle')}</h2>
+            <p className="mt-0.5 text-xs text-gray-500">{t('historyHint')}</p>
+          </div>
+
+          <TaskHistoryTimeline
+            items={result.ListTaskHistory}
+            labels={{
+              empty: t('historyEmpty'),
+              started: t('historyStarted'),
+              ended: t('historyEnded'),
+              assignee: t('historyAssignee'),
+              trxNo: t('historyTrxNo'),
+            }}
+          />
         </div>
       )}
     </div>

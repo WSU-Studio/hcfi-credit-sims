@@ -14,58 +14,107 @@ import {
 import { getClientIp, leadTrackingLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { leadTrackingSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
-import type { WebsiteLeadStage } from '@/lib/lead-tracking';
+import {
+  normalizeTaskHistory,
+  sortTaskHistory,
+  type LeadMonitoringResult,
+  type LeadTaskHistoryItem,
+} from '@/lib/lead-tracking';
 import { prisma } from '@/lib/prisma';
 
-function mockLeadStage(leadNo: string): WebsiteLeadStage {
+type MonitoringEnvelope = {
+  CustConsentStatus?: string | null;
+  ListTaskHistory?: unknown;
+  StatusCode?: string;
+  Message?: string;
+  HeaderObj?: { StatusCode?: string; Message?: string };
+};
+
+function mockTaskHistory(leadNo: string): LeadTaskHistoryItem[] {
+  const now = Date.now();
+  return [
+    {
+      Name: 'Lead Created (Website)',
+      IndicatorSLA: null,
+      StartTime: new Date(now - 3 * 60_000).toISOString(),
+      EndTime: new Date(now - 3 * 60_000 + 800).toISOString(),
+      Assignee: null,
+      Due: null,
+      TrxNo: leadNo,
+    },
+    {
+      Name: 'Customer Consent Submitted',
+      IndicatorSLA: null,
+      StartTime: new Date(now - 2 * 60_000).toISOString(),
+      EndTime: new Date(now - 2 * 60_000 + 500).toISOString(),
+      Assignee: null,
+      Due: null,
+      TrxNo: null,
+    },
+    {
+      Name: 'Update App Status and Step To Live',
+      IndicatorSLA: null,
+      StartTime: new Date(now - 60_000).toISOString(),
+      EndTime: new Date(now - 59_000).toISOString(),
+      Assignee: null,
+      Due: null,
+      TrxNo: null,
+    },
+  ];
+}
+
+function mockMonitoring(leadNo: string): LeadMonitoringResult {
   return {
     LeadNo: leadNo,
-    ApprovalCode: null,
+    CustConsentStatus: 'SCS',
+    ListTaskHistory: mockTaskHistory(leadNo),
     CustName: 'DEMO CUSTOMER',
-    AssetName: 'THE ALL NEW SANTA FE',
-    IdNo: '',
-    LeadStepCode: 'LEAD_INPUT',
-    LeadStepDescr: 'LEAD INPUT',
-    LeadStatCode: 'PRP',
-    LeadStatDescr: 'IN-PROGRESS',
-    CreatedDt: new Date().toISOString(),
-    LastUpdDt: new Date().toISOString(),
-    IsFromForward: false,
-    IsTakenFromDealer: false,
-    ChannelCode: 'WEBSITE',
-    UserInputName: null,
+    VehicleSummary: 'THE ALL NEW SANTA FE',
   };
 }
 
 /**
- * Hyundai GetPagingStageWebsiteLead often returns empty CustName at LEAD_INPUT
- * (before AddLeadCust). Fall back to our local Lead.name when available.
+ * Endpoint monitoring tidak mengembalikan nama/aset.
+ * Enrich dari Lead lokal jika LeadNo cocok.
  */
-async function enrichCustName(rows: WebsiteLeadStage[]): Promise<WebsiteLeadStage[]> {
-  return Promise.all(
-    rows.map(async (row) => {
-      if (String(row.CustName ?? '').trim()) return row;
+async function enrichFromLocalLead(
+  leadNo: string,
+  result: LeadMonitoringResult
+): Promise<LeadMonitoringResult> {
+  const local = await prisma.lead.findFirst({
+    where: {
+      OR: [{ simulationLeadNo: leadNo }, { hyundaiLeadNo: leadNo }],
+    },
+    select: { name: true, vehicleSummary: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!local) return result;
+  return {
+    ...result,
+    CustName: local.name?.trim() || result.CustName || null,
+    VehicleSummary: local.vehicleSummary?.trim() || result.VehicleSummary || null,
+  };
+}
 
-      const leadNo = String(row.LeadNo ?? '').trim();
-      if (!leadNo) return row;
+function buildMonitoringResult(
+  leadNo: string,
+  envelope: MonitoringEnvelope
+): LeadMonitoringResult {
+  return {
+    LeadNo: leadNo,
+    CustConsentStatus: String(envelope.CustConsentStatus ?? '').trim(),
+    ListTaskHistory: sortTaskHistory(normalizeTaskHistory(envelope.ListTaskHistory)),
+  };
+}
 
-      const local = await prisma.lead.findFirst({
-        where: {
-          OR: [{ simulationLeadNo: leadNo }, { hyundaiLeadNo: leadNo }],
-        },
-        select: { name: true },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      const name = local?.name?.trim();
-      if (!name) return row;
-      return { ...row, CustName: name };
-    })
+function isMonitoringFound(result: LeadMonitoringResult): boolean {
+  return (
+    result.ListTaskHistory.length > 0 || result.CustConsentStatus.length > 0
   );
 }
 
 /**
- * Public Lead Inquiry — Hyundai GetPagingStageWebsiteLead.
+ * Public Lead Inquiry — Hyundai GetMonitoringByStgLeadNo (Postman v1.9).
  * Body: { leadNo }
  */
 export async function POST(request: NextRequest) {
@@ -90,7 +139,7 @@ export async function POST(request: NextRequest) {
     typeof rawBody === 'object' &&
     isHoneypotTripped((rawBody as Record<string, unknown>)[HONEYPOT_FIELD])
   ) {
-    return NextResponse.json({ data: [], found: false, dataSource: 'discarded' });
+    return NextResponse.json({ data: null, found: false, dataSource: 'discarded' });
   }
 
   const parsed = leadTrackingSchema.safeParse(rawBody);
@@ -111,33 +160,36 @@ export async function POST(request: NextRequest) {
 
   if (isMockApiActive(siteMock.enabled) || leadNo.startsWith('MOCK-LEAD-')) {
     await simulateDelay(400);
-    // Mock "not found" for clearly fake suffix
     if (leadNo.endsWith('X') || leadNo.endsWith('x')) {
-      return NextResponse.json({ data: [], found: false, dataSource: 'mock' });
+      return NextResponse.json({ data: null, found: false, dataSource: 'mock' });
     }
     return NextResponse.json({
-      data: [mockLeadStage(leadNo)],
+      data: mockMonitoring(leadNo),
       found: true,
       dataSource: 'mock',
     });
   }
 
   try {
-    const envelope = await hyundaiPost<{ Data?: WebsiteLeadStage[] }>(
-      '/v1/IntegrationWebsite/GetPagingStageWebsiteLead',
+    const envelope = await hyundaiPost<MonitoringEnvelope>(
+      '/v1/IntegrationWebsite/GetMonitoringByStgLeadNo',
       { LeadNo: leadNo }
     );
 
-    const data = Array.isArray(envelope.Data) ? envelope.Data : [];
-    const enriched = data.length > 0 ? await enrichCustName(data) : data;
+    const base = buildMonitoringResult(leadNo, envelope);
+    if (!isMonitoringFound(base)) {
+      return NextResponse.json({ data: null, found: false });
+    }
+
+    const enriched = await enrichFromLocalLead(leadNo, base);
     return NextResponse.json({
       data: enriched,
-      found: enriched.length > 0,
+      found: true,
     });
   } catch (error: unknown) {
     const errorId = extractHyundaiErrorId(error);
     console.warn(
-      '[lead-tracking] GetPagingStageWebsiteLead failed:',
+      '[lead-tracking] GetMonitoringByStgLeadNo failed:',
       errorId ? `(Hyundai Error ID: ${errorId})` : '',
       error instanceof Error ? error.message : error
     );
@@ -154,7 +206,7 @@ export async function POST(request: NextRequest) {
 
     await simulateDelay(300);
     return NextResponse.json({
-      data: [mockLeadStage(leadNo)],
+      data: mockMonitoring(leadNo),
       found: true,
       dataSource: 'mock',
     });
