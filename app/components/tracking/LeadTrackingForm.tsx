@@ -100,6 +100,7 @@ export function LeadTrackingForm() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [result, setResult] = useState<LeadMonitoringResult | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +113,7 @@ export function LeadTrackingForm() {
     setLoading(true);
     setError(null);
     setNotFound(false);
+    setPendingSubmit(false);
     setResult(null);
 
     try {
@@ -128,7 +130,11 @@ export function LeadTrackingForm() {
         throw new Error(data.message || data.error || t('errorGeneric'));
       }
       if (!data.found || !data.data) {
-        setNotFound(true);
+        if (data.reason === 'pending_submit') {
+          setPendingSubmit(true);
+        } else {
+          setNotFound(true);
+        }
         return;
       }
       setResult(data.data as LeadMonitoringResult);
@@ -183,12 +189,30 @@ export function LeadTrackingForm() {
         </div>
       )}
 
+      {pendingSubmit && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          {t('pendingSubmit')}
+        </div>
+      )}
+
       {result && (
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">{t('resultLeadNo')}</p>
-              <p className="font-mono text-base font-semibold text-gray-900">{result.LeadNo}</p>
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">{t('resultLeadNo')}</p>
+                <p className="font-mono text-base font-semibold text-gray-900">{result.LeadNo}</p>
+              </div>
+              {result.SimulationLeadNo &&
+                result.SimulationLeadNo !== result.LeadNo && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      {t('resultSimulationLeadNo')}
+                    </p>
+                    <p className="font-mono text-sm text-gray-700">{result.SimulationLeadNo}</p>
+                    <p className="mt-1 text-xs text-gray-500">{t('resolvedFromSimulationHint')}</p>
+                  </div>
+                )}
             </div>
             {result.CustConsentStatus ? (
               <span

@@ -16,9 +16,11 @@ import { leadTrackingSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import {
   normalizeTaskHistory,
+  resolveTrackingLeadNo,
   sortTaskHistory,
   type LeadMonitoringResult,
   type LeadTaskHistoryItem,
+  type LocalLeadTrackingRef,
 } from '@/lib/lead-tracking';
 import { prisma } from '@/lib/prisma';
 
@@ -63,36 +65,71 @@ function mockTaskHistory(leadNo: string): LeadTaskHistoryItem[] {
   ];
 }
 
-function mockMonitoring(leadNo: string): LeadMonitoringResult {
+function mockMonitoring(
+  leadNo: string,
+  opts?: { simulationLeadNo?: string | null; custName?: string | null; vehicleSummary?: string | null }
+): LeadMonitoringResult {
   return {
     LeadNo: leadNo,
     CustConsentStatus: 'SCS',
     ListTaskHistory: mockTaskHistory(leadNo),
-    CustName: 'DEMO CUSTOMER',
-    VehicleSummary: 'THE ALL NEW SANTA FE',
+    CustName: opts?.custName ?? 'DEMO CUSTOMER',
+    VehicleSummary: opts?.vehicleSummary ?? 'THE ALL NEW SANTA FE',
+    SimulationLeadNo: opts?.simulationLeadNo ?? null,
   };
 }
 
-/**
- * Endpoint monitoring tidak mengembalikan nama/aset.
- * Enrich dari Lead lokal jika LeadNo cocok.
- */
-async function enrichFromLocalLead(
-  leadNo: string,
-  result: LeadMonitoringResult
-): Promise<LeadMonitoringResult> {
-  const local = await prisma.lead.findFirst({
+async function findLocalLead(leadNo: string): Promise<LocalLeadTrackingRef | null> {
+  const normalized = leadNo.trim().toUpperCase();
+
+  const direct = await prisma.lead.findFirst({
     where: {
-      OR: [{ simulationLeadNo: leadNo }, { hyundaiLeadNo: leadNo }],
+      OR: [
+        { simulationLeadNo: { equals: normalized, mode: 'insensitive' } },
+        { hyundaiLeadNo: { equals: normalized, mode: 'insensitive' } },
+      ],
     },
-    select: { name: true, vehicleSummary: true },
+    select: {
+      simulationLeadNo: true,
+      hyundaiLeadNo: true,
+      hyundaiAssignStatus: true,
+      name: true,
+      vehicleSummary: true,
+    },
     orderBy: { createdAt: 'desc' },
   });
-  if (!local) return result;
+  if (direct) return direct;
+
+  // Fallback: LeadNo simulasi tersimpan di LeadAssetDraft, link via convertedLeadId.
+  const draft = await prisma.leadAssetDraft.findFirst({
+    where: { hyundaiLeadNo: { equals: normalized, mode: 'insensitive' } },
+    select: { convertedLeadId: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!draft?.convertedLeadId) return null;
+
+  return prisma.lead.findUnique({
+    where: { id: draft.convertedLeadId },
+    select: {
+      simulationLeadNo: true,
+      hyundaiLeadNo: true,
+      hyundaiAssignStatus: true,
+      name: true,
+      vehicleSummary: true,
+    },
+  });
+}
+
+function enrichWithLocal(
+  result: LeadMonitoringResult,
+  local: LocalLeadTrackingRef | null,
+  simulationLeadNo: string | null
+): LeadMonitoringResult {
   return {
     ...result,
-    CustName: local.name?.trim() || result.CustName || null,
-    VehicleSummary: local.vehicleSummary?.trim() || result.VehicleSummary || null,
+    CustName: local?.name?.trim() || result.CustName || null,
+    VehicleSummary: local?.vehicleSummary?.trim() || result.VehicleSummary || null,
+    SimulationLeadNo: simulationLeadNo || result.SimulationLeadNo || null,
   };
 }
 
@@ -115,7 +152,9 @@ function isMonitoringFound(result: LeadMonitoringResult): boolean {
 
 /**
  * Public Lead Inquiry — Hyundai GetMonitoringByStgLeadNo (Postman v1.9).
- * Body: { leadNo }
+ *
+ * LeadNo simulasi (PriceStep) sering berbeda dari LeadNo submitted (admin → MLoan).
+ * Resolve dulu via DB lokal: simulationLeadNo → hyundaiLeadNo, baru hit monitoring.
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request);
@@ -155,43 +194,81 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const leadNo = parsed.data.leadNo;
+  const inputLeadNo = parsed.data.leadNo.trim().toUpperCase();
+  const local = await findLocalLead(inputLeadNo);
+  const resolved = resolveTrackingLeadNo(inputLeadNo, local);
+
+  console.info('[lead-tracking] resolve', {
+    inputLeadNo,
+    localFound: !!local,
+    simulationLeadNo: local?.simulationLeadNo ?? null,
+    hyundaiLeadNo: local?.hyundaiLeadNo ?? null,
+    hyundaiAssignStatus: local?.hyundaiAssignStatus ?? null,
+    monitorLeadNo: resolved.monitorLeadNo,
+    resolvedFromSimulation: resolved.resolvedFromSimulation,
+    pendingSubmit: resolved.pendingSubmit,
+  });
+
+  if (resolved.pendingSubmit) {
+    return NextResponse.json({
+      data: null,
+      found: false,
+      reason: 'pending_submit',
+      queriedLeadNo: inputLeadNo,
+      simulationLeadNo: resolved.simulationLeadNo,
+    });
+  }
+
+  const monitorLeadNo = resolved.monitorLeadNo;
   const siteMock = await getMockApiSettings();
 
-  if (isMockApiActive(siteMock.enabled) || leadNo.startsWith('MOCK-LEAD-')) {
+  if (isMockApiActive(siteMock.enabled) || inputLeadNo.startsWith('MOCK-LEAD-')) {
     await simulateDelay(400);
-    if (leadNo.endsWith('X') || leadNo.endsWith('x')) {
+    if (inputLeadNo.endsWith('X') || inputLeadNo.endsWith('x')) {
       return NextResponse.json({ data: null, found: false, dataSource: 'mock' });
     }
     return NextResponse.json({
-      data: mockMonitoring(leadNo),
+      data: mockMonitoring(monitorLeadNo, {
+        simulationLeadNo: resolved.simulationLeadNo,
+        custName: local?.name,
+        vehicleSummary: local?.vehicleSummary,
+      }),
       found: true,
       dataSource: 'mock',
+      resolvedFromSimulation: resolved.resolvedFromSimulation,
     });
   }
 
   try {
     const envelope = await hyundaiPost<MonitoringEnvelope>(
       '/v1/IntegrationWebsite/GetMonitoringByStgLeadNo',
-      { LeadNo: leadNo }
+      { LeadNo: monitorLeadNo }
     );
 
-    const base = buildMonitoringResult(leadNo, envelope);
+    const base = buildMonitoringResult(monitorLeadNo, envelope);
     if (!isMonitoringFound(base)) {
-      return NextResponse.json({ data: null, found: false });
+      return NextResponse.json({
+        data: null,
+        found: false,
+        queriedLeadNo: inputLeadNo,
+        monitorLeadNo,
+      });
     }
 
-    const enriched = await enrichFromLocalLead(leadNo, base);
+    const enriched = enrichWithLocal(base, local, resolved.simulationLeadNo);
     return NextResponse.json({
       data: enriched,
       found: true,
+      resolvedFromSimulation: resolved.resolvedFromSimulation,
+      queriedLeadNo: inputLeadNo,
     });
   } catch (error: unknown) {
     const errorId = extractHyundaiErrorId(error);
     console.warn(
       '[lead-tracking] GetMonitoringByStgLeadNo failed:',
       errorId ? `(Hyundai Error ID: ${errorId})` : '',
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
+      { inputLeadNo, monitorLeadNo, resolvedFromSimulation: resolved.resolvedFromSimulation }
     );
 
     if (shouldNotUseMockFallback()) {
@@ -206,9 +283,14 @@ export async function POST(request: NextRequest) {
 
     await simulateDelay(300);
     return NextResponse.json({
-      data: mockMonitoring(leadNo),
+      data: mockMonitoring(monitorLeadNo, {
+        simulationLeadNo: resolved.simulationLeadNo,
+        custName: local?.name,
+        vehicleSummary: local?.vehicleSummary,
+      }),
       found: true,
       dataSource: 'mock',
+      resolvedFromSimulation: resolved.resolvedFromSimulation,
     });
   }
 }

@@ -20,7 +20,99 @@ export type LeadMonitoringResult = {
   /** Enrich dari DB lokal (endpoint monitoring tidak kirim nama/aset). */
   CustName?: string | null;
   VehicleSummary?: string | null;
+  /**
+   * LeadNo simulasi (PriceStep) yang dipakai user untuk pencarian,
+   * jika berbeda dari LeadNo yang dipantau di MLoan/Confins.
+   */
+  SimulationLeadNo?: string | null;
 };
+
+export type LocalLeadTrackingRef = {
+  simulationLeadNo: string | null;
+  hyundaiLeadNo: string | null;
+  hyundaiAssignStatus: string;
+  name: string | null;
+  vehicleSummary: string | null;
+};
+
+export type ResolvedTrackingLead = {
+  /** LeadNo yang dikirim ke GetMonitoringByStgLeadNo. */
+  monitorLeadNo: string;
+  simulationLeadNo: string | null;
+  /** true = user input LeadNo simulasi, lalu diarahkan ke hyundaiLeadNo. */
+  resolvedFromSimulation: boolean;
+  /**
+   * Lead lokal ketemu via simulationLeadNo, tapi belum SUBMITTED ke MLoan
+   * (hyundaiLeadNo kosong / status belum SUBMITTED) — monitoring belum tersedia.
+   */
+  pendingSubmit: boolean;
+};
+
+/**
+ * Resolve LeadNo input user → LeadNo yang valid untuk monitoring MLoan.
+ *
+ * Cross-office submit membuat LeadNo baru (`hyundaiLeadNo`) berbeda dari
+ * LeadNo simulasi (`simulationLeadNo`). User sering hanya punya nomor simulasi
+ * (ditampilkan di ResultStep) — harus diarahkan ke nomor submitted.
+ *
+ * Aturan: kalau input = simulationLeadNo dan hyundaiLeadNo sudah ada (beda),
+ * SELALU monitor pakai hyundaiLeadNo — jangan panggil MLoan dengan nomor simulasi
+ * (itu punya histori sendiri yang tidak lengkap).
+ */
+export function resolveTrackingLeadNo(
+  inputLeadNo: string,
+  local: LocalLeadTrackingRef | null
+): ResolvedTrackingLead {
+  const input = inputLeadNo.trim().toUpperCase();
+  if (!local) {
+    return {
+      monitorLeadNo: input,
+      simulationLeadNo: null,
+      resolvedFromSimulation: false,
+      pendingSubmit: false,
+    };
+  }
+
+  const sim = local.simulationLeadNo?.trim().toUpperCase() || null;
+  const submitted = local.hyundaiLeadNo?.trim().toUpperCase() || null;
+
+  // User input = LeadNo simulasi, dan sudah ada LeadNo MLoan yang berbeda.
+  if (sim && sim === input && submitted && submitted !== input) {
+    return {
+      monitorLeadNo: submitted,
+      simulationLeadNo: sim,
+      resolvedFromSimulation: true,
+      pendingSubmit: false,
+    };
+  }
+
+  // User input = LeadNo simulasi, belum ada hyundaiLeadNo sama sekali.
+  if (sim && sim === input && !submitted) {
+    return {
+      monitorLeadNo: input,
+      simulationLeadNo: sim,
+      resolvedFromSimulation: false,
+      pendingSubmit: true,
+    };
+  }
+
+  // User input = LeadNo submitted (atau same-office: sim === submitted).
+  if (submitted && submitted === input) {
+    return {
+      monitorLeadNo: submitted,
+      simulationLeadNo: sim && sim !== submitted ? sim : null,
+      resolvedFromSimulation: false,
+      pendingSubmit: false,
+    };
+  }
+
+  return {
+    monitorLeadNo: input,
+    simulationLeadNo: sim && sim !== input ? sim : null,
+    resolvedFromSimulation: false,
+    pendingSubmit: false,
+  };
+}
 
 /** @deprecated Prefer LeadMonitoringResult — disimpan untuk referensi response lama. */
 export type WebsiteLeadStage = {

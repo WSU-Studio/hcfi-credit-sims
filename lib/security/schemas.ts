@@ -253,7 +253,7 @@ export const leadTrackingSchema = z
     leadNo: z
       .string({ message: 'LeadNo wajib diisi' })
       .max(64, 'max 64 karakter')
-      .transform(cleanString)
+      .transform((v) => cleanString(v).toUpperCase())
       .refine((v) => v.length > 0, { message: 'LeadNo wajib diisi' })
       .refine((v) => /^[A-Za-z0-9_-]+$/.test(v), {
         message: 'LeadNo hanya boleh huruf/angka/-/_',
