@@ -198,17 +198,6 @@ export async function POST(request: NextRequest) {
   const local = await findLocalLead(inputLeadNo);
   const resolved = resolveTrackingLeadNo(inputLeadNo, local);
 
-  console.info('[lead-tracking] resolve', {
-    inputLeadNo,
-    localFound: !!local,
-    simulationLeadNo: local?.simulationLeadNo ?? null,
-    hyundaiLeadNo: local?.hyundaiLeadNo ?? null,
-    hyundaiAssignStatus: local?.hyundaiAssignStatus ?? null,
-    monitorLeadNo: resolved.monitorLeadNo,
-    resolvedFromSimulation: resolved.resolvedFromSimulation,
-    pendingSubmit: resolved.pendingSubmit,
-  });
-
   if (resolved.pendingSubmit) {
     return NextResponse.json({
       data: null,
