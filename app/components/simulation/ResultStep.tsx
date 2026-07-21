@@ -813,9 +813,22 @@ export function ResultStep({
                 </button>
               </div>
               {leadSubmitted && (
-                <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
-                  {t('leadSubmittedHint')}
-                </p>
+                <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
+                  <p>{t('leadSubmittedHint')}</p>
+                  {leadNo ? (
+                    <div className="rounded-md bg-white/80 border border-emerald-200 px-3 py-2">
+                      <p className="text-xs font-medium text-emerald-700">
+                        {t('leadSubmittedLeadNoLabel')}
+                      </p>
+                      <p className="mt-0.5 font-mono text-base font-semibold tracking-tight text-emerald-950 break-all">
+                        {leadNo}
+                      </p>
+                      <p className="mt-1 text-xs text-emerald-700">
+                        {t('leadSubmittedLeadNoHint')}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
               )}
               <SimulationSummaryModal
                 open={summaryOpen}

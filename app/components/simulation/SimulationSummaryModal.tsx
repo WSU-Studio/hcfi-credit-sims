@@ -308,7 +308,7 @@ export function SimulationSummaryModal({
                 {leadNo && (
                   <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <dt className="text-gray-500">{t('summaryLeadNoLabel')}</dt>
-                    <dd className="font-medium text-gray-900 font-mono tracking-tight">{leadNo}</dd>
+                    <dd className="font-semibold text-gray-900 font-mono tracking-wide">{leadNo}</dd>
                   </dl>
                 )}
               </section>
