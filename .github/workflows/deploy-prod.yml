@@ -41,6 +41,8 @@ jobs:
           echo "API_BASE_URL=\"${{ secrets.API_BASE_URL }}\"" >> .env
           echo "" >> .env
           echo "NODE_ENV=production" >> .env
+          # Leave unset/false for Report-Only; set secret CSP_ENFORCE=true to enforce.
+          echo "CSP_ENFORCE=${{ secrets.CSP_ENFORCE }}" >> .env
    
       - name: Build application
         run: npm run build

@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth-middleware";
 import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
 import { checkWriteOrigin } from "@/lib/security/origin-check";
+import { CSP_POLICY, getCspHeaderName } from "@/lib/security/csp";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -54,6 +55,11 @@ function getCorsHeaders(request: NextRequest): Record<string, string> | null {
   };
 }
 
+function withCsp(response: NextResponse): NextResponse {
+  response.headers.set(getCspHeaderName(), CSP_POLICY);
+  return response;
+}
+
 function withCors(response: NextResponse, request: NextRequest): NextResponse {
   if (!request.nextUrl.pathname.startsWith("/api")) return response;
   const cors = getCorsHeaders(request);
@@ -63,6 +69,11 @@ function withCors(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
+/** CSP always; CORS only for API when ALLOWED_ORIGINS is set. */
+function finalize(response: NextResponse, request: NextRequest): NextResponse {
+  return withCsp(withCors(response, request));
+}
+
 export async function middleware(request: NextRequest) {
   const rawPathname = request.nextUrl.pathname;
   const pathname = stripLocaleFromDealerPath(normalizePathname(rawPathname));
@@ -70,7 +81,7 @@ export async function middleware(request: NextRequest) {
   if (pathname !== rawPathname) {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
-    return NextResponse.redirect(url);
+    return finalize(NextResponse.redirect(url), request);
   }
 
   // ELB/ALB health check often hits GET / and expects 200.
@@ -82,17 +93,18 @@ export async function middleware(request: NextRequest) {
     request.method === "GET" &&
     ua.includes("ELB-HealthChecker")
   ) {
-    return NextResponse.json({ status: "ok" }, { status: 200 });
+    return finalize(NextResponse.json({ status: "ok" }, { status: 200 }), request);
   }
 
   // CORS for API routes (only when ALLOWED_ORIGINS is set)
   if (pathname.startsWith("/api")) {
     if (request.method === "OPTIONS") {
       const cors = getCorsHeaders(request);
-      return new NextResponse(null, {
+      const res = new NextResponse(null, {
         status: 204,
         headers: cors ?? {},
       });
+      return withCsp(res);
     }
   }
 
@@ -106,7 +118,7 @@ export async function middleware(request: NextRequest) {
       host: request.headers.get("host"),
     });
     if (!verdict.ok) {
-      return withCors(
+      return finalize(
         NextResponse.json(
           { error: "Forbidden: cross-origin request rejected" },
           { status: 403 }
@@ -130,7 +142,7 @@ export async function middleware(request: NextRequest) {
       ? { success: true as const, retryAfterSec: 0 }
       : loginLimiter.limit(ip);
     if (!rl.success) {
-      return withCors(
+      return finalize(
         tooManyRequestsResponse(
           "Too many login attempts. Please try again later.",
           rl.retryAfterSec
@@ -147,10 +159,10 @@ export async function middleware(request: NextRequest) {
       if (!session?.authenticated) {
         const loginUrl = new URL("/dealer/login", request.url);
         loginUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(loginUrl);
+        return finalize(NextResponse.redirect(loginUrl), request);
       }
     }
-    return NextResponse.next();
+    return finalize(NextResponse.next(), request);
   }
 
   if (pathname.startsWith("/admin")) {
@@ -158,28 +170,28 @@ export async function middleware(request: NextRequest) {
     if (!session?.authenticated) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return finalize(NextResponse.redirect(loginUrl), request);
     }
-    return NextResponse.next();
+    return finalize(NextResponse.next(), request);
   }
 
   // API admin routes require authentication (defense-in-depth)
   if (pathname.startsWith("/api/admin") || pathname.startsWith("/api/dealer")) {
     const session = await getSessionFromRequest(request);
     if (!session?.authenticated) {
-      return withCors(
+      return finalize(
         NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
         request
       );
     }
-    return withCors(NextResponse.next(), request);
+    return finalize(NextResponse.next(), request);
   }
 
   if (pathname.startsWith("/api") || pathname.startsWith("/auth")) {
-    return withCors(NextResponse.next(), request);
+    return finalize(NextResponse.next(), request);
   }
 
-  return intlMiddleware(request);
+  return finalize(intlMiddleware(request), request);
 }
 
 export const config = {
