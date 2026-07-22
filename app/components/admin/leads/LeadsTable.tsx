@@ -8,6 +8,7 @@ import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
 import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
+import { LeadSimulationSummaryButton } from '@/app/components/admin/leads/LeadSimulationSummaryButton';
 import { TablePagination } from '@/app/components/admin/TablePagination';
 
 type Lead = {
@@ -17,8 +18,14 @@ type Lead = {
   email: string;
   ktpUrl?: string | null;
   productName: string | null;
+  productCode?: string | null;
+  firstInstallment?: string | null;
+  isPromotion?: boolean | null;
+  partnerCode?: string | null;
   vehicleSummary?: string | null;
+  assetSnapshot?: unknown;
   otrPrice: number | null;
+  discount?: number | null;
   dpPercent: number | null;
   tenor: number | null;
   ipAddress?: string | null;
@@ -408,6 +415,7 @@ export function LeadsTable() {
                           {lead.otrPrice && <div>OTR: {formatCurrency(lead.otrPrice)}</div>}
                           {lead.dpPercent && <div>DP: {lead.dpPercent}%</div>}
                           {lead.tenor && <div>Tenor: {lead.tenor} bln</div>}
+                          <LeadSimulationSummaryButton lead={lead} />
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">-</span>

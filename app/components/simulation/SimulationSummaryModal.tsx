@@ -29,6 +29,8 @@ interface SimulationSummaryModalProps {
   /** Data resmi dari FinalCalculateByLeadNo (Cust Consent mapping). */
   summary: FinalSummaryInfo | null;
   loading?: boolean;
+  /** Override loading copy (e.g. admin view of submitted simulation). */
+  loadingMessage?: string;
   error?: string | null;
   errorId?: string | null;
   onRetry?: () => void;
@@ -77,6 +79,7 @@ export function SimulationSummaryModal({
   firstInstallment,
   summary,
   loading = false,
+  loadingMessage,
   error = null,
   errorId = null,
   onRetry,
@@ -280,7 +283,7 @@ export function SimulationSummaryModal({
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-[#002c5f]">
               <IconLoader2 size={36} className="animate-spin" aria-hidden />
               <p className="text-sm text-gray-600 text-center max-w-sm">
-                {t('summaryLoadingFinal')}
+                {loadingMessage ?? t('summaryLoadingFinal')}
               </p>
             </div>
           )}
