@@ -56,7 +56,7 @@
   },
   "tracking": {
     "pageTitle": "Track Application Status",
-    "pageDescription": "Enter your Lead number (LeadNo) from your simulation or application to view the process history from the website through Confins.",
+    "pageDescription": "Enter your Lead number (LeadNo) from your simulation or application to view the process history and status of your credit application.",
     "metaTitle": "Hyundai Capital - Track Status",
     "metaDescription": "Track your Hyundai Finance credit application status with your LeadNo.",
     "leadNoLabel": "Lead Number (LeadNo)",
