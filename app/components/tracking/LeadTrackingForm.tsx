@@ -148,7 +148,7 @@ export function LeadTrackingForm() {
                     <p className="font-mono text-sm text-gray-700">
                       {result.SimulationLeadNo || queriedLeadNo}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500">{t('resolvedFromSimulationHint')}</p>
+                    {/* <p className="mt-1 text-xs text-gray-500">{t('resolvedFromSimulationHint')}</p> */}
                   </div>
                 )}
             </div>
