@@ -1,96 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconSearch, IconLoader2 } from '@tabler/icons-react';
 import {
   consentStatusTone,
   type LeadMonitoringResult,
-  type LeadTaskHistoryItem,
 } from '@/lib/lead-tracking';
+import { collapseTaskHistoryToStages } from '@/lib/lead-tracking-stages';
 import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import { HoneypotField } from '@/app/components/security/HoneypotField';
-
-function formatDateTime(iso: string | null | undefined) {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString('id-ID', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-}
-
-function TaskHistoryTimeline({
-  items,
-  labels,
-}: {
-  items: LeadTaskHistoryItem[];
-  labels: {
-    empty: string;
-    started: string;
-    ended: string;
-    assignee: string;
-    trxNo: string;
-  };
-}) {
-  if (items.length === 0) {
-    return (
-      <p className="text-sm text-gray-500 px-5 py-4">{labels.empty}</p>
-    );
-  }
-
-  return (
-    <ol className="relative space-y-0 px-5 py-5">
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1;
-        return (
-          <li key={`${item.Name}-${item.StartTime ?? index}`} className="relative flex gap-4 pb-6 last:pb-0">
-            {!isLast && (
-              <span
-                className="absolute left-[9px] top-5 bottom-0 w-px bg-gray-500"
-                aria-hidden
-              />
-            )}
-            <span
-              className={`relative z-[1] mt-1.5 h-[18px] w-[18px] shrink-0 rounded-full border-2 ${
-                isLast
-                  ? 'border-[#002c5f] bg-[#002c5f]'
-                  : 'border-[#002c5f] bg-[#002c5f]/40'
-              }`}
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">{item.Name}</p>
-              <dl className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                <div>
-                  <dt className="inline text-gray-500">{labels.started}: </dt>
-                  <dd className="inline">{formatDateTime(item.StartTime)}</dd>
-                </div>
-                <div>
-                  <dt className="inline text-gray-500">{labels.ended}: </dt>
-                  <dd className="inline">{formatDateTime(item.EndTime)}</dd>
-                </div>
-                {item.Assignee && (
-                  <div>
-                    <dt className="inline text-gray-500">{labels.assignee}: </dt>
-                    <dd className="inline">{item.Assignee}</dd>
-                  </div>
-                )}
-                {item.TrxNo && (
-                  <div>
-                    <dt className="inline text-gray-500">{labels.trxNo}: </dt>
-                    <dd className="inline font-mono">{item.TrxNo}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+import { TrackingStageTimeline } from '@/app/components/tracking/TrackingStageTimeline';
 
 export function LeadTrackingForm() {
   const t = useTranslations('tracking');
@@ -101,6 +21,13 @@ export function LeadTrackingForm() {
   const [notFound, setNotFound] = useState(false);
   const [result, setResult] = useState<LeadMonitoringResult | null>(null);
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [queriedLeadNo, setQueriedLeadNo] = useState<string | null>(null);
+  const [resolvedFromSimulation, setResolvedFromSimulation] = useState(false);
+
+  const stages = useMemo(
+    () => (result ? collapseTaskHistoryToStages(result.ListTaskHistory) : []),
+    [result]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +42,8 @@ export function LeadTrackingForm() {
     setNotFound(false);
     setPendingSubmit(false);
     setResult(null);
+    setQueriedLeadNo(null);
+    setResolvedFromSimulation(false);
 
     try {
       const res = await fetch('/api/public/lead-tracking', {
@@ -137,7 +66,12 @@ export function LeadTrackingForm() {
         }
         return;
       }
-      setResult(data.data as LeadMonitoringResult);
+      const monitoring = data.data as LeadMonitoringResult;
+      setResult(monitoring);
+      setQueriedLeadNo(
+        typeof data.queriedLeadNo === 'string' ? data.queriedLeadNo : trimmed.toUpperCase()
+      );
+      setResolvedFromSimulation(Boolean(data.resolvedFromSimulation));
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errorGeneric'));
     } finally {
@@ -203,13 +137,17 @@ export function LeadTrackingForm() {
                 <p className="text-xs text-gray-500 uppercase tracking-wide">{t('resultLeadNo')}</p>
                 <p className="font-mono text-base font-semibold text-gray-900">{result.LeadNo}</p>
               </div>
-              {result.SimulationLeadNo &&
-                result.SimulationLeadNo !== result.LeadNo && (
+              {((result.SimulationLeadNo && result.SimulationLeadNo !== result.LeadNo) ||
+                (resolvedFromSimulation &&
+                  queriedLeadNo &&
+                  queriedLeadNo !== result.LeadNo)) && (
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">
                       {t('resultSimulationLeadNo')}
                     </p>
-                    <p className="font-mono text-sm text-gray-700">{result.SimulationLeadNo}</p>
+                    <p className="font-mono text-sm text-gray-700">
+                      {result.SimulationLeadNo || queriedLeadNo}
+                    </p>
                     <p className="mt-1 text-xs text-gray-500">{t('resolvedFromSimulationHint')}</p>
                   </div>
                 )}
@@ -247,14 +185,16 @@ export function LeadTrackingForm() {
             <p className="mt-0.5 text-xs text-gray-500">{t('historyHint')}</p>
           </div>
 
-          <TaskHistoryTimeline
-            items={result.ListTaskHistory}
+          <TrackingStageTimeline
+            stages={stages}
+            getLabel={(stageId) => t(`stages.${stageId}` as 'stages.Application Submitted')}
             labels={{
               empty: t('historyEmpty'),
               started: t('historyStarted'),
               ended: t('historyEnded'),
-              assignee: t('historyAssignee'),
-              trxNo: t('historyTrxNo'),
+              statusCompleted: t('stageStatusCompleted'),
+              statusCurrent: t('stageStatusCurrent'),
+              statusPending: t('stageStatusPending'),
             }}
           />
         </div>

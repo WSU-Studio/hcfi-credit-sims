@@ -55,9 +55,11 @@ export type ResolvedTrackingLead = {
  * LeadNo simulasi (`simulationLeadNo`). User sering hanya punya nomor simulasi
  * (ditampilkan di ResultStep) — harus diarahkan ke nomor submitted.
  *
- * Aturan: kalau input = simulationLeadNo dan hyundaiLeadNo sudah ada (beda),
- * SELALU monitor pakai hyundaiLeadNo — jangan panggil MLoan dengan nomor simulasi
- * (itu punya histori sendiri yang tidak lengkap).
+ * Aturan:
+ * - Input = simulationLeadNo, dan hyundaiLeadNo sudah ada (beda) → monitor hyundaiLeadNo
+ * - Local ketemu via draft/simulasi tapi `simulationLeadNo` kosong, sementara
+ *   `hyundaiLeadNo` beda dari input → tetap anggap input = simulasi, monitor submitted
+ * - Input = simulationLeadNo, belum SUBMITTED / belum ada hyundaiLeadNo → pending
  */
 export function resolveTrackingLeadNo(
   inputLeadNo: string,
@@ -75,24 +77,31 @@ export function resolveTrackingLeadNo(
 
   const sim = local.simulationLeadNo?.trim().toUpperCase() || null;
   const submitted = local.hyundaiLeadNo?.trim().toUpperCase() || null;
+  const assignStatus = local.hyundaiAssignStatus?.trim().toUpperCase() || '';
+  const isSubmittedStatus = assignStatus === 'SUBMITTED';
 
-  // User input = LeadNo simulasi, dan sudah ada LeadNo MLoan yang berbeda.
-  if (sim && sim === input && submitted && submitted !== input) {
-    return {
-      monitorLeadNo: submitted,
-      simulationLeadNo: sim,
-      resolvedFromSimulation: true,
-      pendingSubmit: false,
-    };
-  }
+  // findLocalLead hanya match simulationLeadNo / hyundaiLeadNo / draft.
+  // Jika submitted ada dan beda dari input, input pasti nomor simulasi (atau draft).
+  const inputIsSimulation =
+    (sim != null && sim === input) ||
+    (submitted != null && submitted !== input);
 
-  // User input = LeadNo simulasi, belum ada hyundaiLeadNo sama sekali.
-  if (sim && sim === input && !submitted) {
+  if (inputIsSimulation) {
+    if (submitted && submitted !== input) {
+      return {
+        monitorLeadNo: submitted,
+        simulationLeadNo: sim || input,
+        resolvedFromSimulation: true,
+        pendingSubmit: false,
+      };
+    }
+
     return {
       monitorLeadNo: input,
-      simulationLeadNo: sim,
+      simulationLeadNo: sim || input,
       resolvedFromSimulation: false,
-      pendingSubmit: true,
+      // Belum ada LeadNo submitted (atau status belum selesai submit).
+      pendingSubmit: !isSubmittedStatus || !submitted,
     };
   }
 

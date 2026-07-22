@@ -36,28 +36,37 @@ function mockTaskHistory(leadNo: string): LeadTaskHistoryItem[] {
   const now = Date.now();
   return [
     {
-      Name: 'Lead Created (Website)',
+      Name: 'Input data from website',
       IndicatorSLA: null,
-      StartTime: new Date(now - 3 * 60_000).toISOString(),
-      EndTime: new Date(now - 3 * 60_000 + 800).toISOString(),
+      StartTime: new Date(now - 5 * 60_000).toISOString(),
+      EndTime: new Date(now - 5 * 60_000 + 800).toISOString(),
       Assignee: null,
       Due: null,
       TrxNo: leadNo,
     },
     {
-      Name: 'Customer Consent Submitted',
+      Name: 'Update Customer Consent Status Success',
       IndicatorSLA: null,
-      StartTime: new Date(now - 2 * 60_000).toISOString(),
-      EndTime: new Date(now - 2 * 60_000 + 500).toISOString(),
+      StartTime: new Date(now - 4 * 60_000).toISOString(),
+      EndTime: new Date(now - 4 * 60_000 + 500).toISOString(),
       Assignee: null,
       Due: null,
       TrxNo: null,
     },
     {
-      Name: 'Update App Status and Step To Live',
+      Name: 'Request CBAS_SLIK',
       IndicatorSLA: null,
-      StartTime: new Date(now - 60_000).toISOString(),
-      EndTime: new Date(now - 59_000).toISOString(),
+      StartTime: new Date(now - 3 * 60_000).toISOString(),
+      EndTime: new Date(now - 3 * 60_000 + 900).toISOString(),
+      Assignee: null,
+      Due: null,
+      TrxNo: null,
+    },
+    {
+      Name: 'Lead Review',
+      IndicatorSLA: null,
+      StartTime: new Date(now - 2 * 60_000).toISOString(),
+      EndTime: null,
       Assignee: null,
       Due: null,
       TrxNo: null,
@@ -108,7 +117,7 @@ async function findLocalLead(leadNo: string): Promise<LocalLeadTrackingRef | nul
   });
   if (!draft?.convertedLeadId) return null;
 
-  return prisma.lead.findUnique({
+  const fromDraft = await prisma.lead.findUnique({
     where: { id: draft.convertedLeadId },
     select: {
       simulationLeadNo: true,
@@ -118,6 +127,13 @@ async function findLocalLead(leadNo: string): Promise<LocalLeadTrackingRef | nul
       vehicleSummary: true,
     },
   });
+  if (!fromDraft) return null;
+
+  return {
+    ...fromDraft,
+    // Draft.hyundaiLeadNo = LeadNo simulasi PriceStep; isi jika Lead belum menyimpan field-nya.
+    simulationLeadNo: fromDraft.simulationLeadNo?.trim() || normalized,
+  };
 }
 
 function enrichWithLocal(
@@ -225,6 +241,7 @@ export async function POST(request: NextRequest) {
       found: true,
       dataSource: 'mock',
       resolvedFromSimulation: resolved.resolvedFromSimulation,
+      queriedLeadNo: inputLeadNo,
     });
   }
 
@@ -280,6 +297,7 @@ export async function POST(request: NextRequest) {
       found: true,
       dataSource: 'mock',
       resolvedFromSimulation: resolved.resolvedFromSimulation,
+      queriedLeadNo: inputLeadNo,
     });
   }
 }

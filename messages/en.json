@@ -74,13 +74,25 @@
     "resultConsent": "Consent Status",
     "resultAsset": "Vehicle",
     "resultCustomer": "Customer Name",
-    "historyTitle": "Process History",
-    "historyHint": "Sequence of events from the website application through Confins processing.",
-    "historyEmpty": "No process history is available for this LeadNo yet.",
+    "historyTitle": "Process Status",
+    "historyHint": "Your credit application stages, from submission through contract activation.",
+    "historyEmpty": "No process status is available for this LeadNo yet.",
     "historyStarted": "Started",
     "historyEnded": "Ended",
     "historyAssignee": "Assignee",
-    "historyTrxNo": "TrxNo"
+    "historyTrxNo": "TrxNo",
+    "stageStatusCompleted": "Completed",
+    "stageStatusCurrent": "In progress",
+    "stageStatusPending": "Not started",
+    "stages": {
+      "Application Submitted": "Application Submitted",
+      "Data Verification": "Data Verification",
+      "Approval Process": "Approval Process",
+      "Agreement Activation Process": "Agreement Activation Process",
+      "Customer Confirmation": "Customer Confirmation",
+      "Vehicle Delivery": "Vehicle Delivery",
+      "Contract Activation": "Contract Activation"
+    }
   },
   "articles": {
     "pageTitle": "Articles",

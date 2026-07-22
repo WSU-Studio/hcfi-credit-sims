@@ -74,13 +74,25 @@
     "resultConsent": "Status Consent",
     "resultAsset": "Kendaraan",
     "resultCustomer": "Nama Customer",
-    "historyTitle": "Riwayat Proses",
-    "historyHint": "Urutan peristiwa dari pengajuan website hingga proses di Confins.",
-    "historyEmpty": "Belum ada riwayat proses untuk LeadNo ini.",
+    "historyTitle": "Status Proses",
+    "historyHint": "Tahapan pengajuan kredit Anda, dari pengajuan hingga aktivasi kontrak.",
+    "historyEmpty": "Belum ada status proses untuk LeadNo ini.",
     "historyStarted": "Mulai",
     "historyEnded": "Selesai",
     "historyAssignee": "PIC",
-    "historyTrxNo": "TrxNo"
+    "historyTrxNo": "TrxNo",
+    "stageStatusCompleted": "Selesai",
+    "stageStatusCurrent": "Sedang diproses",
+    "stageStatusPending": "Belum dimulai",
+    "stages": {
+      "Application Submitted": "Pengajuan Dikirim",
+      "Data Verification": "Verifikasi Data",
+      "Approval Process": "Proses Persetujuan",
+      "Agreement Activation Process": "Aktivasi Perjanjian",
+      "Customer Confirmation": "Konfirmasi Nasabah",
+      "Vehicle Delivery": "Pengiriman Kendaraan",
+      "Contract Activation": "Aktivasi Kontrak"
+    }
   },
   "articles": {
     "pageTitle": "Artikel",
