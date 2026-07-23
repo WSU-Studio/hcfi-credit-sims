@@ -16,7 +16,7 @@
  */
 
 const API_BASE_URL =
-  process.env.CREDIT_SIMULATION_API_URL ||
+  process.env.API_BASE_URL ||
   'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
 
 const USERNAME = process.env.CREDIT_SIMULATION_USERNAME;

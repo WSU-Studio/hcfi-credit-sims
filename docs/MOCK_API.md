@@ -434,6 +434,6 @@ Untuk mengupdate mock data, edit file `lib/mock-api.ts`:
 Ketika VPN tersedia dan API real dapat diakses:
 
 1. Set `USE_MOCK_API=false` atau hapus environment variable
-2. Pastikan `CREDIT_SIMULATION_API_URL` sudah benar di `.env`
+2. Pastikan `API_BASE_URL` sudah benar di `.env`
 3. Test dengan API real
 4. Mock API akan tetap tersedia sebagai fallback jika terjadi error

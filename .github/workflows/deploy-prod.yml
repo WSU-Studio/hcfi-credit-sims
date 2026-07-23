@@ -31,7 +31,6 @@ jobs:
           echo "AWS_S3_BUCKET=\"${{ secrets.AWS_S3_BUCKET }}\"" >> .env
           echo "" >> .env
           echo "USE_MOCK_API=${{ secrets.USE_MOCK_API }}" >> .env
-          echo "CREDIT_SIMULATION_API_URL=\"${{ secrets.CREDIT_SIMULATION_API_URL }}\"" >> .env
           echo "CREDIT_SIMULATION_USERNAME=\"${{ secrets.CREDIT_SIMULATION_USERNAME }}\"" >> .env
           echo "CREDIT_SIMULATION_PASSWORD=\"${{ secrets.CREDIT_SIMULATION_PASSWORD }}\"" >> .env
           echo "" >> .env
