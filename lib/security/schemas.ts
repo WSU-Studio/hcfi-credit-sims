@@ -123,7 +123,7 @@ const httpUrlSchema = z
 //   .transform((v) => (v == null || v === '' ? null : v));
 
 import { LEAD_SOURCES } from '@/lib/lead-source';
-import { ocrKtpSnapshotSchema } from '@/lib/ocr-ktp-snapshot';
+import { isOcrKtpSnapshotComplete, ocrKtpSnapshotSchema } from '@/lib/ocr-ktp-snapshot';
 
 export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER'] as const;
 
@@ -140,6 +140,10 @@ export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER
  * Lapisan defense tambahan ada di `app/api/leads/route.ts` yang memvalidasi
  * `simulationLeadNo` benar-benar berasal dari sesi `LeadAssetDraft` (artinya
  * user benar-benar memanggil Hyundai AddLeadAsset di Step 4).
+ *
+ * Fast Track (2026-07): scoring fields (KTP/OCR/ibu kandung/kepemilikan rumah)
+ * hanya wajib jika `fastTrack === true`. Tanpa Fast Track, user cukup kirim
+ * nama/telepon/email (+ data simulasi). Admin bisa melengkapi scoring nanti.
  */
 export const leadCreateSchema = z
   .object({
@@ -189,13 +193,26 @@ export const leadCreateSchema = z
     dpPercent: requiredFiniteNumber({ min: 0, max: 100, label: 'DP %' }),
     tenor: requiredFiniteNumber({ min: 1, max: 120, integer: true, label: 'tenor' }),
 
-    ktpUrl: httpUrlSchema,
-    ocrSnapshot: ocrKtpSnapshotSchema,
-    citizenType: z.enum(['LOCAL', 'FOREIGNER'], { message: 'citizenType wajib diisi' }),
-    motherName: requiredSafeText(MAX_NAME, 'nama ibu kandung'),
-    homeOwnershipStatus: z.enum(HOME_OWNERSHIP_VALUES, {
-      message: 'status kepemilikan rumah wajib diisi',
-    }),
+    /** true = user minta Fast Track → scoring fields wajib. */
+    fastTrack: z.boolean().optional().default(false),
+
+    ktpUrl: z
+      .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
+      .transform((v) => (v == null || v === '' ? null : v)),
+    ocrSnapshot: ocrKtpSnapshotSchema.optional().nullable(),
+    citizenType: z
+      .union([z.enum(['LOCAL', 'FOREIGNER']), z.null(), z.undefined()])
+      .optional()
+      .transform((v) => v ?? null),
+    motherName: optionalSafeText(MAX_NAME),
+    homeOwnershipStatus: z
+      .union([
+        z.enum(HOME_OWNERSHIP_VALUES),
+        z.literal(''),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((v) => (v == null || v === '' ? null : v)),
 
     notes: optionalSafeText(MAX_NOTES),
     // Harus literal `true` — bukan sekedar boolean. Tombol di ContactModal
@@ -215,9 +232,74 @@ export const leadCreateSchema = z
     // Honeypot — must be empty for legit submissions.
     [HONEYPOT_FIELD]: z.string().optional(),
   })
+  .superRefine((data, ctx) => {
+    if (!data.fastTrack) return;
+
+    if (!data.ktpUrl) {
+      ctx.addIssue({ code: 'custom', path: ['ktpUrl'], message: 'foto KTP wajib diunggah' });
+    }
+    if (!data.ocrSnapshot || !isOcrKtpSnapshotComplete(data.ocrSnapshot)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ocrSnapshot'],
+        message: 'data OCR KTP wajib dilengkapi',
+      });
+    }
+    if (!data.citizenType) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['citizenType'],
+        message: 'citizenType wajib diisi',
+      });
+    }
+    if (!data.motherName) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['motherName'],
+        message: 'nama ibu kandung wajib diisi',
+      });
+    }
+    if (!data.homeOwnershipStatus) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['homeOwnershipStatus'],
+        message: 'status kepemilikan rumah wajib diisi',
+      });
+    }
+  })
   .strip();
 
 export type LeadCreateInput = z.infer<typeof leadCreateSchema>;
+
+/** Admin melengkapi data credit scoring untuk lead tanpa Fast Track. */
+export const leadCompleteScoringSchema = z
+  .object({
+    name: requiredSafeText(MAX_NAME, 'nama'),
+    phone: phoneSchema,
+    email: emailSchema,
+    ktpUrl: httpUrlSchema,
+    ocrSnapshot: ocrKtpSnapshotSchema,
+    citizenType: z.enum(['LOCAL', 'FOREIGNER'], { message: 'citizenType wajib diisi' }),
+    motherName: requiredSafeText(MAX_NAME, 'nama ibu kandung'),
+    homeOwnershipStatus: z.enum(HOME_OWNERSHIP_VALUES, {
+      message: 'status kepemilikan rumah wajib diisi',
+    }),
+    consentAccepted: z
+      .boolean({ message: 'consent wajib dicentang' })
+      .refine((v) => v === true, { message: 'consent wajib dicentang' }),
+  })
+  .superRefine((data, ctx) => {
+    if (!isOcrKtpSnapshotComplete(data.ocrSnapshot)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ocrSnapshot'],
+        message: 'data OCR KTP wajib dilengkapi',
+      });
+    }
+  })
+  .strip();
+
+export type LeadCompleteScoringInput = z.infer<typeof leadCompleteScoringSchema>;
 
 /** Public Hyundai AddLeadAsset draft (POST /api/simulation/lead-asset). */
 export const leadAssetDraftSchema = z

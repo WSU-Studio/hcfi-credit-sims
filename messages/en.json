@@ -283,6 +283,8 @@
     "citizenTypeForeigner": "Foreigner",
     "creditScoringSectionTitle": "Additional data for credit scoring",
     "creditScoringSectionHint": "All fields below are required to continue your application and credit scoring.",
+    "fastTrackLabel": "Credit Application Fast Track",
+    "fastTrackHint": "Check to fill ID card and credit scoring data now. Without Fast Track, only name, phone, and email are required.",
     "ktpUploadLabel": "Upload ID card (KTP) photo",
     "ktpUploadLabelForeigner": "Upload ID Card / KITAS / Passport",
     "browse": "Browse...",

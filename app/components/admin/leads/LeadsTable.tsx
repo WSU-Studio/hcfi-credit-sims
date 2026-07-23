@@ -17,6 +17,8 @@ type Lead = {
   phone: string;
   email: string;
   ktpUrl?: string | null;
+  motherName?: string | null;
+  homeOwnershipStatus?: string | null;
   productName: string | null;
   productCode?: string | null;
   firstInstallment?: string | null;
@@ -391,6 +393,11 @@ export function LeadsTable() {
                             </button>
                           ) : null}
                           <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                          {!lead.ktpUrl && (
+                            <span className="mt-1 inline-flex rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                              Belum lengkap
+                            </span>
+                          )}
                           {lead.source === LEAD_SOURCES.DEALER_SALES && (
                             <span className="mt-1 inline-flex rounded bg-[#002c5f]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#002c5f]">
                               {LEAD_SOURCE_LABELS.DEALER_SALES}

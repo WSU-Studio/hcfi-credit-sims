@@ -283,6 +283,8 @@
     "citizenTypeForeigner": "Warga Negara Asing (WNA)",
     "creditScoringSectionTitle": "Data tambahan untuk proses credit scoring",
     "creditScoringSectionHint": "Semua field di bawah wajib diisi untuk melanjutkan pengajuan dan proses credit scoring.",
+    "fastTrackLabel": "Fast Track Pengajuan Kredit",
+    "fastTrackHint": "Centang untuk mengisi data KTP dan credit scoring sekarang. Tanpa Fast Track, cukup kirim nama, telepon, dan email.",
     "ktpUploadLabel": "Upload foto KTP",
     "ktpUploadLabelForeigner": "Upload ID Card / KITAS / Passport",
     "browse": "Pilih file...",
