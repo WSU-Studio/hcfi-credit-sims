@@ -433,15 +433,18 @@ export function LeadAssignRow({
             onSaved={handleOcrSaved}
           />
         )}
-        <CompleteLeadScoringModal
-          open={completeScoringOpen}
-          leadId={lead.id}
-          leadName={lead.name ?? ''}
-          leadPhone={lead.phone ?? ''}
-          leadEmail={lead.email ?? ''}
-          onClose={() => setCompleteScoringOpen(false)}
-          onSaved={handleScoringSaved}
-        />
+        {completeScoringOpen ? (
+          <CompleteLeadScoringModal
+            key={lead.id}
+            open={completeScoringOpen}
+            leadId={lead.id}
+            leadName={lead.name ?? ''}
+            leadPhone={lead.phone ?? ''}
+            leadEmail={lead.email ?? ''}
+            onClose={() => setCompleteScoringOpen(false)}
+            onSaved={handleScoringSaved}
+          />
+        ) : null}
       </td>
     </>
   );

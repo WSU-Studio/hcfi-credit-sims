@@ -67,9 +67,9 @@ export function CompleteLeadScoringModal({
   onClose,
   onSaved,
 }: CompleteLeadScoringModalProps) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState(leadName);
+  const [phone, setPhone] = useState(leadPhone);
+  const [email, setEmail] = useState(leadEmail);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [ktpUrl, setKtpUrl] = useState<string | null>(null);
@@ -90,6 +90,7 @@ export function CompleteLeadScoringModal({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync contact fields whenever the modal opens or the lead identity changes.
   useEffect(() => {
     if (!open) return;
     setName(leadName);
@@ -392,7 +393,7 @@ export function CompleteLeadScoringModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-black">
           <div className="grid md:grid-cols-3 sm:grid-cols-2 grid-cols-1 gap-4">
             <div>
               <label htmlFor="complete-name" className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -405,7 +406,7 @@ export function CompleteLeadScoringModal({
                 onChange={(e) => setName(e.target.value)}
                 required
                 disabled={loading || success}
-                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f] outline-none disabled:bg-gray-100 disabled:cursor-not-allowed text-black"
                 placeholder="Masukkan nama lengkap"
               />
             </div>
@@ -422,7 +423,7 @@ export function CompleteLeadScoringModal({
                 onBlur={() => setPhoneTouched(true)}
                 required
                 disabled={loading || success}
-                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed text-black ${
                   phoneErrorText
                     ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]'
@@ -446,7 +447,7 @@ export function CompleteLeadScoringModal({
                 onBlur={() => setEmailTouched(true)}
                 required
                 disabled={loading || success}
-                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                className={`w-full px-4 h-11 border rounded-lg outline-none disabled:bg-gray-100 disabled:cursor-not-allowed text-black ${
                   emailErrorText
                     ? 'border-red-400 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                     : 'border-gray-300 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]'
