@@ -42,6 +42,7 @@ model User {
   articles  Article[]
   dealerPromotions DealerPromotion[]
   salesLeads Lead[] @relation("SalesLeads")
+  preSimulations PreSimulation[] @relation("PreSimulationCreator")
 
   @@index([userType])
   @@index([vendorCode])
@@ -386,6 +387,8 @@ model Lead {
   isPromotion Boolean @default(false) // true jika user pilih tab Promotion
   vehicleSummary String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
   assetSnapshot  Json?   // Kode model/trim/warna untuk Hyundai AddLeadAsset
+  /// Snapshot FinalSummaryInfo (Cust Consent) setelah user pilih tenor di ResultStep.
+  summarySnapshot Json?
   otrPrice    Float?
   discount    Float?   // Potongan harga (nominal)
   partnerCode String?  // Kode partner Hyundai (opsional, dari PriceStep)
@@ -536,4 +539,54 @@ model LeadAssetDraft {
   @@index([status, createdAt])
   @@index([convertedLeadId])
   @@map("lead_asset_drafts")
+}
+
+/// Pre-simulated credit quotation for event/motorshow QR sharing.
+/// Admin fills the full simulation wizard once; visitors open the public slug and see the summary.
+model PreSimulation {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  isPublished Boolean  @default(true)
+
+  vendorCode      String?
+  vendorName      String?
+  vendorCity      String?
+  oriOfficeCode   String?
+  oriOfficeName   String?
+
+  modelCode           String?
+  modelName           String?
+  manufacturingYear   Int?
+  fscCode             String?
+  trimName            String?
+  exteriorColorCode   String?
+  exteriorColorName   String?
+  interiorColorCode   String?
+  interiorColorName   String?
+  vehicleSummary      String?
+  assetSnapshot       Json?
+
+  otrPrice           Float?
+  discount           Float?
+  partnerCode        String?
+  simulationLeadNo   String?
+
+  productCode        String?
+  productName        String?
+  dpPercent          Float?
+  tenor              Int?
+  firstInstallment   String? // ADDM | ADDB
+  isPromotion        Boolean  @default(false)
+
+  /// FinalSummaryInfo snapshot for public display (no live Hyundai call required).
+  summarySnapshot    Json?
+
+  createdById String?
+  createdBy   User?    @relation("PreSimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, createdAt])
+  @@map("pre_simulations")
 }
