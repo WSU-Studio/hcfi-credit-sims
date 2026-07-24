@@ -256,7 +256,7 @@ export function PreSimulationsTable() {
               <button
                 type="button"
                 onClick={() => void copyLink(qrFor.slug)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700 cursor-pointer"
               >
                 Salin Link
               </button>
@@ -264,7 +264,7 @@ export function PreSimulationsTable() {
                 <a
                   href={qrDataUrl}
                   download={`qr-${qrFor.slug}.png`}
-                  className="flex-1 px-3 py-2 bg-[#002c5f] text-white rounded-lg text-sm font-medium text-center hover:bg-[#002c5f]/90"
+                  className="flex-1 px-3 py-2 bg-[#002c5f] text-white rounded-lg text-sm font-medium text-center hover:bg-[#002c5f]/90 text-gray-700 cursor-pointer"
                 >
                   Download QR
                 </a>
@@ -273,7 +273,7 @@ export function PreSimulationsTable() {
             <button
               type="button"
               onClick={() => setQrFor(null)}
-              className="mt-3 w-full text-sm text-gray-500 hover:text-gray-700"
+              className="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
             >
               Tutup
             </button>
