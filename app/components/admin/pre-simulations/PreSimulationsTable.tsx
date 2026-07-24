@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import QRCode from 'qrcode';
-import { IconCopy, IconExternalLink, IconTrash, IconPlus, IconQrcode } from '@tabler/icons-react';
+import { IconExternalLink, IconTrash, IconPlus, IconQrcode, IconLink } from '@tabler/icons-react';
 import { AdminLink } from '@/app/components/admin/AdminLink';
 import { TablePagination } from '@/app/components/admin/TablePagination';
 import { buildPreSimulationPublicPath } from '@/lib/pre-simulation';
+import Link from 'next/link';
 
 type PreSimItem = {
   id: string;
@@ -29,7 +29,6 @@ function absolutePublicUrl(slug: string): string {
 }
 
 export function PreSimulationsTable() {
-  const router = useRouter();
   const [items, setItems] = useState<PreSimItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -108,9 +107,9 @@ export function PreSimulationsTable() {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-3 py-4 border-b border-gray-200 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Pre-Simulasi Event</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Pre-Simulation Event</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Simulasi siap pakai untuk barcode / QR di motorshow &amp; event sales.
+            Simulasi siap pakai untuk barcode / QR.
           </p>
         </div>
         <AdminLink
@@ -118,7 +117,7 @@ export function PreSimulationsTable() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#1956FF] text-white rounded-lg hover:bg-[#1956FF]/90 transition-colors"
         >
           <IconPlus size={20} />
-          Buat Pre-Simulasi
+          Buat Pre-Simulation
         </AdminLink>
       </div>
 
@@ -175,11 +174,11 @@ export function PreSimulationsTable() {
                     </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-nowrap gap-1.5">
                       <button
                         type="button"
                         onClick={() => setQrFor(item)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 cursor-pointer"
                         title="QR Code"
                       >
                         <IconQrcode size={14} />
@@ -188,20 +187,20 @@ export function PreSimulationsTable() {
                       <button
                         type="button"
                         onClick={() => void copyLink(item.slug)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 cursor-pointer"
                         title="Salin link"
                       >
-                        <IconCopy size={14} />
+                        <IconLink size={14} />
                       </button>
-                      <a
+                      <Link
                         href={absolutePublicUrl(item.slug)}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 cursor-pointer"
                         title="Buka halaman publik"
                       >
                         <IconExternalLink size={14} />
-                      </a>
+                      </Link>
                       <button
                         type="button"
                         onClick={() => void handleDelete(item.id)}
