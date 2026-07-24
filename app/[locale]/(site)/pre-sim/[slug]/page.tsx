@@ -1,0 +1,78 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import { Container } from '@/app/components/ui/Container';
+import { PreSimulationSummaryView } from '@/app/components/simulation/PreSimulationSummaryView';
+import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
+import { Link } from '@/i18n/navigation';
+
+export const dynamic = 'force-dynamic';
+
+type PageProps = {
+  params: Promise<{ locale: string; slug: string }>;
+};
+
+function asFinalSummary(raw: unknown): FinalSummaryInfo | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const s = raw as Record<string, unknown>;
+  if (typeof s.productName !== 'string' || typeof s.instAmt !== 'number') return null;
+  return raw as FinalSummaryInfo;
+}
+
+async function getPreSim(slug: string) {
+  return prisma.preSimulation.findFirst({
+    where: { slug, isPublished: true },
+  });
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const item = await getPreSim(slug);
+  if (!item) return { title: 'Pre-Simulasi tidak ditemukan' };
+  return {
+    title: `${item.title} | Hyundai Capital`,
+    description: item.vehicleSummary || item.productName || 'Ringkasan pre-simulasi kredit',
+  };
+}
+
+export default async function PreSimulationPublicPage({ params }: PageProps) {
+  const { slug } = await params;
+  const item = await getPreSim(slug);
+  if (!item) notFound();
+
+  const summary = asFinalSummary(item.summarySnapshot);
+  if (!summary) notFound();
+
+  const vendorLabel = [item.vendorCity, item.vendorName].filter(Boolean).join(' · ');
+
+  return (
+    <div className="min-h-screen py-10 text-gray-900">
+      <Container>
+        <div className="mx-auto w-full max-w-3xl space-y-6">
+          <PreSimulationSummaryView
+            title={item.title}
+            vehicleSummary={item.vehicleSummary}
+            vendorLabel={vendorLabel || null}
+            discount={item.discount}
+            firstInstallment={item.firstInstallment}
+            summary={summary}
+          />
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link
+              href="/credit-simulation"
+              className="inline-flex items-center justify-center px-5 h-11 rounded-lg bg-[#002c5f] text-white text-sm font-semibold hover:bg-[#002c5f]/90 transition"
+            >
+              Buat simulasi sendiri
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center px-5 h-11 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              Beranda
+            </Link>
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}

@@ -21,7 +21,7 @@ import {
   type SimulationWizardLabels,
 } from '@/lib/simulation-wizard-labels';
 
-export type SimulationMode = 'public' | 'dealer-sales';
+export type SimulationMode = 'public' | 'dealer-sales' | 'pre-simulation';
 
 type StepKey = 'dealer' | 'model' | 'spec' | 'price' | 'result';
 
@@ -48,6 +48,33 @@ export type SimulationWizardProps = {
   initialDealer?: Vendor | null;
   leadSource?: LeadSource;
   embedded?: boolean;
+  /** Admin pre-simulasi — dipanggil setelah user pilih produk + ringkasan siap. */
+  onCapturePreSimulation?: (data: {
+    productCode: string;
+    productName: string;
+    dpPercent: number;
+    tenor: number;
+    firstInstallment: 'ADDM' | 'ADDB';
+    isPromotion: boolean;
+    summary: import('@/app/types/credit-simulation').FinalSummaryInfo;
+    dealer: Vendor;
+    asset: AssetMaster;
+    specs: {
+      manufacturingYear?: number;
+      fscCode?: string;
+      trimName?: string;
+      variantPrice?: number;
+      exteriorColorCode?: string;
+      exteriorColorName?: string;
+      interiorColorCode?: string;
+      interiorColorName?: string;
+    };
+    otrPrice: number;
+    discount: number;
+    partnerCode: string | null;
+    leadNo: string;
+    assetSnapshot: LeadAssetSnapshot | null;
+  }) => void | Promise<void>;
 };
 
 export function SimulationWizard({
@@ -56,10 +83,12 @@ export function SimulationWizard({
   initialDealer = null,
   leadSource = LEAD_SOURCES.WEBSITE,
   embedded = false,
+  onCapturePreSimulation,
 }: SimulationWizardProps) {
   const t = useTranslations('creditSimulation');
-  const steps = mode === 'dealer-sales' ? DEALER_STEPS : PUBLIC_STEPS;
   const isDealerSales = mode === 'dealer-sales';
+  const isPreSimulation = mode === 'pre-simulation';
+  const steps = isDealerSales ? DEALER_STEPS : PUBLIC_STEPS;
 
   const [currentStepKey, setCurrentStepKey] = useState<StepKey>(
     isDealerSales ? 'model' : 'dealer'
@@ -493,6 +522,27 @@ export function SimulationWizard({
                   userLocation={userLocation}
                   leadSource={leadSource}
                   onRestart={handleRestart}
+                  variant={isPreSimulation ? 'pre-simulation' : 'default'}
+                  onCapturePreSimulation={
+                    isPreSimulation && onCapturePreSimulation
+                      ? async (capture) => {
+                          if (!selectedDealer || !selectedAsset || otrPrice == null || !leadNo) {
+                            return;
+                          }
+                          await onCapturePreSimulation({
+                            ...capture,
+                            dealer: selectedDealer,
+                            asset: selectedAsset,
+                            specs,
+                            otrPrice,
+                            discount,
+                            partnerCode,
+                            leadNo,
+                            assetSnapshot: leadAssetSnapshot,
+                          });
+                        }
+                      : undefined
+                  }
                   vehicle={
                     specs.trimName || specs.exteriorColorName || specs.interiorColorName
                       ? {
