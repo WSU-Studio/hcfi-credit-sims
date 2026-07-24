@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { NextIntlClientProvider } from 'next-intl';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import {
   emptyOcrKtpSnapshot,
@@ -14,6 +16,7 @@ import {
   type CreditScoringLabels,
 } from '@/app/components/simulation/CreditScoringFields';
 import { KtpOcrReviewForm } from '@/app/components/simulation/KtpOcrReviewForm';
+import idMessages from '@/messages/id.json';
 
 const LABELS: CreditScoringLabels = {
   sectionTitle: 'Data tambahan untuk proses credit scoring',
@@ -270,6 +273,7 @@ export function CompleteLeadScoringModal({
   const handleKtpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const input = e.target;
     setKtpError(null);
     setOcrError(null);
     setKtpUploading(true);
@@ -291,7 +295,12 @@ export function CompleteLeadScoringModal({
       setKtpError(err instanceof Error ? err.message : 'Upload gagal');
     } finally {
       setKtpUploading(false);
-      e.target.value = '';
+      // Reset after async — input may have been remounted; guard against stale ref.
+      try {
+        input.value = '';
+      } catch {
+        /* ignore */
+      }
     }
   };
 
@@ -364,7 +373,7 @@ export function CompleteLeadScoringModal({
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-50 flex sm:items-center justify-center p-4 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50" aria-hidden onClick={onClose} />
       <div
@@ -560,12 +569,14 @@ export function CompleteLeadScoringModal({
               </button>
             </div>
             <div className="max-h-[75vh] overflow-y-auto p-4">
-              <KtpOcrReviewForm
-                value={ocrDraft}
-                onChange={setOcrDraft}
-                disabled={loading || success}
-                showErrors={ocrDraftShowErrors}
-              />
+              <NextIntlClientProvider locale="id" messages={idMessages}>
+                <KtpOcrReviewForm
+                  value={ocrDraft}
+                  onChange={setOcrDraft}
+                  disabled={loading || success}
+                  showErrors={ocrDraftShowErrors}
+                />
+              </NextIntlClientProvider>
               {ocrDraftShowErrors && !isOcrKtpSnapshotComplete(ocrDraft) && (
                 <p className="mt-3 text-xs text-red-600">
                   Perbaiki data yang belum valid sebelum menyimpan.
@@ -597,4 +608,7 @@ export function CompleteLeadScoringModal({
       )}
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(modal, document.body);
 }
