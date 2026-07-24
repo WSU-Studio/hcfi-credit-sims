@@ -39,6 +39,10 @@ const ACTIVITIES: Activity[] = [
     id: 'leads.editOcrSnapshot',
     name: 'Boleh mengedit data identitas KTP (OCR snapshot) sebelum submit',
   },
+  {
+    id: 'leads.purgeAll',
+    name: 'Boleh menghapus SEMUA leads (Danger Zone — hanya untuk reset data uji)',
+  },
 ];
 
 type RoleFormProps = {

@@ -29,6 +29,7 @@ export const AUDIT_ACTIONS = {
   // Leads
   LEAD_STATUS_CHANGE: 'lead.statusChange',
   LEAD_DELETE: 'lead.delete',
+  LEAD_PURGE_ALL: 'lead.purgeAll',
   LEAD_SUBMIT_HYUNDAI: 'lead.submitHyundai',
   LEAD_OCR_SNAPSHOT_UPDATE: 'lead.ocrSnapshotUpdate',
   LEAD_COMPLETE_SCORING: 'lead.completeScoring',

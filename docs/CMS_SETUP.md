@@ -34,6 +34,11 @@ AWS_SECRET_ACCESS_KEY="your-secret-key"
 # KTP upload simulasi — `local` = simpan di `.data/` (tanpa AWS, aman untuk dev)
 # `s3` = production/staging (default jika tidak di-set)
 KTP_STORAGE=local
+
+# Danger Zone — bulk purge semua leads (Settings). Matikan setelah soft launch selesai.
+# ALLOW_LEADS_PURGE harus "true"; phrase dicek server-side (jangan pakai NEXT_PUBLIC_*).
+ALLOW_LEADS_PURGE=false
+LEADS_PURGE_CONFIRM_PHRASE="HAPUS-SEMUA-LEADS"
 ```
 
 ### 2. Database Setup

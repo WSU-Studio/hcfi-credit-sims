@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { IconDeviceFloppy } from '@tabler/icons-react';
+import { LeadsPurgeDangerZone } from '@/app/components/admin/settings/LeadsPurgeDangerZone';
 
 type SiteSettingsData = {
   gtmId: string;
@@ -512,6 +513,8 @@ export function SiteSettings() {
           {saving ? 'Menyimpan...' : 'Simpan pengaturan'}
         </button>
       </div>
+
+      <LeadsPurgeDangerZone />
     </div>
   );
 }
