@@ -64,6 +64,20 @@ interface ResultStepProps {
   onSelectProduct?: (product: ProductCalculation) => void;
   /** Setelah lead tersubmit — reset wizard ke step awal. */
   onRestart?: () => void;
+  /**
+   * Admin pre-simulasi: sembunyikan tombol kontak/WA, tampilkan tombol simpan
+   * setelah produk + tenor dipilih.
+   */
+  variant?: 'default' | 'pre-simulation';
+  onCapturePreSimulation?: (data: {
+    productCode: string;
+    productName: string;
+    dpPercent: number;
+    tenor: number;
+    firstInstallment: FirstInstallmentType;
+    isPromotion: boolean;
+    summary: FinalSummaryInfo;
+  }) => void | Promise<void>;
 }
 
 export function ResultStep({
@@ -78,9 +92,12 @@ export function ResultStep({
   leadSource = LEAD_SOURCES.WEBSITE,
   onSelectProduct,
   onRestart,
+  variant = 'default',
+  onCapturePreSimulation,
 }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
   const isDealerSales = leadSource === LEAD_SOURCES.DEALER_SALES;
+  const isPreSimulation = variant === 'pre-simulation';
   const [tab, setTab] = useState<TabKind>('Standard');
   const [listStandard, setListStandard] = useState<ProductCalculation[]>([]);
   const [listPromo, setListPromo] = useState<ProductCalculation[]>([]);
@@ -88,6 +105,7 @@ export function ResultStep({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [savingPreSim, setSavingPreSim] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState<ProductCalculation | null>(null);
   const [dpPercent, setDpPercent] = useState<number>(10);
@@ -296,6 +314,54 @@ export function ResultStep({
   const openSummary = () => {
     setSummaryOpen(true);
     void fetchFinalSummary();
+  };
+
+  const handleSavePreSimulation = async () => {
+    if (!onCapturePreSimulation || !selectedProduct || !highlightedRow || !otrPrice) return;
+    setSavingPreSim(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/simulation/final-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadNo,
+          LeadNo: leadNo,
+          otrPrice,
+          dpPercent,
+          tenor: highlightedRow.Tenor,
+          productCode: selectedProduct.ProductCode,
+          productName: selectedProduct.ProductName,
+          firstInstallment,
+          isPromotion,
+          partnerCode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.summary) {
+        throw new Error(data.error || data.message || t('summaryErrorFinal'));
+      }
+      const summary = data.summary as FinalSummaryInfo;
+      const rowBalloon = Number(highlightedRow.BalloonAmt) || 0;
+      const summaryBalloon = Number(summary.balloonAmt) || 0;
+      await onCapturePreSimulation({
+        productCode: selectedProduct.ProductCode,
+        productName: selectedProduct.ProductName,
+        dpPercent,
+        tenor: highlightedRow.Tenor,
+        firstInstallment,
+        isPromotion,
+        summary: {
+          ...summary,
+          balloonAmt: summaryBalloon > 0 ? summaryBalloon : rowBalloon > 0 ? rowBalloon : 0,
+          firstInstallment,
+        },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('summaryErrorFinal'));
+    } finally {
+      setSavingPreSim(false);
+    }
   };
 
   // Invalidate cached final summary saat pilihan simulasi berubah.
@@ -792,57 +858,97 @@ export function ResultStep({
                 )}
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                {!isDealerSales && (
-                  <Link
-                    href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
-                      t('whatsappMessageTemplate', {
-                        productName: selectedProduct.ProductName,
-                        dpPercent,
-                        tenor: highlightedRow.Tenor,
-                        installment: formatCurrency(highlightedRow.InstallmentAmt),
-                      })
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-600/90 transition cursor-pointer transition-colors duration-300"
-                  >
-                    <IconBrandWhatsapp size={20} className="text-gray-100" />
-                    <span className="text-gray-100">{t('whatsapp')}</span>
-                  </Link>
+                {isPreSimulation ? (
+                  <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void handleSavePreSimulation()}
+                      disabled={savingPreSim || finalSummaryLoading}
+                      className="flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <IconSend size={20} />
+                      {savingPreSim ? 'Menyimpan ringkasan…' : 'Simpan Pre-Simulasi'}
+                    </button>
+                    <p className="text-xs text-gray-700 leading-snug">
+                      Simpan hasil simulasi ini sebagai link + QR untuk event / motorshow.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {!isDealerSales && (
+                      <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                        <Link
+                          href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
+                            t('whatsappMessageTemplate', {
+                              productName: selectedProduct.ProductName,
+                              dpPercent,
+                              tenor: highlightedRow.Tenor,
+                              installment: formatCurrency(highlightedRow.InstallmentAmt),
+                            })
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-600/90 transition cursor-pointer transition-colors duration-300"
+                        >
+                          <IconBrandWhatsapp size={20} className="text-gray-100" />
+                          <span className="text-gray-100">{t('whatsapp')}</span>
+                        </Link>
+                        <p className="text-xs text-gray-700 leading-snug">
+                          {t('whatsappHint')}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (leadSubmitted) {
+                            onRestart?.();
+                            return;
+                          }
+                          setContactOpen(true);
+                        }}
+                        disabled={leadSubmitted && !onRestart}
+                        className={`flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
+                          leadSubmitted
+                            ? 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                            : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
+                        }`}
+                      >
+                        {leadSubmitted ? <IconRefresh size={20} /> : <IconSend size={20} />}
+                        {leadSubmitted
+                          ? isDealerSales
+                            ? t('dealerStartOver')
+                            : t('startOverSimulation')
+                          : isDealerSales
+                            ? t('dealerSubmitLead')
+                            : t('contact')}
+                      </button>
+                      <p className="text-xs text-gray-700 leading-snug">
+                        {leadSubmitted
+                          ? isDealerSales
+                            ? t('dealerStartOverHint')
+                            : t('startOverSimulationHint')
+                          : isDealerSales
+                            ? t('dealerSubmitLeadHint')
+                            : t('contactHint')}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={openSummary}
+                        className="flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
+                      >
+                        <IconFileDescription size={20} />
+                        {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
+                      </button>
+                      <p className="text-xs text-gray-700 leading-snug">
+                        {isDealerSales ? t('dealerViewSummaryHint') : t('viewSummaryHint')}
+                      </p>
+                    </div>
+                  </>
                 )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (leadSubmitted) {
-                      onRestart?.();
-                      return;
-                    }
-                    setContactOpen(true);
-                  }}
-                  disabled={leadSubmitted && !onRestart}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
-                    leadSubmitted
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
-                      : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
-                  }`}
-                >
-                  {leadSubmitted ? <IconRefresh size={20} /> : <IconSend size={20} />}
-                  {leadSubmitted
-                    ? isDealerSales
-                      ? t('dealerStartOver')
-                      : t('startOverSimulation')
-                    : isDealerSales
-                      ? t('dealerSubmitLead')
-                      : t('contact')}
-                </button>
-                <button
-                  type="button"
-                  onClick={openSummary}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
-                >
-                  <IconFileDescription size={20} />
-                  {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
-                </button>
               </div>
               {leadSubmitted && (
                 <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
@@ -875,18 +981,19 @@ export function ResultStep({
                 errorId={finalSummaryErrorId}
                 onRetry={fetchFinalSummary}
               />
-              <ContactModal
-                open={contactOpen}
-                onClose={() => setContactOpen(false)}
-                leadNo={leadNo}
-                dealer={dealer}
-                userLocation={userLocation}
-                leadSource={leadSource}
-                productName={
-                  highlightedRow
-                    ? `${selectedProduct?.ProductName} - ${t('tenorWithMonths', { tenor: highlightedRow.Tenor })}`
-                    : selectedProduct?.ProductName
-                }
+              {!isPreSimulation && (
+                <ContactModal
+                  open={contactOpen}
+                  onClose={() => setContactOpen(false)}
+                  leadNo={leadNo}
+                  dealer={dealer}
+                  userLocation={userLocation}
+                  leadSource={leadSource}
+                  productName={
+                    highlightedRow
+                      ? `${selectedProduct?.ProductName} - ${t('tenorWithMonths', { tenor: highlightedRow.Tenor })}`
+                      : selectedProduct?.ProductName
+                  }
                 productCode={selectedProduct?.ProductCode}
                 firstInstallment={firstInstallment}
                 isPromotion={isPromotion}
@@ -906,6 +1013,7 @@ export function ResultStep({
                   setLeadSubmitted(true);
                 }}
               />
+              )}
             </div>
           )}
         </div>

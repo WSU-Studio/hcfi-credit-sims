@@ -139,7 +139,7 @@ export function PriceStep({
           )}
         </div>
 
-        {/* <div>
+        <div>
           <label htmlFor="discount" className="block text-sm font-medium mb-2">
             {t('discountLabel')}{' '}
             {!discountLocked && showManualInput && (
@@ -176,7 +176,7 @@ export function PriceStep({
               }`}
             />
           )}
-        </div> */}
+        </div>
 
         <div>
           <label htmlFor="partnerCode" className="block text-sm font-medium mb-2">

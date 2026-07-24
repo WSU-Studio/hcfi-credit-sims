@@ -7,7 +7,9 @@ import {
   resolveCmoAssignFields,
   type CmoSelectOption,
 } from '@/lib/hyundai-cmo-assign';
+import { isLeadScoringComplete } from '@/lib/lead-scoring-complete';
 import { EditLeadOcrSnapshotModal } from '@/app/components/admin/leads/EditLeadOcrSnapshotModal';
+import { CompleteLeadScoringModal } from '@/app/components/admin/leads/CompleteLeadScoringModal';
 import { BlockingProcessOverlay } from '@/app/components/ui/BlockingProcessOverlay';
 
 type LeadAssignState = {
@@ -20,6 +22,8 @@ type LeadAssignState = {
 export type LeadForAssign = {
   id: string;
   name?: string | null;
+  phone?: string | null;
+  email?: string | null;
   vendorCode?: string | null;
   vendorName?: string | null;
   vendorCity?: string | null;
@@ -29,6 +33,9 @@ export type LeadForAssign = {
   hyundaiAssignStatus?: string | null;
   hyundaiAssignError?: string | null;
   ocrSnapshot?: unknown;
+  ktpUrl?: string | null;
+  motherName?: string | null;
+  homeOwnershipStatus?: string | null;
 };
 
 interface LeadAssignRowProps {
@@ -57,6 +64,7 @@ export function LeadAssignRow({
 }: LeadAssignRowProps) {
   const isSubmitted = lead.hyundaiAssignStatus === 'SUBMITTED' && !!lead.hyundaiLeadNo;
   const isSubmittingOnServer = lead.hyundaiAssignStatus === 'SUBMITTING';
+  const scoringComplete = isLeadScoringComplete(lead);
 
   const [selection, setSelection] = useState<LeadAssignState>({
     vendorCode: lead.vendorCode ?? '',
@@ -70,6 +78,8 @@ export function LeadAssignRow({
   const [error, setError] = useState<string | null>(lead.hyundaiAssignError ?? null);
   const [ocrEditOpen, setOcrEditOpen] = useState(false);
   const [ocrSavedHint, setOcrSavedHint] = useState(false);
+  const [completeScoringOpen, setCompleteScoringOpen] = useState(false);
+  const [scoringSavedHint, setScoringSavedHint] = useState(false);
 
   useEffect(() => {
     setError(lead.hyundaiAssignError ?? null);
@@ -175,6 +185,10 @@ export function LeadAssignRow({
   */
 
   const handleSubmit = async () => {
+    if (!scoringComplete) {
+      setError('Lengkapi data credit scoring terlebih dahulu.');
+      return;
+    }
     const { cmoCode } = parseCmoSelectKey(selection.cmoSelectKey);
     if (!selection.vendorCode || !cmoCode) {
       setError('Pilih dealer dan CMO terlebih dahulu');
@@ -206,6 +220,12 @@ export function LeadAssignRow({
   const handleOcrSaved = () => {
     setError(null);
     setOcrSavedHint(true);
+    onSubmitted();
+  };
+
+  const handleScoringSaved = () => {
+    setError(null);
+    setScoringSavedHint(true);
     onSubmitted();
   };
 
@@ -328,7 +348,13 @@ export function LeadAssignRow({
               cmoOfficeCode: sp?.officeMemberCode ?? '',
             });
           }}
-          disabled={!canSubmit || submitting || !selection.vendorCode || cmoLoading}
+          disabled={
+            !canSubmit ||
+            submitting ||
+            !selection.vendorCode ||
+            cmoLoading ||
+            !scoringComplete
+          }
           className={selectClass}
           aria-label="Pilih CMO"
         >
@@ -341,20 +367,39 @@ export function LeadAssignRow({
         </select>
       </td>
       <td className="px-3 py-2 align-top max-w-[10rem]">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={
-            !canSubmit ||
-            submitting ||
-            !selection.vendorCode ||
-            !selection.cmoSelectKey
-          }
-          className="w-full min-w-[5rem] px-2 py-1.5 bg-[#002c5f] text-white rounded-lg text-xs font-semibold hover:bg-[#002c5f]/90 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
-        >
-          {submitting ? '...' : 'SUBMIT'}
-        </button>
-        {canEditOcrSnapshot && (
+        {!scoringComplete ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setScoringSavedHint(false);
+                setCompleteScoringOpen(true);
+              }}
+              disabled={submitting}
+              className="w-full min-w-[5rem] px-2 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+            >
+              Lengkapi Data
+            </button>
+            <p className="text-[10px] text-amber-700 mt-1 leading-tight">
+              Lead belum lengkap (tanpa Fast Track).
+            </p>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={
+              !canSubmit ||
+              submitting ||
+              !selection.vendorCode ||
+              !selection.cmoSelectKey
+            }
+            className="w-full min-w-[5rem] px-2 py-1.5 bg-[#002c5f] text-white rounded-lg text-xs font-semibold hover:bg-[#002c5f]/90 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            {submitting ? '...' : 'SUBMIT'}
+          </button>
+        )}
+        {scoringComplete && canEditOcrSnapshot && (
           <button
             type="button"
             onClick={() => {
@@ -366,6 +411,11 @@ export function LeadAssignRow({
           >
             Edit Identitas
           </button>
+        )}
+        {scoringSavedHint && !error && (
+          <p className="text-[10px] text-green-700 mt-1 leading-tight">
+            Data credit scoring tersimpan. Silakan pilih CMO lalu SUBMIT.
+          </p>
         )}
         {ocrSavedHint && !error && (
           <p className="text-[10px] text-green-700 mt-1 leading-tight">
@@ -383,6 +433,18 @@ export function LeadAssignRow({
             onSaved={handleOcrSaved}
           />
         )}
+        {completeScoringOpen ? (
+          <CompleteLeadScoringModal
+            key={lead.id}
+            open={completeScoringOpen}
+            leadId={lead.id}
+            leadName={lead.name ?? ''}
+            leadPhone={lead.phone ?? ''}
+            leadEmail={lead.email ?? ''}
+            onClose={() => setCompleteScoringOpen(false)}
+            onSaved={handleScoringSaved}
+          />
+        ) : null}
       </td>
     </>
   );

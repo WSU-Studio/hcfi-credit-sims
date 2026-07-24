@@ -178,11 +178,14 @@ export async function POST(request: NextRequest) {
       partnerCode: draft.partnerCode ?? null,
       dpPercent: data.dpPercent,
       tenor: data.tenor != null ? Math.trunc(data.tenor) : null,
-      ktpUrl: data.ktpUrl,
-      ocrSnapshot: data.ocrSnapshot as object,
-      citizenType: data.citizenType,
-      motherName: data.motherName,
-      homeOwnershipStatus: data.homeOwnershipStatus,
+      ktpUrl: data.ktpUrl ?? null,
+      ocrSnapshot:
+        data.ocrSnapshot && typeof data.ocrSnapshot === 'object'
+          ? (data.ocrSnapshot as object)
+          : null,
+      citizenType: data.citizenType ?? null,
+      motherName: data.motherName ?? null,
+      homeOwnershipStatus: data.homeOwnershipStatus ?? null,
       consentAccepted: Boolean(data.consentAccepted),
       simulationLeadNo: data.simulationLeadNo,
       status: 'NEW',

@@ -31,6 +31,7 @@ export const AUDIT_ACTIONS = {
   LEAD_DELETE: 'lead.delete',
   LEAD_SUBMIT_HYUNDAI: 'lead.submitHyundai',
   LEAD_OCR_SNAPSHOT_UPDATE: 'lead.ocrSnapshotUpdate',
+  LEAD_COMPLETE_SCORING: 'lead.completeScoring',
   LEAD_RUN_SLIK: 'lead.runSlik',
   LEAD_DOWNLOAD_PDF: 'lead.downloadPdf',
 
