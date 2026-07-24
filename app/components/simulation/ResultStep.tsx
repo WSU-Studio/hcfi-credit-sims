@@ -810,7 +810,7 @@ export function ResultStep({
                       <IconBrandWhatsapp size={20} className="text-gray-100" />
                       <span className="text-gray-100">{t('whatsapp')}</span>
                     </Link>
-                    <p className="text-xs text-gray-500 text-center leading-snug">
+                    <p className="text-xs text-gray-700 leading-snug">
                       {t('whatsappHint')}
                     </p>
                   </div>
@@ -841,7 +841,7 @@ export function ResultStep({
                         ? t('dealerSubmitLead')
                         : t('contact')}
                   </button>
-                  <p className="text-xs text-gray-500 text-center leading-snug">
+                  <p className="text-xs text-gray-700 leading-snug">
                     {leadSubmitted
                       ? isDealerSales
                         ? t('dealerStartOverHint')
@@ -860,7 +860,7 @@ export function ResultStep({
                     <IconFileDescription size={20} />
                     {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
                   </button>
-                  <p className="text-xs text-gray-500 text-center leading-snug">
+                  <p className="text-xs text-gray-700 leading-snug">
                     {isDealerSales ? t('dealerViewSummaryHint') : t('viewSummaryHint')}
                   </p>
                 </div>
