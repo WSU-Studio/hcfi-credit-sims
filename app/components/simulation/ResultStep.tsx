@@ -793,56 +793,77 @@ export function ResultStep({
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
                 {!isDealerSales && (
-                  <Link
-                    href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
-                      t('whatsappMessageTemplate', {
-                        productName: selectedProduct.ProductName,
-                        dpPercent,
-                        tenor: highlightedRow.Tenor,
-                        installment: formatCurrency(highlightedRow.InstallmentAmt),
-                      })
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-600/90 transition cursor-pointer transition-colors duration-300"
-                  >
-                    <IconBrandWhatsapp size={20} className="text-gray-100" />
-                    <span className="text-gray-100">{t('whatsapp')}</span>
-                  </Link>
+                  <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                    <Link
+                      href={`https://wa.me/${whatsappLeadPhone || '628111500708'}?text=${encodeURIComponent(
+                        t('whatsappMessageTemplate', {
+                          productName: selectedProduct.ProductName,
+                          dpPercent,
+                          tenor: highlightedRow.Tenor,
+                          installment: formatCurrency(highlightedRow.InstallmentAmt),
+                        })
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-2 h-11 bg-green-600 rounded-lg font-semibold hover:bg-green-600/90 transition cursor-pointer transition-colors duration-300"
+                    >
+                      <IconBrandWhatsapp size={20} className="text-gray-100" />
+                      <span className="text-gray-100">{t('whatsapp')}</span>
+                    </Link>
+                    <p className="text-xs text-gray-500 text-center leading-snug">
+                      {t('whatsappHint')}
+                    </p>
+                  </div>
                 )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (leadSubmitted) {
-                      onRestart?.();
-                      return;
-                    }
-                    setContactOpen(true);
-                  }}
-                  disabled={leadSubmitted && !onRestart}
-                  className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
-                    leadSubmitted
-                      ? 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
-                      : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
-                  }`}
-                >
-                  {leadSubmitted ? <IconRefresh size={20} /> : <IconSend size={20} />}
-                  {leadSubmitted
-                    ? isDealerSales
-                      ? t('dealerStartOver')
-                      : t('startOverSimulation')
-                    : isDealerSales
-                      ? t('dealerSubmitLead')
-                      : t('contact')}
-                </button>
-                <button
-                  type="button"
-                  onClick={openSummary}
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
-                >
-                  <IconFileDescription size={20} />
-                  {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
-                </button>
+                <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (leadSubmitted) {
+                        onRestart?.();
+                        return;
+                      }
+                      setContactOpen(true);
+                    }}
+                    disabled={leadSubmitted && !onRestart}
+                    className={`flex items-center justify-center gap-2 h-11 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300 ${
+                      leadSubmitted
+                        ? 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed'
+                        : 'bg-[#002c5f] text-white hover:bg-[#002c5f]/90'
+                    }`}
+                  >
+                    {leadSubmitted ? <IconRefresh size={20} /> : <IconSend size={20} />}
+                    {leadSubmitted
+                      ? isDealerSales
+                        ? t('dealerStartOver')
+                        : t('startOverSimulation')
+                      : isDealerSales
+                        ? t('dealerSubmitLead')
+                        : t('contact')}
+                  </button>
+                  <p className="text-xs text-gray-500 text-center leading-snug">
+                    {leadSubmitted
+                      ? isDealerSales
+                        ? t('dealerStartOverHint')
+                        : t('startOverSimulationHint')
+                      : isDealerSales
+                        ? t('dealerSubmitLeadHint')
+                        : t('contactHint')}
+                  </p>
+                </div>
+                <div className="flex-1 min-w-[140px] flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={openSummary}
+                    className="flex items-center justify-center gap-2 h-11 bg-[#002c5f] text-white hover:bg-[#002c5f]/90 rounded-lg font-semibold transition cursor-pointer transition-colors duration-300"
+                  >
+                    <IconFileDescription size={20} />
+                    {isDealerSales ? t('dealerViewSummary') : t('viewSummary')}
+                  </button>
+                  <p className="text-xs text-gray-500 text-center leading-snug">
+                    {isDealerSales ? t('dealerViewSummaryHint') : t('viewSummaryHint')}
+                  </p>
+                </div>
               </div>
               {leadSubmitted && (
                 <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 space-y-2">
