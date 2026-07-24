@@ -232,7 +232,7 @@
     "dealerSubmitLead": "Submit Lead",
     "dealerStartOver": "Buat Quotation Baru",
     "startOverSimulation": "Mulai Simulasi Baru",
-    "leadSubmittedHint": "Lead berhasil dikirim. Simpan Nomor Lead (LeadNo) di bawah untuk tracking progress simulasi kredit Anda. Gunakan tombol di bawah untuk mulai dari awal.",
+    "leadSubmittedHint": "Lead berhasil dikirim. Simpan Nomor Lead (LeadNo) di bawah untuk tracking progress simulasi kredit Anda. Gunakan tombol di atas untuk mulai dari awal.",
     "leadSubmittedLeadNoLabel": "Nomor Lead (LeadNo)",
     "leadSubmittedLeadNoHint": "Simpan nomor ini. Anda membutuhkannya untuk cek status di halaman Tracking.",
     "dealerViewSummary": "Lihat Ringkasan",
