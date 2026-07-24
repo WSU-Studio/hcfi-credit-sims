@@ -124,6 +124,9 @@ export function SimulationWizard({
   }, [isDealerSales, initialDealer]);
 
   useEffect(() => {
+    // Lokasi hanya dipakai saat submit lead pengunjung (ContactModal).
+    // Admin pre-simulasi & dealer sales tidak perlu permission geolocation.
+    if (isPreSimulation || isDealerSales) return;
     if (typeof window === 'undefined' || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -135,7 +138,7 @@ export function SimulationWizard({
       () => {},
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
-  }, []);
+  }, [isPreSimulation, isDealerSales]);
 
   useEffect(() => {
     if (!dealerSelectNotice) return;
