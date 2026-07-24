@@ -1,4 +1,4 @@
-name: Build & Deploy to Self-Hosted Runner TQA
+name: Build & Deploy to Self-Hosted TQA Runner
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
           echo "CSP_ENFORCE=${{ secrets.CSP_ENFORCE }}" >> .env
    
       - name: Build application
-        run: npm run build
+        run: nice -n 19 ionice -c 3 npm run build
 
       - name: Apply Database Migrations & Prisma Seed
         run: |
@@ -56,4 +56,5 @@ jobs:
         run: |
           pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
           pm2 save
+
           
