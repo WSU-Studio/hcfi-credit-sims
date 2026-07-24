@@ -19,6 +19,7 @@ import {
   IconClipboardHeart,
   IconCar,
   IconScan,
+  IconQrcode,
 } from '@tabler/icons-react';
 import { useAdminNavigation } from '@/app/(back-office)/AdminNavigationContext';
 import { AdminLink } from '@/app/components/admin/AdminLink';
@@ -37,6 +38,7 @@ const menuIcons: Record<string, ComponentType<{ size?: number }>> = {
   PAGES: IconFileText,
   LEADS: IconPhone,
   LEAD_OCR: IconScan,
+  PRE_SIMULATIONS: IconQrcode,
   FOOTER: IconSettings,
   VEHICLE_MODELS: IconCar,
   MEDIA: IconFolder,
