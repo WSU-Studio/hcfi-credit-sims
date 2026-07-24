@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { Container } from '@/app/components/ui/Container';
 import { PreSimulationSummaryView } from '@/app/components/simulation/PreSimulationSummaryView';
@@ -27,16 +28,18 @@ async function getPreSim(slug: string) {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+  const t = await getTranslations('preSimulation');
   const item = await getPreSim(slug);
-  if (!item) return { title: 'Pre-Simulasi tidak ditemukan' };
+  if (!item) return { title: t('notFoundTitle') };
   return {
     title: `${item.title} | Hyundai Capital`,
-    description: item.vehicleSummary || item.productName || 'Ringkasan pre-simulasi kredit',
+    description: item.vehicleSummary || item.productName || t('metaFallbackDescription'),
   };
 }
 
 export default async function PreSimulationPublicPage({ params }: PageProps) {
   const { slug } = await params;
+  const t = await getTranslations('preSimulation');
   const item = await getPreSim(slug);
   if (!item) notFound();
 
@@ -62,13 +65,13 @@ export default async function PreSimulationPublicPage({ params }: PageProps) {
               href="/credit-simulation"
               className="inline-flex items-center justify-center px-5 h-11 rounded-lg bg-[#002c5f] text-white text-sm font-semibold hover:bg-[#002c5f]/90 transition"
             >
-              Buat simulasi sendiri
+              {t('createOwnSimulation')}
             </Link>
             <Link
               href="/"
               className="inline-flex items-center justify-center px-5 h-11 rounded-lg border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
             >
-              Beranda
+              {t('toHome')}
             </Link>
           </div>
         </div>

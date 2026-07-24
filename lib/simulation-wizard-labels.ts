@@ -37,7 +37,7 @@ export const DEALER_QUOTATION_LABELS: SimulationWizardLabels = {
 };
 
 export const PRE_SIMULATION_LABELS: SimulationWizardLabels = {
-  title: 'Pre-Simulasi Event',
+  title: 'Pre-Simulation Event',
   subtitle:
     'Siapkan simulasi kredit untuk event/motorshow — hasilnya bisa dibagikan sebagai link & QR code',
   stepDealer: 'Dealer',
