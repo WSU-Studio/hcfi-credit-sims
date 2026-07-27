@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Vendor } from '@/app/types/credit-simulation';
+import {
+  fetchSimulationJson,
+  isAbortError,
+} from '@/lib/simulation-client-fetch';
 
 interface DealerStepProps {
   onContinue: (dealer: Vendor) => void;
@@ -22,7 +26,41 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
   const [localDealer, setLocalDealer] = useState<Vendor | null>(selectedDealer ?? null);
 
   useEffect(() => {
-    fetchVendors();
+    const controller = new AbortController();
+    let active = true;
+
+    async function loadVendors() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchSimulationJson<{ ReturnObject?: Vendor[] }>({
+          url: '/api/simulation/vendors',
+          body: {
+            // Asset: dealer harus punya stok unit untuk simulasi.
+            // CMO: false agar semua kota/dealer tampil (CMO dipilih saat admin assign lead).
+            hasAvailableAssetOnly: true,
+            hasCmoAssignedOnly: false,
+          },
+          signal: controller.signal,
+        });
+
+        if (!active) return;
+        setVendors(Array.isArray(data.ReturnObject) ? data.ReturnObject : []);
+      } catch (err) {
+        if (!active || isAbortError(err)) return;
+        setError(err instanceof Error ? err.message : 'Failed to load vendors');
+        console.error('Error fetching vendors:', err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadVendors();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -55,37 +93,6 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
 
   const handleDealerClick = (dealer: Vendor) => {
     setLocalDealer(dealer);
-  };
-
-  const fetchVendors = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/simulation/vendors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Asset: dealer harus punya stok unit untuk simulasi.
-          // CMO: false agar semua kota/dealer tampil (CMO dipilih saat admin assign lead).
-          hasAvailableAssetOnly: true,
-          hasCmoAssignedOnly: false,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch vendors');
-      }
-
-      if (data.ReturnObject) {
-        setVendors(data.ReturnObject);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load vendors');
-      console.error('Error fetching vendors:', err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -157,12 +164,6 @@ export function DealerStep({ onContinue, selectedDealer }: DealerStepProps) {
                       }`}
                     >
                       <p className="font-medium text-gray-900">{dealer.VendorName}</p>
-                      {/* {dealer.ZipCode && (
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {dealer.ZipCode}
-                          {dealer.OriOfficeName ? ` · ${dealer.OriOfficeName}` : ''}
-                        </p>
-                      )} */}
                     </button>
                   );
                 })}

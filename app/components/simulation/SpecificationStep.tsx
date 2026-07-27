@@ -3,6 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ManufacturingYear, AssetVariant, ExteriorColor, InteriorColor } from '@/app/types/credit-simulation';
+import {
+  fetchSimulationJson,
+  isAbortError,
+} from '@/lib/simulation-client-fetch';
 
 interface SpecificationStepProps {
   modelCode: string;
@@ -46,125 +50,151 @@ export function SpecificationStep({ modelCode, dealerCode, onComplete, initialSp
   const [loadingExterior, setLoadingExterior] = useState(false);
   const [loadingInterior, setLoadingInterior] = useState(false);
 
-  const fetchManufacturingYears = useCallback(async () => {
-    setLoadingYears(true);
-    try {
-      const response = await fetch('/api/simulation/manufacturing-years', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ModelCode: modelCode, DealerCode: dealerCode }),
-      });
-      const data = await response.json();
-      if (data.ReturnObject) setManufacturingYears(data.ReturnObject);
-    } catch (err) {
-      console.error('Error fetching manufacturing years:', err);
-    } finally {
-      setLoadingYears(false);
-    }
-  }, [modelCode, dealerCode]);
-
-  const fetchVariants = useCallback(async () => {
-    setLoadingVariants(true);
-    try {
-      const response = await fetch('/api/simulation/variants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ModelCode: modelCode, DealerCode: dealerCode, ManufYear: selectedYear }),
-      });
-      const data = await response.json();
-      if (data.ReturnObject) {
-        setVariants(
-          (data.ReturnObject as AssetVariant[]).map((variant) => ({
-            ...variant,
-            Price:
-              variant.Price != null && !Number.isNaN(Number(variant.Price))
-                ? Number(variant.Price)
-                : undefined,
-          }))
-        );
+  const fetchManufacturingYears = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoadingYears(true);
+      try {
+        const data = await fetchSimulationJson<{
+          ReturnObject?: ManufacturingYear[];
+        }>({
+          url: '/api/simulation/manufacturing-years',
+          body: { ModelCode: modelCode, DealerCode: dealerCode },
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (data.ReturnObject) setManufacturingYears(data.ReturnObject);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        console.error('Error fetching manufacturing years:', err);
+      } finally {
+        if (!signal?.aborted) setLoadingYears(false);
       }
-    } catch (err) {
-      console.error('Error fetching variants:', err);
-    } finally {
-      setLoadingVariants(false);
-    }
-  }, [modelCode, dealerCode, selectedYear]);
+    },
+    [modelCode, dealerCode]
+  );
 
-  const fetchExteriorColors = useCallback(async () => {
-    setLoadingExterior(true);
-    try {
-      const response = await fetch('/api/simulation/colors/exterior', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ FscCode: selectedVariant, ManufYear: selectedYear }),
-      });
-      const data = await response.json();
-      if (data.ReturnObject) setExteriorColors(data.ReturnObject);
-    } catch (err) {
-      console.error('Error fetching exterior colors:', err);
-    } finally {
-      setLoadingExterior(false);
-    }
-  }, [selectedVariant, selectedYear]);
+  const fetchVariants = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoadingVariants(true);
+      try {
+        const data = await fetchSimulationJson<{ ReturnObject?: AssetVariant[] }>({
+          url: '/api/simulation/variants',
+          body: {
+            ModelCode: modelCode,
+            DealerCode: dealerCode,
+            ManufYear: selectedYear,
+          },
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (data.ReturnObject) {
+          setVariants(
+            data.ReturnObject.map((variant) => ({
+              ...variant,
+              Price:
+                variant.Price != null && !Number.isNaN(Number(variant.Price))
+                  ? Number(variant.Price)
+                  : undefined,
+            }))
+          );
+        }
+      } catch (err) {
+        if (isAbortError(err)) return;
+        console.error('Error fetching variants:', err);
+      } finally {
+        if (!signal?.aborted) setLoadingVariants(false);
+      }
+    },
+    [modelCode, dealerCode, selectedYear]
+  );
 
-  const fetchInteriorColors = useCallback(async () => {
-    setLoadingInterior(true);
-    try {
-      const response = await fetch('/api/simulation/colors/interior', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          FscCode: selectedVariant,
-          ManufYear: selectedYear,
-          ExtColorCode: selectedExtColor,
-        }),
-      });
-      const data = await response.json();
-      if (data.ReturnObject) setInteriorColors(data.ReturnObject);
-    } catch (err) {
-      console.error('Error fetching interior colors:', err);
-    } finally {
-      setLoadingInterior(false);
-    }
-  }, [selectedExtColor, selectedVariant, selectedYear]);
+  const fetchExteriorColors = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoadingExterior(true);
+      try {
+        const data = await fetchSimulationJson<{ ReturnObject?: ExteriorColor[] }>({
+          url: '/api/simulation/colors/exterior',
+          body: { FscCode: selectedVariant, ManufYear: selectedYear },
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (data.ReturnObject) setExteriorColors(data.ReturnObject);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        console.error('Error fetching exterior colors:', err);
+      } finally {
+        if (!signal?.aborted) setLoadingExterior(false);
+      }
+    },
+    [selectedVariant, selectedYear]
+  );
+
+  const fetchInteriorColors = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoadingInterior(true);
+      try {
+        const data = await fetchSimulationJson<{ ReturnObject?: InteriorColor[] }>({
+          url: '/api/simulation/colors/interior',
+          body: {
+            FscCode: selectedVariant,
+            ManufYear: selectedYear,
+            ExtColorCode: selectedExtColor,
+          },
+          signal,
+        });
+        if (signal?.aborted) return;
+        if (data.ReturnObject) setInteriorColors(data.ReturnObject);
+      } catch (err) {
+        if (isAbortError(err)) return;
+        console.error('Error fetching interior colors:', err);
+      } finally {
+        if (!signal?.aborted) setLoadingInterior(false);
+      }
+    },
+    [selectedExtColor, selectedVariant, selectedYear]
+  );
 
   // Fetch manufacturing years
   useEffect(() => {
-    if (modelCode && dealerCode) {
-      fetchManufacturingYears();
-    }
+    if (!modelCode || !dealerCode) return;
+    const controller = new AbortController();
+    void fetchManufacturingYears(controller.signal);
+    return () => controller.abort();
   }, [modelCode, dealerCode, fetchManufacturingYears]);
 
   // Fetch variants when year is selected
   useEffect(() => {
-    if (selectedYear && modelCode && dealerCode) {
-      fetchVariants();
-      // Reset dependent fields when year changes (unless they're in initialSpecs)
-      if (initialSpecs?.manufacturingYear !== selectedYear) {
-        setSelectedVariant(initialSpecs?.fscCode || '');
-        setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
-        setSelectedIntColor(initialSpecs?.interiorColorCode || '');
-      }
+    if (!selectedYear || !modelCode || !dealerCode) return;
+    const controller = new AbortController();
+    void fetchVariants(controller.signal);
+    // Reset dependent fields when year changes (unless they're in initialSpecs)
+    if (initialSpecs?.manufacturingYear !== selectedYear) {
+      setSelectedVariant(initialSpecs?.fscCode || '');
+      setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
+      setSelectedIntColor(initialSpecs?.interiorColorCode || '');
     }
+    return () => controller.abort();
   }, [selectedYear, modelCode, dealerCode, fetchVariants, initialSpecs]);
 
   // Fetch exterior colors when variant is selected
   useEffect(() => {
-    if (selectedVariant && selectedYear) {
-      fetchExteriorColors();
-      // Reset dependent fields when variant changes (unless they're in initialSpecs)
-      if (initialSpecs?.fscCode !== selectedVariant) {
-        setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
-        setSelectedIntColor(initialSpecs?.interiorColorCode || '');
-      }
+    if (!selectedVariant || !selectedYear) return;
+    const controller = new AbortController();
+    void fetchExteriorColors(controller.signal);
+    // Reset dependent fields when variant changes (unless they're in initialSpecs)
+    if (initialSpecs?.fscCode !== selectedVariant) {
+      setSelectedExtColor(initialSpecs?.exteriorColorCode || '');
+      setSelectedIntColor(initialSpecs?.interiorColorCode || '');
     }
+    return () => controller.abort();
   }, [selectedVariant, selectedYear, fetchExteriorColors, initialSpecs]);
 
   // Fetch interior colors when exterior color is selected
   useEffect(() => {
-    if (selectedExtColor && selectedVariant && selectedYear) {
-      fetchInteriorColors();
-    }
+    if (!selectedExtColor || !selectedVariant || !selectedYear) return;
+    const controller = new AbortController();
+    void fetchInteriorColors(controller.signal);
+    return () => controller.abort();
   }, [selectedExtColor, selectedVariant, selectedYear, fetchInteriorColors]);
 
   // Validate and reset interior color if it's not available for the new exterior color

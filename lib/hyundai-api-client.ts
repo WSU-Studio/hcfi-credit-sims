@@ -74,6 +74,8 @@ export function getFouApiBaseUrl(): string {
 
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
+/** Shared in-flight login so concurrent API routes do not race multiple Auth/Login calls. */
+let loginInFlight: Promise<string | null> | null = null;
 const TOKEN_TTL_MS = 50 * 60 * 1000; // 50 minutes
 
 interface LoginResponse {
@@ -117,23 +119,30 @@ async function login(): Promise<string | null> {
   return token;
 }
 
+async function getValidToken(): Promise<string | null> {
+  const now = Date.now();
+  if (cachedToken && tokenExpiresAt > now + 60_000) {
+    return cachedToken;
+  }
+
+  if (!loginInFlight) {
+    loginInFlight = login().finally(() => {
+      loginInFlight = null;
+    });
+  }
+
+  return loginInFlight;
+}
+
 /**
  * Returns request headers for Hyundai API calls, including AdInsKey (token).
- * Performs Login if no valid cached token.
+ * Performs Login if no valid cached token (single-flight for concurrent callers).
  */
 export async function getHyundaiRequestHeaders(): Promise<Record<string, string>> {
   // Fail closed in production if API_BASE_URL is unset (no silent QA fallback).
   resolveApiBaseUrl();
 
-  const now = Date.now();
-  if (cachedToken && tokenExpiresAt > now + 60_000) {
-    return {
-      'Content-Type': 'application/json',
-      AdInsKey: cachedToken,
-    };
-  }
-
-  const token = await login();
+  const token = await getValidToken();
   if (!token) {
     return { 'Content-Type': 'application/json' };
   }

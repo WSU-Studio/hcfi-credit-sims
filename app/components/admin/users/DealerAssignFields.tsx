@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { Vendor } from '@/app/types/credit-simulation';
+import {
+  fetchSimulationJson,
+  isAbortError,
+} from '@/lib/simulation-client-fetch';
 import { ROLE_NAMES } from '@/lib/user-types';
 
 export type DealerAssignValue = {
@@ -51,29 +55,35 @@ export function DealerAssignFields({
     if (!needsDealer) return;
 
     const controller = new AbortController();
+    let active = true;
 
-    fetch('/api/simulation/vendors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        hasAvailableAssetOnly: true,
-        hasCmoAssignedOnly: false,
-      }),
-      signal: controller.signal,
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    async function loadVendors() {
+      try {
+        const data = await fetchSimulationJson<{ ReturnObject?: Vendor[] }>({
+          url: '/api/simulation/vendors',
+          body: {
+            hasAvailableAssetOnly: true,
+            hasCmoAssignedOnly: false,
+          },
+          signal: controller.signal,
+        });
+        if (!active) return;
         setVendors(
-          Array.isArray(data.ReturnObject) ? (data.ReturnObject as Vendor[]) : []
+          Array.isArray(data.ReturnObject) ? data.ReturnObject : []
         );
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+      } catch (err: unknown) {
+        if (!active || isAbortError(err)) return;
         setError('Gagal memuat daftar dealer');
         setVendors([]);
-      });
+      }
+    }
 
-    return () => controller.abort();
+    void loadVendors();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [needsDealer]);
 
   const cities = useMemo(

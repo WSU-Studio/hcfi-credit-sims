@@ -3,6 +3,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import type { AssetMaster } from '@/app/types/credit-simulation';
+import {
+  fetchSimulationJson,
+  isAbortError,
+} from '@/lib/simulation-client-fetch';
 
 const CATEGORY_KEYS = ['ALL', 'SUV', 'EV', 'MPV'] as const;
 
@@ -22,42 +26,49 @@ export function ModelStep({ dealerCode, onSelect, selectedAsset }: ModelStepProp
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('ALL');
 
   useEffect(() => {
-    if (dealerCode) {
-      fetchAssets();
-    }
-  }, [dealerCode]);
+    if (!dealerCode) return;
 
-  const fetchAssets = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/simulation/assets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const controller = new AbortController();
+    let active = true;
+
+    async function loadAssets() {
+      setLoading(true);
+      setError(null);
+      try {
         // Katalog dealer terpilih saja (tanpa GlobalCatalog): model dari dealer
         // lain tidak punya tahun/varian saat step spesifikasi memakai dealer ini.
-        body: JSON.stringify({
-          DealerCode: dealerCode,
-          GetLatestAsset: true,
-        }),
-      });
+        const data = await fetchSimulationJson<{
+          ListAssetMasterObj?: AssetMaster[];
+        }>({
+          url: '/api/simulation/assets',
+          body: {
+            DealerCode: dealerCode,
+            GetLatestAsset: true,
+          },
+          signal: controller.signal,
+        });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch assets');
+        if (!active) return;
+        setAssets(
+          Array.isArray(data.ListAssetMasterObj) ? data.ListAssetMasterObj : []
+        );
+      } catch (err: unknown) {
+        if (!active || isAbortError(err)) return;
+        const message = err instanceof Error ? err.message : t('errorLoadModels');
+        setError(message);
+        console.error('Error fetching assets:', err);
+      } finally {
+        if (active) setLoading(false);
       }
-
-      if (data.ListAssetMasterObj) {
-        setAssets(data.ListAssetMasterObj);
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t('errorLoadModels');
-      setError(message);
-      console.error('Error fetching assets:', err);
-    } finally {
-      setLoading(false);
     }
-  };
+
+    void loadAssets();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [dealerCode, t]);
 
   const filteredAssets = useMemo(() => {
     if (activeCategory === 'ALL') return assets;
