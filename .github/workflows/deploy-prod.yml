@@ -54,4 +54,3 @@ jobs:
         run: |
           pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
           pm2 save
-          
