@@ -50,7 +50,11 @@ export async function validateCustomerZipcode(
     }));
   } catch (err) {
     const original = err instanceof Error ? err.message : String(err);
-    console.error('[validateCustomerLocation]', { zipCode: input.zipCode, city: input.city, original });
+    console.error('[validateCustomerLocation]', {
+      zipCode: input.zipCode,
+      city: input.city,
+      original,
+    });
     throw new Error(
       `Kode pos / kota belum valid (ZipCode=${input.zipCode}, City=${input.city}). Pastikan data KTP terbaca jelas.`
     );
@@ -74,9 +78,11 @@ export async function validateCustomerPhoneAndEmail(
     }));
   } catch (err) {
     const original = err instanceof Error ? err.message : String(err);
+    // Do not log raw email/phone (PII) — length only for ops debugging.
     console.error('[validateCustomerPhoneAndEmail]', {
-      email: input.email,
-      phoneNo: input.phoneNo,
+      emailLen: input.email?.length ?? 0,
+      phoneLen: input.phoneNo?.length ?? 0,
+      custType,
       original,
     });
     throw new Error(

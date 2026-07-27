@@ -107,18 +107,41 @@ export const passwordChangeLimiter = createLimiter(5, 15 * 60 * 1000);
 
 // ---------- Helpers ----------
 
+/**
+ * Resolve client IP behind a trusted reverse proxy (e.g. AWS ALB).
+ *
+ * ALB *appends* the connecting client IP to X-Forwarded-For; it does not
+ * strip client-supplied values. Taking the first hop lets attackers rotate
+ * spoofed IPs and bypass rate limits. We therefore take the last
+ * `TRUSTED_PROXY_HOPS` entry (default 1 = the IP ALB appended).
+ *
+ * Prefer platform-set headers when present (Cloudflare / nginx Real-IP).
+ */
 export function getClientIp(request: Request): string {
+  const cfConnectingIp = request.headers.get('cf-connecting-ip')?.trim();
+  if (cfConnectingIp) return cfConnectingIp;
+
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  if (realIp) return realIp;
+
   const forwarded = request.headers.get('x-forwarded-for');
-  const realIp = request.headers.get('x-real-ip');
-  const cfConnectingIp = request.headers.get('cf-connecting-ip');
+  if (forwarded) {
+    const hops = forwarded
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean);
+    if (hops.length > 0) {
+      const trustedHops = Math.max(
+        1,
+        Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? '1', 10) || 1
+      );
+      const index = Math.max(0, hops.length - trustedHops);
+      return hops[index] ?? hops[hops.length - 1]!;
+    }
+  }
+
   const nextIp = (request as { ip?: string }).ip;
-  return (
-    forwarded?.split(',')[0]?.trim() ||
-    realIp ||
-    cfConnectingIp ||
-    nextIp ||
-    'unknown'
-  );
+  return nextIp || 'unknown';
 }
 
 /**

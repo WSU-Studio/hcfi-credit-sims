@@ -7,6 +7,7 @@ import {
   CMS_HTML_ALLOWED_ATTR,
   CMS_HTML_ALLOWED_TAGS,
 } from './cms-html-allowlist';
+import { isSafeHref, sanitizeHref } from './safe-href';
 
 export {
   CMS_HTML_ALLOWED_ATTR,
@@ -14,6 +15,13 @@ export {
 } from './cms-html-allowlist';
 
 const MAX_CMS_HTML_CHARS = 200_000;
+
+// Force rel=noopener noreferrer on target=_blank to mitigate reverse-tabnabbing.
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A' && node.getAttribute('target') === '_blank') {
+    node.setAttribute('rel', 'noopener noreferrer');
+  }
+});
 
 /** Sanitize rich-text HTML; empty/null stays empty/null. */
 export function sanitizeCmsHtml(html: string | null | undefined): string | null {
@@ -51,9 +59,23 @@ type LayoutRoot = {
 
 const HTML_PAYLOAD_KEYS = ['content', 'contentEn'] as const;
 
+function sanitizeCtaButtons(payload: Record<string, unknown>): void {
+  const buttons = payload.buttons;
+  if (!Array.isArray(buttons)) return;
+  payload.buttons = buttons.map((button) => {
+    if (!button || typeof button !== 'object') return button;
+    const b = { ...(button as Record<string, unknown>) };
+    if (typeof b.url === 'string') {
+      const safe = sanitizeHref(b.url);
+      b.url = safe ?? '';
+    }
+    return b;
+  });
+}
+
 /**
  * Deep-sanitize HTML fields inside page-builder layout payloads
- * (`rich_text` / any cell with content|contentEn).
+ * (`rich_text` / any cell with content|contentEn) and CTA button URLs.
  */
 export function sanitizeLayoutHtml(layout: unknown): unknown {
   if (layout == null || typeof layout !== 'object') return layout;
@@ -76,9 +98,14 @@ export function sanitizeLayoutHtml(layout: unknown): unknown {
               payload[key] = sanitizeCmsHtmlRequired(payload[key] as string);
             }
           }
+          if (cell.widgetType === 'cta' || Array.isArray(payload.buttons)) {
+            sanitizeCtaButtons(payload);
+          }
           return { ...cell, payload };
         }),
       };
     }),
   };
 }
+
+export { isSafeHref };

@@ -6,12 +6,13 @@ import { isLeadKtpS3Key } from '@/lib/s3-url';
 /**
  * Dev-only proxy untuk KTP lokal (`KTP_STORAGE=local`).
  * URL ini disimpan sebagai `Lead.ktpUrl` saat upload di localhost.
+ * Disabled in production regardless of KTP_STORAGE misconfiguration.
  */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ key: string[] }> }
 ) {
-  if (!isLocalKtpStorageEnabled()) {
+  if (process.env.NODE_ENV === 'production' || !isLocalKtpStorageEnabled()) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

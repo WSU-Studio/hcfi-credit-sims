@@ -59,16 +59,35 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.cloudinary.com',
       },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.amazonaws.com',
-      },
+      // Pin to this project's S3 bucket host (not **.amazonaws.com wildcard).
+      // Override via AWS_S3_BUCKET + AWS_REGION at build time when set.
+      ...(process.env.AWS_S3_BUCKET && process.env.AWS_REGION
+        ? [
+            {
+              protocol: 'https',
+              hostname: `${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com`,
+            },
+            {
+              protocol: 'https',
+              hostname: `${process.env.AWS_S3_BUCKET}.s3.amazonaws.com`,
+            },
+          ]
+        : [
+            {
+              protocol: 'https',
+              hostname: 'hcfi-credit-sims-media.s3.ap-southeast-3.amazonaws.com',
+            },
+            {
+              protocol: 'https',
+              hostname: 'hcfi-credit-sims-media.s3.amazonaws.com',
+            },
+          ]),
+      ...(process.env.NODE_ENV !== 'production'
+        ? [{ protocol: 'http', hostname: 'localhost' }]
+        : []),
     ],
-    dangerouslyAllowSVG: true,
+    // SVG via next/image is disabled — serve SVG through the media proxy with CSP sandbox if needed.
+    dangerouslyAllowSVG: false,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: false,

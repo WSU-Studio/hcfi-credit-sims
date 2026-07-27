@@ -46,13 +46,18 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Apply Database Migrations & Prisma Seed
+      - name: Apply Database Migrations
         run: |
-          npm run db:migrate
-          npm run db:seed
           npx prisma migrate deploy
 
       - name: Restart App with PM2
         run: |
           pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
           pm2 save
+
+      - name: Remove deploy secrets from workspace
+        if: always()
+        run: |
+          rm -f .env
+          # Best-effort wipe if shred is available on the runner
+          command -v shred >/dev/null 2>&1 && shred -u -n 1 .env 2>/dev/null || true

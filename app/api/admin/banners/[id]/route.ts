@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import {
+  bannerUpdateSchema,
+  invalidAdminInputResponse,
+} from '@/lib/security/admin-schemas';
 
 export async function GET(
   request: NextRequest,
@@ -58,29 +62,14 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-
-    // Clean up empty strings and invalid URLs
-    const cleanedData: any = { ...body };
-    if (cleanedData.ctaUrl === '' || cleanedData.ctaUrl === '-') {
-      cleanedData.ctaUrl = null;
+    const parsed = bannerUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
     }
-    if (cleanedData.ctaLabel === '') {
-      cleanedData.ctaLabel = null;
-    }
-    if (cleanedData.highlight === '') {
-      cleanedData.highlight = null;
-    }
-    if (cleanedData.description === '') {
-      cleanedData.description = null;
-    }
-    if (cleanedData.titleEn === '') cleanedData.titleEn = null;
-    if (cleanedData.highlightEn === '') cleanedData.highlightEn = null;
-    if (cleanedData.descriptionEn === '') cleanedData.descriptionEn = null;
-    if (cleanedData.ctaLabelEn === '') cleanedData.ctaLabelEn = null;
 
     const banner = await prisma.banner.update({
       where: { id },
-      data: cleanedData,
+      data: parsed.data,
     });
 
     return NextResponse.json({ banner });
@@ -137,5 +126,3 @@ export async function DELETE(
     );
   }
 }
-
-

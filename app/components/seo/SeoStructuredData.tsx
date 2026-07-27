@@ -45,7 +45,11 @@ export function SeoStructuredDataOrganization({
     <script
       type="application/ld+json"
       suppressHydrationWarning
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{
+        // Escape `<` so JSON-LD cannot break out of the script tag
+        // (JSON.stringify alone does not escape </script>).
+        __html: JSON.stringify(schema).replace(/</g, '\\u003c'),
+      }}
     />
   );
 }

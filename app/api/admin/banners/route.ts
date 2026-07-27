@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import {
+  bannerWriteSchema,
+  invalidAdminInputResponse,
+} from '@/lib/security/admin-schemas';
 
 export async function GET() {
   try {
@@ -20,8 +24,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ banners });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -41,28 +45,13 @@ export async function POST(request: NextRequest) {
     await requirePermission('BANNERS', 'create');
 
     const body = await request.json();
-
-    // Clean up empty strings and invalid URLs
-    const cleanedData: any = { ...body };
-    if (cleanedData.ctaUrl === '' || cleanedData.ctaUrl === '-') {
-      cleanedData.ctaUrl = null;
+    const parsed = bannerWriteSchema.safeParse(body);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
     }
-    if (cleanedData.ctaLabel === '') {
-      cleanedData.ctaLabel = null;
-    }
-    if (cleanedData.highlight === '') {
-      cleanedData.highlight = null;
-    }
-    if (cleanedData.description === '') {
-      cleanedData.description = null;
-    }
-    if (cleanedData.titleEn === '') cleanedData.titleEn = null;
-    if (cleanedData.highlightEn === '') cleanedData.highlightEn = null;
-    if (cleanedData.descriptionEn === '') cleanedData.descriptionEn = null;
-    if (cleanedData.ctaLabelEn === '') cleanedData.ctaLabelEn = null;
 
     const banner = await prisma.banner.create({
-      data: cleanedData,
+      data: parsed.data,
     });
 
     return NextResponse.json({ banner });
@@ -83,5 +72,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

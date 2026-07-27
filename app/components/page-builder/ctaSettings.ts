@@ -82,3 +82,6 @@ export function getCtaSettingsClasses(
 export function isInternalUrl(url: string): boolean {
   return url.startsWith('/') && !url.startsWith('//');
 }
+
+export { isSafeHref, sanitizeHref } from '@/lib/security/safe-href';
+

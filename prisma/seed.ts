@@ -143,18 +143,48 @@ async function main() {
 
   console.log('Role permissions granted');
 
-  const hashedPassword = await hashPassword('admin123');
-  const superAdminUser = await prisma.user.upsert({
+  const seedAdminPassword = (process.env.SEED_ADMIN_PASSWORD || '').trim();
+  const isProdLike =
+    process.env.NODE_ENV === 'production' ||
+    process.env.MODE_ENV === 'production';
+
+  if (!seedAdminPassword) {
+    if (isProdLike) {
+      console.warn(
+        'SEED_ADMIN_PASSWORD unset — skipping admin@hcfi.com create/update in production-like env'
+      );
+      return;
+    }
+    throw new Error(
+      'SEED_ADMIN_PASSWORD is required to seed admin@hcfi.com (no hardcoded default)'
+    );
+  }
+
+  const hashedPassword = await hashPassword(seedAdminPassword);
+  const existingAdmin = await prisma.user.findUnique({
     where: { email: 'admin@hcfi.com' },
-    update: { userType: 'HCFI_ADMIN' },
-    create: {
-      email: 'admin@hcfi.com',
-      password: hashedPassword,
-      name: 'Super Admin',
-      isActive: true,
-      userType: 'HCFI_ADMIN',
-    },
   });
+
+  let superAdminUser;
+  if (existingAdmin) {
+    // Never reset an existing admin password from seed — only sync userType.
+    superAdminUser = await prisma.user.update({
+      where: { email: 'admin@hcfi.com' },
+      data: { userType: 'HCFI_ADMIN' },
+    });
+    console.log('Super Admin user synced (password unchanged)');
+  } else {
+    superAdminUser = await prisma.user.create({
+      data: {
+        email: 'admin@hcfi.com',
+        password: hashedPassword,
+        name: 'Super Admin',
+        isActive: true,
+        userType: 'HCFI_ADMIN',
+      },
+    });
+    console.log('Super Admin user created from SEED_ADMIN_PASSWORD');
+  }
 
   await prisma.userRole.upsert({
     where: {
@@ -169,8 +199,6 @@ async function main() {
       roleId: superAdminRole.id,
     },
   });
-
-  console.log('Super Admin user synced');
 }
 
 main()

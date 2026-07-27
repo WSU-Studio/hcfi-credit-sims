@@ -4,15 +4,73 @@
  * - Use token in header AdInsKey for all data API calls.
  */
 
-const API_BASE_URL =
-  process.env.API_BASE_URL ||
+const QA_API_BASE_URL =
   'https://qaapigwconfins.hyundaicapital.co.id/api/mobileloan';
-
-/** Foundation / VendorEmpX APIs (Postman v1.7 — Customer Data Fase 3). */
-export const FOU_API_BASE_URL =
-  process.env.HYUNDAI_FOU_API_URL ||
-  process.env.API_BASE_URL?.replace(/\/api\/mobileloan\/?$/, '/api/fou') ||
+const QA_FOU_API_BASE_URL =
   'https://qaapigwconfins.hyundaicapital.co.id/api/fou';
+
+function resolveApiBaseUrl(): string {
+  const fromEnv = process.env.API_BASE_URL?.trim();
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'API_BASE_URL must be set in production (refusing QA fallback)'
+    );
+  }
+  return QA_API_BASE_URL;
+}
+
+function resolveFouApiBaseUrl(): string {
+  const fou = process.env.HYUNDAI_FOU_API_URL?.trim();
+  if (fou) return fou;
+  const mobile = process.env.API_BASE_URL?.trim();
+  if (mobile) {
+    return mobile.replace(/\/api\/mobileloan\/?$/, '/api/fou');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'API_BASE_URL or HYUNDAI_FOU_API_URL must be set in production (refusing QA fallback)'
+    );
+  }
+  return QA_FOU_API_BASE_URL;
+}
+
+/**
+ * Resolved at call time so missing env fails on first API use (not at import).
+ * Prefer `getApiBaseUrl()` / `getFouApiBaseUrl()`; these getters keep existing
+ * `${API_BASE_URL}/...` call sites working via toString.
+ */
+export const API_BASE_URL = {
+  toString() {
+    return resolveApiBaseUrl();
+  },
+  valueOf() {
+    return resolveApiBaseUrl();
+  },
+  [Symbol.toPrimitive]() {
+    return resolveApiBaseUrl();
+  },
+} as unknown as string;
+
+export const FOU_API_BASE_URL = {
+  toString() {
+    return resolveFouApiBaseUrl();
+  },
+  valueOf() {
+    return resolveFouApiBaseUrl();
+  },
+  [Symbol.toPrimitive]() {
+    return resolveFouApiBaseUrl();
+  },
+} as unknown as string;
+
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
+
+export function getFouApiBaseUrl(): string {
+  return resolveFouApiBaseUrl();
+}
 
 let cachedToken: string | null = null;
 let tokenExpiresAt = 0;
@@ -31,7 +89,7 @@ async function login(): Promise<string | null> {
     return null;
   }
 
-  const url = `${API_BASE_URL}/v3/Auth/Login`;
+  const url = `${resolveApiBaseUrl()}/v3/Auth/Login`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,6 +122,9 @@ async function login(): Promise<string | null> {
  * Performs Login if no valid cached token.
  */
 export async function getHyundaiRequestHeaders(): Promise<Record<string, string>> {
+  // Fail closed in production if API_BASE_URL is unset (no silent QA fallback).
+  resolveApiBaseUrl();
+
   const now = Date.now();
   if (cachedToken && tokenExpiresAt > now + 60_000) {
     return {
@@ -82,5 +143,3 @@ export async function getHyundaiRequestHeaders(): Promise<Record<string, string>
     AdInsKey: token,
   };
 }
-
-export { API_BASE_URL };

@@ -2,7 +2,12 @@
  * Content-Security-Policy for the whole app.
  *
  * Set `CSP_ENFORCE=true` (or `1`) to switch from Report-Only → enforce.
- * Evaluated at request time in middleware so EB env can flip without rebuild.
+ * Evaluated at request time in middleware so EB/self-hosted env can flip
+ * without rebuild. Recommended rollout: enable on TQA first, watch for
+ * violations (TipTap / GTM / inline scripts), then production.
+ *
+ * Note: script-src still allows 'unsafe-inline'/'unsafe-eval' until a nonce
+ * migration; tightening those is a separate breaking change.
  */
 export const CSP_POLICY = [
   "default-src 'self'",

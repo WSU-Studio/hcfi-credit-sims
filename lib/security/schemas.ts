@@ -118,6 +118,43 @@ const httpUrlSchema = z
   .max(2048)
   .refine((v) => /^https?:\/\/[^\s<>"']+$/i.test(v), { message: 'URL tidak valid' });
 
+/** KTP storage URL: S3 object under hcfi_leads_ktp/ or local /api/dev/ktp/... path. */
+const ktpStorageUrlSchema = z
+  .string()
+  .max(2048)
+  .refine(
+    (v) => {
+      const trimmed = v.trim();
+      if (!trimmed) return false;
+      if (trimmed.startsWith('/api/dev/ktp/')) {
+        try {
+          const key = decodeURIComponent(trimmed.slice('/api/dev/ktp/'.length));
+          return key.startsWith('hcfi_leads_ktp/') && !key.includes('..') && key.length < 512;
+        } catch {
+          return false;
+        }
+      }
+      if (!/^https?:\/\//i.test(trimmed)) return false;
+      // Absolute URL must still resolve to a known KTP storage ref (S3 or local API).
+      try {
+        // Dynamic import avoided — inline same rules as parseKtpStorageUrl for schema purity.
+        const u = new URL(trimmed);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+        if (u.pathname.startsWith('/api/dev/ktp/')) {
+          const key = decodeURIComponent(u.pathname.slice('/api/dev/ktp/'.length));
+          return key.startsWith('hcfi_leads_ktp/') && !key.includes('..') && key.length < 512;
+        }
+        const host = u.hostname;
+        if (!host.endsWith('.amazonaws.com')) return false;
+        const key = decodeURIComponent(u.pathname.replace(/^\//, ''));
+        return key.startsWith('hcfi_leads_ktp/') && !key.includes('..') && key.length < 512;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'ktpUrl harus URL penyimpanan KTP yang valid' }
+  );
+
 // const optionalHttpUrl = z
 //   .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
 //   .transform((v) => (v == null || v === '' ? null : v));
@@ -197,7 +234,7 @@ export const leadCreateSchema = z
     fastTrack: z.boolean().optional().default(false),
 
     ktpUrl: z
-      .union([httpUrlSchema, z.literal(''), z.null(), z.undefined()])
+      .union([ktpStorageUrlSchema, z.literal(''), z.null(), z.undefined()])
       .transform((v) => (v == null || v === '' ? null : v)),
     ocrSnapshot: ocrKtpSnapshotSchema.optional().nullable(),
     citizenType: z
@@ -277,7 +314,7 @@ export const leadCompleteScoringSchema = z
     name: requiredSafeText(MAX_NAME, 'nama'),
     phone: phoneSchema,
     email: emailSchema,
-    ktpUrl: httpUrlSchema,
+    ktpUrl: ktpStorageUrlSchema,
     ocrSnapshot: ocrKtpSnapshotSchema,
     citizenType: z.enum(['LOCAL', 'FOREIGNER'], { message: 'citizenType wajib diisi' }),
     motherName: requiredSafeText(MAX_NAME, 'nama ibu kandung'),

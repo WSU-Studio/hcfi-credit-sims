@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import { cleanString, looksMalicious } from './sanitize';
 import { sanitizeCmsHtml, sanitizeCmsHtmlRequired, sanitizeLayoutHtml } from './cms-html';
 import { validatePasswordPolicy } from './password-policy';
+import { isSafeHref, requiredSafeHrefSchema, safeHrefSchema } from './safe-href';
 
 export { isSafeGaMeasurementId, isSafeGtmId } from './analytics-ids';
 import { isSafeGaMeasurementId, isSafeGtmId } from './analytics-ids';
@@ -16,6 +17,8 @@ const MAX_EXCERPT = 5000;
 const MAX_META = 2000;
 const MAX_SETTING_TEXT = 500;
 const MAX_MOCK_JSON = 500_000;
+const MAX_FOOTER_LINE = 500;
+const MAX_FOOTER_TEXT = 5000;
 
 const safeText = (max: number) =>
   z
@@ -232,20 +235,8 @@ export const pageWriteSchema = z
 
 export type PageWriteInput = z.infer<typeof pageWriteSchema>;
 
-/** Media / cover URL — length-capped; rejects javascript: / data:html probes. */
-const mediaUrlSchema = z
-  .union([z.string(), z.null(), z.undefined()])
-  .transform((v) => {
-    if (v == null) return null;
-    const s = String(v).trim();
-    return s.length > 0 ? s.slice(0, 2048) : null;
-  })
-  .refine((v) => v == null || !/^\s*javascript\s*:/i.test(v), {
-    message: 'URL tidak valid',
-  })
-  .refine((v) => v == null || !/^\s*data\s*:\s*text\/html/i.test(v), {
-    message: 'URL tidak valid',
-  });
+/** Media / cover URL — length-capped; rejects javascript: / data:html / unsafe schemes. */
+export const mediaUrlSchema = safeHrefSchema;
 
 const optionalDateIsoSchema = z
   .union([z.string(), z.null(), z.undefined()])
@@ -262,6 +253,103 @@ const orderSchema = z
     const n = Number(v);
     return Number.isFinite(n) ? Math.trunc(n) : 0;
   });
+
+const bilingualFooterTextSchema = z
+  .union([
+    z.string(),
+    z.object({
+      id: z.union([z.string(), z.null(), z.undefined()]).optional(),
+      en: z.union([z.string(), z.null(), z.undefined()]).optional(),
+    }),
+    z.null(),
+    z.undefined(),
+  ])
+  .transform((v) => {
+    if (v == null) return { id: '', en: '' };
+    if (typeof v === 'string') {
+      const cleaned = cleanString(v).slice(0, MAX_FOOTER_TEXT);
+      return { id: cleaned, en: '' };
+    }
+    return {
+      id: cleanString(String(v.id ?? '')).slice(0, MAX_FOOTER_TEXT),
+      en: cleanString(String(v.en ?? '')).slice(0, MAX_FOOTER_TEXT),
+    };
+  })
+  .refine((v) => !looksMalicious(v.id) && !looksMalicious(v.en), {
+    message: 'mengandung karakter yang tidak diizinkan',
+  });
+
+const footerAddressSchema = z
+  .union([z.array(z.unknown()), z.string(), z.null(), z.undefined()])
+  .transform((v) => {
+    if (v == null) return [];
+    const arr = Array.isArray(v) ? v : [v];
+    return arr
+      .map((line) => cleanString(String(line ?? '')).slice(0, MAX_FOOTER_LINE))
+      .filter((line) => line.length > 0)
+      .slice(0, 20);
+  })
+  .refine((lines) => lines.every((l) => !looksMalicious(l)), {
+    message: 'mengandung karakter yang tidak diizinkan',
+  });
+
+/** Footer settings — allowlisted keys only. */
+export const footerWriteSchema = z
+  .object({
+    companyName: optionalSafeText(MAX_FOOTER_LINE).optional(),
+    address: footerAddressSchema.optional(),
+    phoneDisplay: optionalSafeText(MAX_FOOTER_LINE).optional(),
+    phoneHref: safeHrefSchema.optional(),
+    whatsappDisplay: optionalSafeText(MAX_FOOTER_LINE).optional(),
+    whatsappHref: safeHrefSchema.optional(),
+    emailDisplay: optionalSafeText(MAX_FOOTER_LINE).optional(),
+    emailHref: safeHrefSchema.optional(),
+    playStoreHref: safeHrefSchema.optional(),
+    appStoreHref: safeHrefSchema.optional(),
+    disclaimer: bilingualFooterTextSchema.optional(),
+    copyright: bilingualFooterTextSchema.optional(),
+  })
+  .strip();
+
+export type FooterWriteInput = z.infer<typeof footerWriteSchema>;
+
+export const bannerWriteSchema = z
+  .object({
+    title: safeText(MAX_TITLE).refine((v) => v.length > 0, { message: 'title wajib diisi' }),
+    titleEn: optionalSafeText(MAX_TITLE),
+    highlight: optionalSafeText(MAX_TITLE),
+    highlightEn: optionalSafeText(MAX_TITLE),
+    description: optionalSafeText(MAX_EXCERPT),
+    descriptionEn: optionalSafeText(MAX_EXCERPT),
+    imageUrl: requiredSafeHrefSchema,
+    ctaLabel: optionalSafeText(MAX_TITLE),
+    ctaLabelEn: optionalSafeText(MAX_TITLE),
+    ctaUrl: safeHrefSchema,
+    isActive: z.boolean().optional(),
+    order: orderSchema.optional(),
+    startDate: optionalDateIsoSchema.optional(),
+    endDate: optionalDateIsoSchema.optional(),
+  })
+  .strip();
+
+export type BannerWriteInput = z.infer<typeof bannerWriteSchema>;
+
+export const bannerUpdateSchema = bannerWriteSchema.partial().strip();
+
+export type BannerUpdateInput = z.infer<typeof bannerUpdateSchema>;
+
+export const vehicleModelImageWriteSchema = z
+  .object({
+    assetCode: safeText(100).refine((v) => v.length > 0, { message: 'assetCode wajib diisi' }),
+    fullAssetCode: optionalSafeText(100),
+    assetName: optionalSafeText(200),
+    imageUrl: requiredSafeHrefSchema,
+    mediaId: optionalSafeText(100),
+    isActive: z.boolean().optional(),
+  })
+  .strip();
+
+export type VehicleModelImageWriteInput = z.infer<typeof vehicleModelImageWriteSchema>;
 
 export const promoWriteSchema = z
   .object({
@@ -303,7 +391,7 @@ export const productWriteSchema = z
         if (v == null || v === '') return '';
         return String(v).trim().slice(0, 2048);
       })
-      .refine((v) => v === '' || !/^\s*javascript\s*:/i.test(v), {
+      .refine((v) => v === '' || isSafeHref(v), {
         message: 'URL tidak valid',
       }),
     order: orderSchema.optional(),

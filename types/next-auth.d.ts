@@ -35,9 +35,9 @@ declare module 'next-auth' {
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    id: string;
-    email: string;
-    name: string;
+    id?: string;
+    email?: string;
+    name?: string;
     userType?: string | null;
     roleNames?: string[];
     vendorCode?: string | null;
@@ -46,5 +46,8 @@ declare module 'next-auth/jwt' {
     oriOfficeCode?: string | null;
     oriOfficeName?: string | null;
     cmoEmpNo?: string | null;
+    rememberMe?: boolean;
+    /** Unix seconds — app-level expiry (Auth.js overwrites JWT exp). */
+    sessionExpiresAt?: number;
   }
 }

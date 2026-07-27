@@ -105,13 +105,29 @@ export async function POST(request: NextRequest) {
       byteBase64: prepared.base64,
     });
 
-    // Expose request bundle yang dikirim ke Hyundai supaya admin bisa
-    // replicate di Postman / dikirim ke tim Hyundai untuk debugging.
-    // Headers termasuk AdInsKey — tool ini admin-only, jadi OK keluarin token.
+    // Expose request shape for Postman/debug — redact live credentials.
+    const rawHeaders = hyundaiReq.headers as Record<string, string>;
+    const redactedHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(rawHeaders)) {
+      const lower = k.toLowerCase();
+      if (
+        lower === 'adinskey' ||
+        lower === 'authorization' ||
+        lower === 'cookie' ||
+        lower.includes('token') ||
+        lower.includes('secret') ||
+        lower.includes('api-key') ||
+        lower.includes('apikey')
+      ) {
+        redactedHeaders[k] = '[REDACTED]';
+      } else {
+        redactedHeaders[k] = v;
+      }
+    }
     const exportedRequest = {
       url: hyundaiReq.url,
       method: hyundaiReq.method,
-      headers: hyundaiReq.headers,
+      headers: redactedHeaders,
       body: hyundaiReq.body,
     };
 

@@ -3,6 +3,7 @@ import type { CtaButtonItem, LayoutCell } from '@/app/types';
 import { pickLocaleString } from '@/lib/pick-locale';
 import type { Locale } from '@/lib/pick-locale';
 import { getCtaSettingsClasses, isInternalUrl } from './ctaSettings';
+import { isSafeHref } from '@/lib/security/safe-href';
 
 type CtaWidgetProps = {
   cell: LayoutCell;
@@ -21,6 +22,8 @@ function CtaButtonLink({
   openInNewTab?: boolean;
   className: string;
 }) {
+  if (!isSafeHref(url)) return null;
+
   const external = !isInternalUrl(url) || openInNewTab;
 
   if (external) {
@@ -58,7 +61,7 @@ export function CtaWidget({ cell, locale = 'id' }: CtaWidgetProps) {
     .map((button) => {
       const label = pickLocaleString(button.label ?? '', button.labelEn ?? undefined, locale).trim();
       const url = (button.url ?? '').trim();
-      if (!label || !url) return null;
+      if (!label || !url || !isSafeHref(url)) return null;
       return { ...button, label, url };
     })
     .filter((button): button is CtaButtonItem & { label: string; url: string } => button !== null);

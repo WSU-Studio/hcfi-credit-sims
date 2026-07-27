@@ -1,6 +1,7 @@
 import type { Benefit } from "@/app/types";
 import { Link } from "@/i18n/navigation";
 import { isInternalUrl } from "@/app/components/page-builder/ctaSettings";
+import { isSafeHref } from "@/lib/security/safe-href";
 
 type BenefitCardProps = Benefit & {
   className?: string;
@@ -23,7 +24,9 @@ export function BenefitCard({
   openInNewTab,
   className,
 }: BenefitCardProps) {
-  const clickable = isClickable === true && typeof linkUrl === "string" && linkUrl.trim() !== "";
+  const rawUrl = typeof linkUrl === "string" ? linkUrl.trim() : "";
+  const clickable =
+    isClickable === true && rawUrl !== "" && isSafeHref(rawUrl);
   const base =
     "block rounded-xl bg-white text-[var(--foreground)] shadow-md border border-[#002c5f]/20 px-4 py-3 transition-all";
   const interactive =
@@ -41,7 +44,7 @@ export function BenefitCard({
     );
   }
 
-  const url = linkUrl!.trim();
+  const url = rawUrl;
   const external = !isInternalUrl(url) || openInNewTab === true;
 
   if (external) {

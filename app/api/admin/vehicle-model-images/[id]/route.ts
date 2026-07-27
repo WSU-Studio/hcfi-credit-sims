@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth-server';
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { normalizeVehicleModelName } from '@/lib/vehicle-model-images';
+import {
+  invalidAdminInputResponse,
+  vehicleModelImageWriteSchema,
+} from '@/lib/security/admin-schemas';
 
 export async function PATCH(
   request: NextRequest,
@@ -18,16 +22,12 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const assetCode = String(body.assetCode || '').trim();
-    const fullAssetCode = String(body.fullAssetCode || '').trim() || null;
-    const assetName = String(body.assetName || '').trim() || null;
-    const imageUrl = String(body.imageUrl || '').trim();
-    const mediaId = String(body.mediaId || '').trim() || null;
-    const isActive = Boolean(body.isActive ?? true);
-
-    if (!assetCode || !imageUrl) {
-      return NextResponse.json({ error: 'assetCode dan imageUrl wajib diisi' }, { status: 400 });
+    const parsed = vehicleModelImageWriteSchema.safeParse(body);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
     }
+
+    const { assetCode, fullAssetCode, assetName, imageUrl, mediaId, isActive } = parsed.data;
 
     const item = await prisma.vehicleModelImage.update({
       where: { id },
@@ -38,7 +38,7 @@ export async function PATCH(
         normalizedAssetName: normalizeVehicleModelName(assetName),
         imageUrl,
         mediaId,
-        isActive,
+        isActive: isActive ?? true,
       },
       include: {
         media: {

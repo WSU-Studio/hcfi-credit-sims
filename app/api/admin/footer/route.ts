@@ -3,6 +3,10 @@ import { auth } from '@/lib/auth-server';
 
 import { requirePermission } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
+import {
+  footerWriteSchema,
+  invalidAdminInputResponse,
+} from '@/lib/security/admin-schemas';
 
 export async function GET() {
   try {
@@ -14,7 +18,7 @@ export async function GET() {
     await requirePermission('FOOTER', 'view');
 
     const settings = await prisma.footerSetting.findMany();
-    const data: any = {};
+    const data: Record<string, unknown> = {};
 
     settings.forEach((setting) => {
       try {
@@ -25,8 +29,8 @@ export async function GET() {
     });
 
     return NextResponse.json({ data });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -46,8 +50,13 @@ export async function POST(request: NextRequest) {
     await requirePermission('FOOTER', 'edit');
 
     const body = await request.json();
+    const parsed = footerWriteSchema.safeParse(body);
+    if (!parsed.success) {
+      return invalidAdminInputResponse(parsed.error);
+    }
 
-    for (const [key, value] of Object.entries(body)) {
+    for (const [key, value] of Object.entries(parsed.data)) {
+      if (value === undefined) continue;
       await prisma.footerSetting.upsert({
         where: { key },
         update: {
@@ -61,8 +70,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.message.includes('Forbidden')) {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Forbidden')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     return NextResponse.json(
@@ -71,5 +80,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

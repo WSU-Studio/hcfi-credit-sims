@@ -3,7 +3,9 @@
  * Runs pending Prisma migrations via pg (no Prisma CLI needed).
  * Use when Prisma CLI fails on server (e.g. missing WASM).
  * Requires: DATABASE_URL env, pg package
- * Adds sslmode=no-verify for RDS (bypasses cert validation, fixes SELF_SIGNED_CERT_IN_CHAIN).
+ *
+ * TLS: defaults to sslmode=require. Set DB_SSL_NO_VERIFY=1 only for legacy
+ * RDS setups that present a self-signed chain without a CA bundle.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, db:migrate) */
 const { Client } = require('pg');
@@ -31,11 +33,14 @@ function getConnectionConfig() {
     console.error('DATABASE_URL is required');
     process.exit(1);
   }
-  // RDS needs sslmode=no-verify to avoid SELF_SIGNED_CERT_IN_CHAIN
+  const noVerify =
+    (process.env.DB_SSL_NO_VERIFY ?? '').trim() === '1' ||
+    (process.env.DB_SSL_NO_VERIFY ?? '').trim().toLowerCase() === 'true';
+  const sslMode = noVerify ? 'no-verify' : 'require';
   if (url.includes('sslmode=')) {
-    url = url.replace(/sslmode=[^&]+/, 'sslmode=no-verify');
+    url = url.replace(/sslmode=[^&]+/, `sslmode=${sslMode}`);
   } else {
-    url += url.includes('?') ? '&sslmode=no-verify' : '?sslmode=no-verify';
+    url += url.includes('?') ? `&sslmode=${sslMode}` : `?sslmode=${sslMode}`;
   }
   return { connectionString: url };
 }

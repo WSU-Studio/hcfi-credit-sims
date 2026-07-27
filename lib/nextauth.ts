@@ -10,6 +10,11 @@ import {
   recordSuccessfulLogin,
 } from '@/lib/security/auth-lockout';
 
+/** Upper bound for the session cookie (remember-me). */
+const SESSION_COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
+/** Default session when remember-me is off. */
+const SESSION_MAX_AGE_DEFAULT = 6 * 60 * 60; // 6 hours
+
 function rejectLogin(code: string): never {
   const error = new CredentialsSignin();
   error.code = code;
@@ -48,9 +53,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         // Layer 2: persistent DB lockout — survives restarts.
+        // Use generic credentials error (not ACCOUNT_LOCKED) to avoid email enumeration.
         const lockState = readLockState(user);
         if (lockState.locked) {
-          rejectLogin(LOGIN_ERROR_CODES.ACCOUNT_LOCKED);
+          rejectLogin(LOGIN_ERROR_CODES.CREDENTIALS);
         }
 
         const isValid = await verifyPassword(
@@ -59,10 +65,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         );
 
         if (!isValid) {
-          const next = await recordFailedLogin(user.id);
-          if (next.locked) {
-            rejectLogin(LOGIN_ERROR_CODES.ACCOUNT_LOCKED_ADMIN);
-          }
+          await recordFailedLogin(user.id);
+          // Same generic error whether or not this attempt triggered lockout.
           return null;
         }
 
@@ -109,12 +113,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.oriOfficeName = user.oriOfficeName ?? null;
         token.cmoEmpNo = user.cmoEmpNo ?? null;
         const rememberMe = (user as { rememberMe?: boolean }).rememberMe ?? false;
-        const maxAgeSec = rememberMe ? 30 * 24 * 60 * 60 : 6 * 60 * 60; // 30 days or 6 hours
-        token.exp = Math.floor(Date.now() / 1000) + maxAgeSec;
+        const maxAgeSec = rememberMe ? SESSION_COOKIE_MAX_AGE : SESSION_MAX_AGE_DEFAULT;
+        // Auth.js encoder overwrites JWT `exp` with session.maxAge — use a
+        // custom claim and invalidate here so remember-me actually works.
+        token.sessionExpiresAt = Math.floor(Date.now() / 1000) + maxAgeSec;
+        token.rememberMe = rememberMe;
       }
+
+      if (
+        typeof token.sessionExpiresAt === 'number' &&
+        Math.floor(Date.now() / 1000) > token.sessionExpiresAt
+      ) {
+        return null;
+      }
+
       return token;
     },
     async session({ session, token }) {
+      if (!token?.id) {
+        // Expired via sessionExpiresAt — surface as unauthenticated.
+        return {
+          ...session,
+          user: undefined as unknown as typeof session.user,
+          expires: new Date(0).toISOString(),
+        };
+      }
       if (session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
@@ -133,7 +156,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    // Cookie upper bound; actual lifetime enforced via token.sessionExpiresAt.
+    maxAge: SESSION_COOKIE_MAX_AGE,
   },
   secret: process.env.NEXTAUTH_SECRET,
 });
