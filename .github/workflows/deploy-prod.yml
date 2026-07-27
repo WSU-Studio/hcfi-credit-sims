@@ -1,4 +1,4 @@
-name: Build & Deploy to Self-Hosted Runner
+name: Build & Deploy to Self-Hosted PROD Runner
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       MODE_ENV: production
+      HCFI_ENV_FILE: /data/hcfi/nextjs-prod.env
 
     steps:
       - name: Checkout code
@@ -19,38 +20,65 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env file
+      - name: Write runtime env file
         run: |
-          touch .env
-          echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\"" >> .env
-          echo "PORT=${{ secrets.PORT }}" >> .env
-          echo "" >> .env
-          echo "AWS_ACCESS_KEY_ID=\"${{ secrets.AWS_ACCESS_KEY_ID != 'EMPTY' && secrets.AWS_ACCESS_KEY_ID || '' }}\"" >> .env
-          echo "AWS_SECRET_ACCESS_KEY=\"${{ secrets.AWS_SECRET_ACCESS_KEY != 'EMPTY' && secrets.AWS_SECRET_ACCESS_KEY || '' }}\"" >> .env
-          echo "AWS_REGION=\"${{ secrets.AWS_REGION }}\"" >> .env
-          echo "AWS_S3_BUCKET=\"${{ secrets.AWS_S3_BUCKET }}\"" >> .env
-          echo "" >> .env
-          echo "USE_MOCK_API=${{ secrets.USE_MOCK_API }}" >> .env
-          echo "CREDIT_SIMULATION_USERNAME=\"${{ secrets.CREDIT_SIMULATION_USERNAME }}\"" >> .env
-          echo "CREDIT_SIMULATION_PASSWORD=\"${{ secrets.CREDIT_SIMULATION_PASSWORD }}\"" >> .env
-          echo "" >> .env
-          echo "NEXTAUTH_URL=\"${{ secrets.NEXTAUTH_URL }}\"" >> .env
-          echo "NEXTAUTH_SECRET=\"${{ secrets.NEXTAUTH_SECRET }}\"" >> .env
-          echo "" >> .env
-          echo "API_BASE_URL=\"${{ secrets.API_BASE_URL }}\"" >> .env
-          echo "" >> .env
-          echo "NODE_ENV=production" >> .env
-          # Leave unset/false for Report-Only; set secret CSP_ENFORCE=true to enforce.
-          echo "CSP_ENFORCE=${{ secrets.CSP_ENFORCE }}" >> .env
+          set -euo pipefail
+          if [ -d "$(dirname "$HCFI_ENV_FILE")" ] && [ -w "$(dirname "$HCFI_ENV_FILE")" ]; then
+            ENV_FILE="$HCFI_ENV_FILE"
+          else
+            ENV_FILE="${HOME}/.hcfi/nextjs-prod.env"
+            mkdir -p "$(dirname "$ENV_FILE")"
+          fi
+          echo "Using ENV_FILE=$ENV_FILE"
+          echo "ENV_FILE=$ENV_FILE" >> "$GITHUB_ENV"
+
+          umask 077
+          {
+            echo "DATABASE_URL=\"${{ secrets.DATABASE_URL }}\""
+            echo "PORT=${{ secrets.PORT }}"
+            echo "AWS_ACCESS_KEY_ID=\"${{ secrets.AWS_ACCESS_KEY_ID != 'EMPTY' && secrets.AWS_ACCESS_KEY_ID || '' }}\""
+            echo "AWS_SECRET_ACCESS_KEY=\"${{ secrets.AWS_SECRET_ACCESS_KEY != 'EMPTY' && secrets.AWS_SECRET_ACCESS_KEY || '' }}\""
+            echo "AWS_REGION=\"${{ secrets.AWS_REGION }}\""
+            echo "AWS_S3_BUCKET=\"${{ secrets.AWS_S3_BUCKET }}\""
+            echo "USE_MOCK_API=${{ secrets.USE_MOCK_API }}"
+            echo "CREDIT_SIMULATION_USERNAME=\"${{ secrets.CREDIT_SIMULATION_USERNAME }}\""
+            echo "CREDIT_SIMULATION_PASSWORD=\"${{ secrets.CREDIT_SIMULATION_PASSWORD }}\""
+            echo "NEXTAUTH_URL=\"${{ secrets.NEXTAUTH_URL }}\""
+            echo "NEXTAUTH_SECRET=\"${{ secrets.NEXTAUTH_SECRET }}\""
+            echo "API_BASE_URL=\"${{ secrets.API_BASE_URL }}\""
+            echo "NODE_ENV=production"
+            echo "CSP_ENFORCE=${{ secrets.CSP_ENFORCE }}"
+          } > "$ENV_FILE"
+          chmod 600 "$ENV_FILE"
+
+          # Runtime must not depend on workspace .env
+          rm -f .env
    
       - name: Build application
-        run: npm run build
+        run: |
+          set -euo pipefail
+          set -a
+          source "$ENV_FILE"
+          set +a
+          npm run build
 
       - name: Apply Database Migrations
         run: |
+          set -euo pipefail
+          set -a
+          source "$ENV_FILE"
+          set +a
           npx prisma migrate deploy
 
       - name: Restart App with PM2
         run: |
-          pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
+          set -euo pipefail
+          set -a
+          source "$ENV_FILE"
+          set +a
+
+          # Recreate so PM2 dump stores injected env (plain restart can keep stale env)
+          pm2 delete nextjs-app 2>/dev/null || true
+          pm2 start npm --name nextjs-app -- start
           pm2 save
+          
