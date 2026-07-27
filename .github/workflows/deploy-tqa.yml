@@ -49,20 +49,8 @@ jobs:
       - name: Apply Database Migrations & Optional Seed
         run: |
           npx prisma migrate deploy
-          if [ -n "${{ secrets.SEED_ADMIN_PASSWORD }}" ]; then
-            echo "SEED_ADMIN_PASSWORD is set — running db:seed"
-            SEED_ADMIN_PASSWORD="${{ secrets.SEED_ADMIN_PASSWORD }}" npm run db:seed
-          else
-            echo "SEED_ADMIN_PASSWORD unset — skipping db:seed"
-          fi
 
       - name: Restart App with PM2
         run: |
           pm2 restart nextjs-app || pm2 start npm --name "nextjs-app" -- start
           pm2 save
-
-      - name: Remove deploy secrets from workspace
-        if: always()
-        run: |
-          rm -f .env
-          command -v shred >/dev/null 2>&1 && shred -u -n 1 .env 2>/dev/null || true
