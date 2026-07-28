@@ -5,6 +5,7 @@ import { getSessionFromRequest } from "@/lib/auth-middleware";
 import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
 import { checkWriteOrigin } from "@/lib/security/origin-check";
 import { CSP_POLICY, getCspHeaderName } from "@/lib/security/csp";
+import { cacheControlForPath } from "@/lib/security/cache-headers";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -69,9 +70,39 @@ function withCors(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-/** CSP always; CORS only for API when ALLOWED_ORIGINS is set. */
+/** Cache-Control + nosniff on middleware-produced responses (redirects, 401 JSON, etc.). */
+function withCacheAndContentGuards(
+  response: NextResponse,
+  request: NextRequest
+): NextResponse {
+  if (!response.headers.has("X-Content-Type-Options")) {
+    response.headers.set("X-Content-Type-Options", "nosniff");
+  }
+
+  const cache = cacheControlForPath(request.nextUrl.pathname);
+  if (cache && !response.headers.has("Cache-Control")) {
+    response.headers.set("Cache-Control", cache);
+  }
+
+  // Redirects / empty bodies often omit Content-Type; scanners flag that.
+  // text/plain is safe for no-body responses; JSON helpers already set application/json.
+  if (!response.headers.has("Content-Type")) {
+    const status = response.status;
+    if (status >= 300 && status < 400) {
+      response.headers.set("Content-Type", "text/plain; charset=utf-8");
+    } else if (status === 204) {
+      // 204 No Content — omit body type intentionally; nosniff still applies.
+    } else {
+      response.headers.set("Content-Type", "text/plain; charset=utf-8");
+    }
+  }
+
+  return response;
+}
+
+/** CSP always; CORS only for API when ALLOWED_ORIGINS is set; cache/type guards. */
 function finalize(response: NextResponse, request: NextRequest): NextResponse {
-  return withCsp(withCors(response, request));
+  return withCacheAndContentGuards(withCsp(withCors(response, request)), request);
 }
 
 export async function middleware(request: NextRequest) {
@@ -102,7 +133,11 @@ export async function middleware(request: NextRequest) {
       const cors = getCorsHeaders(request);
       const res = new NextResponse(null, {
         status: 204,
-        headers: cors ?? {},
+        headers: {
+          ...(cors ?? {}),
+          "X-Content-Type-Options": "nosniff",
+          "Cache-Control": "private, no-store, no-cache, must-revalidate",
+        },
       });
       return withCsp(res);
     }
