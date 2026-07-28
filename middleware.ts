@@ -88,17 +88,17 @@ function withCacheAndContentGuards(
     response.headers.set("Cache-Control", cache);
   }
 
-  // Redirects / empty bodies often omit Content-Type; scanners flag that.
-  // text/plain is safe for no-body responses; JSON helpers already set application/json.
-  if (!response.headers.has("Content-Type")) {
-    const status = response.status;
-    if (status >= 300 && status < 400) {
-      response.headers.set("Content-Type", "text/plain; charset=utf-8");
-    } else if (status === 204) {
-      // 204 No Content — omit body type intentionally; nosniff still applies.
-    } else {
-      response.headers.set("Content-Type", "text/plain; charset=utf-8");
-    }
+  // Only set Content-Type on middleware-owned redirects.
+  // Do NOT set text/plain on NextResponse.next() — that response has no
+  // Content-Type yet; forcing text/plain makes HTML pages render as source
+  // (especially with nosniff). Page/JSON handlers set their own types later.
+  const status = response.status;
+  if (
+    status >= 300 &&
+    status < 400 &&
+    !response.headers.has("Content-Type")
+  ) {
+    response.headers.set("Content-Type", "text/plain; charset=utf-8");
   }
 
   return response;
