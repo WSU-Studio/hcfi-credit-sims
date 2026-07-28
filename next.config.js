@@ -35,6 +35,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Hide framework fingerprint from response headers (SOC finding #5).
+  poweredByHeader: false,
   async headers() {
     return [
       {
