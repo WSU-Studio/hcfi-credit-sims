@@ -57,6 +57,10 @@ function getCorsHeaders(request: NextRequest): Record<string, string> | null {
 }
 
 function withCsp(response: NextResponse): NextResponse {
+  // Runtime env wins: drop both CSP header names then set the active one so we
+  // never emit Report-Only + Enforce together from next.config + middleware.
+  response.headers.delete("Content-Security-Policy");
+  response.headers.delete("Content-Security-Policy-Report-Only");
   response.headers.set(getCspHeaderName(), CSP_POLICY);
   return response;
 }
@@ -133,13 +137,10 @@ export async function middleware(request: NextRequest) {
       const cors = getCorsHeaders(request);
       const res = new NextResponse(null, {
         status: 204,
-        headers: {
-          ...(cors ?? {}),
-          "X-Content-Type-Options": "nosniff",
-          "Cache-Control": "private, no-store, no-cache, must-revalidate",
-        },
+        headers: cors ?? {},
       });
-      return withCsp(res);
+      // Same CSP / cache / nosniff path as every other response (SOC 3a).
+      return finalize(res, request);
     }
   }
 
@@ -230,5 +231,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
+  // Include robots/sitemap (have a file extension) — previously skipped by
+  // the `.*\\..*` exclusion, so CSP was missing on those public metadata routes.
+  matcher: [
+    "/((?!_next/static|_next/image|_vercel|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?|ttf|eot|css|js|map)$).*)",
+    "/robots.txt",
+    "/sitemap.xml",
+  ],
 };

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, next.config.js) */
 /** @type {import('next').NextConfig} */
 const createNextIntlPlugin = require("next-intl/plugin");
+const { CSP_POLICY, getCspHeaderName } = require("./lib/security/csp-shared.js");
 
 // Relative path (Turbopack rejects absolute). Plugin aliases "next-intl/config" -> this file.
 const withNextIntl = createNextIntlPlugin("i18n/request.ts");
@@ -22,8 +23,12 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
-  // CSP is applied at runtime in middleware (`lib/security/csp.ts`) via
-  // CSP_ENFORCE so QA can flip Report-Only → enforce without a rebuild.
+  // Baseline CSP on every Next header-eligible response (SOC 3a consistency).
+  // Middleware also sets the same policy at request time (CSP_ENFORCE flip).
+  {
+    key: getCspHeaderName(),
+    value: CSP_POLICY,
+  },
   ...(process.env.NODE_ENV === 'production'
     ? [
         {
