@@ -1,15 +1,17 @@
 /**
  * Content-Security-Policy for the whole app (Edge-safe — no require()).
  *
- * Keep the directive list in sync with `csp-shared.js` (used by next.config.js)
- * so middleware + Next headers() emit the same policy (SOC finding 3a).
+ * Keep the directive list in sync with `csp-shared.js` (used by next.config.js).
+ *
+ * Aligned with Google Tag Manager / GA4 CSP guidance (minimum viable, no nonce yet):
+ * https://developers.google.com/tag-platform/security/guides/csp
  *
  * Set `CSP_ENFORCE=true` (or `1`) to switch from Report-Only → enforce.
- * Middleware re-applies at request time; next.config adds a baseline on all
- * header-eligible responses (including paths that skip the middleware matcher).
  *
- * Note: script-src still allows 'unsafe-inline'/'unsafe-eval' until a nonce
- * migration; tightening those is a separate breaking change.
+ * Still pending (Ideal CSP): per-request nonce to drop script-src 'unsafe-inline'.
+ * style-src 'unsafe-inline' kept for Next.js / inline styles.
+ * GTM Custom JavaScript variables need 'unsafe-eval' — removed per SOC; prefer
+ * Custom Templates in GTM if tags break.
  */
 export const CSP_POLICY = [
   "default-src 'self'",
@@ -17,11 +19,13 @@ export const CSP_POLICY = [
   "form-action 'self'",
   "frame-ancestors 'self'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com",
+  // No 'unsafe-eval'; no broad www.google.com. Keep 'unsafe-inline' until nonce migration.
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  // No https: wildcard — explicit GA/GTM + known media hosts used by CMS/banner/S3.
+  "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.g.doubleclick.net https://*.amazonaws.com https://*.pexels.com https://*.unsplash.com https://*.cloudinary.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com https://www.google.com",
+  "connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com https://analytics.google.com https://*.analytics.google.com",
   "frame-src 'self' https://www.googletagmanager.com",
   "worker-src 'self' blob:",
 ].join('; ');
