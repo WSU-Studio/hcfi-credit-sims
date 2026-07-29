@@ -39,7 +39,7 @@ export function PreSimulationSummaryView({
         <p className="text-xs uppercase tracking-wide text-white/70">{t('eyebrow')}</p>
         <h1 className="mt-1 text-xl font-semibold leading-snug">{title}</h1>
         {vehicleSummary && <p className="mt-2 text-sm text-white/85">{vehicleSummary}</p>}
-        {vendorLabel && <p className="mt-1 text-xs text-white/70">{vendorLabel}</p>}
+        {/* {vendorLabel && <p className="mt-1 text-xs text-white/70">{vendorLabel}</p>} */}
       </div>
 
       <div className="p-6 space-y-6">
