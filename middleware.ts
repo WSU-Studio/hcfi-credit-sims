@@ -6,6 +6,7 @@ import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/rateli
 import { checkWriteOrigin } from "@/lib/security/origin-check";
 import { CSP_POLICY, getCspHeaderName } from "@/lib/security/csp";
 import { cacheControlForPath } from "@/lib/security/cache-headers";
+import { isBlockedProbePath } from "@/lib/security/blocked-paths";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -112,6 +113,14 @@ function finalize(response: NextResponse, request: NextRequest): NextResponse {
 export async function middleware(request: NextRequest) {
   const rawPathname = request.nextUrl.pathname;
   const pathname = stripLocaleFromDealerPath(normalizePathname(rawPathname));
+
+  // Deny scanner probe paths (e.g. /graphql) before CMS catch-all can 404 them.
+  if (isBlockedProbePath(pathname)) {
+    return finalize(
+      new NextResponse(null, { status: 404 }),
+      request
+    );
+  }
 
   if (pathname !== rawPathname) {
     const url = request.nextUrl.clone();

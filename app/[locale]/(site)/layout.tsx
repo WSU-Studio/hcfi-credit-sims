@@ -14,6 +14,7 @@ import { pickLocaleString } from "@/lib/pick-locale";
 import type { Locale } from "@/lib/pick-locale";
 import { SeoStructuredDataOrganization } from "@/app/components/seo/SeoStructuredData";
 import { routing } from "@/i18n/routing";
+import { getPublicSiteOrigin } from "@/lib/seo-url";
 
 async function getStaticPages() {
   try {
@@ -230,7 +231,7 @@ type Props = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = getPublicSiteOrigin();
 
   return {
     title: t("siteTitle"),
@@ -269,7 +270,7 @@ export default async function SiteLayout({ children, params }: Props) {
   const fabCtaTextId = siteSettings.whatsappFabCtaText.trim() || undefined;
   const fabCtaTextEn = siteSettings.whatsappFabCtaTextEn.trim() || undefined;
   const showWhatsappFab = siteSettings.whatsappFabVisible.toLowerCase() !== "false";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = getPublicSiteOrigin();
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
