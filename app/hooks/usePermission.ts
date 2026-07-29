@@ -25,9 +25,14 @@ export function useUserPermissions() {
       return;
     }
 
-    fetch('/api/permissions/me')
-      .then((res) => res.json())
-      .then((data) => {
+    fetch('/api/permissions/me', { credentials: 'same-origin' })
+      .then(async (res) => {
+        if (!res.ok) {
+          setPermissions({});
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
         setPermissions(data.permissions ?? {});
         setLoading(false);
       })

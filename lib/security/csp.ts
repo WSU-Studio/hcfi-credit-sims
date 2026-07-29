@@ -8,19 +8,31 @@
  *
  * Set `CSP_ENFORCE=true` (or `1`) to switch from Report-Only → enforce.
  *
- * Still pending (Ideal CSP): per-request nonce to drop script-src 'unsafe-inline'.
- * style-src 'unsafe-inline' kept for Next.js / inline styles.
- * GTM Custom JavaScript variables need 'unsafe-eval' — removed per SOC; prefer
- * Custom Templates in GTM if tags break.
+ * 'unsafe-eval' is intentionally omitted (SOC). Next.js production builds and
+ * the admin shell do not require it. Local `next dev` HMR may need
+ * CSP_ALLOW_UNSAFE_EVAL=true only as an escape hatch — never set on TQA/prod.
+ * Ideal follow-up: per-request nonce to drop script-src 'unsafe-inline'.
  */
+
+const allowUnsafeEval =
+  (process.env.CSP_ALLOW_UNSAFE_EVAL ?? '').trim() === 'true';
+
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  ...(allowUnsafeEval ? ["'unsafe-eval'"] : []),
+  'https://www.googletagmanager.com',
+  'https://www.google-analytics.com',
+  'https://analytics.google.com',
+].join(' ');
+
 export const CSP_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'self'",
   "object-src 'none'",
-  // No 'unsafe-eval'; no broad www.google.com. Keep 'unsafe-inline' until nonce migration.
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
+  `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline'",
   // No https: wildcard — explicit GA/GTM + known media hosts used by CMS/banner/S3.
   "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.g.doubleclick.net https://*.amazonaws.com https://*.pexels.com https://*.unsplash.com https://*.cloudinary.com",
