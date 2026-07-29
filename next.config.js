@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS for plain Node (EB, next.config.js) */
 /** @type {import('next').NextConfig} */
 const createNextIntlPlugin = require("next-intl/plugin");
+const { CSP_POLICY, getCspHeaderName } = require("./lib/security/csp-shared.js");
 
 // Relative path (Turbopack rejects absolute). Plugin aliases "next-intl/config" -> this file.
 const withNextIntl = createNextIntlPlugin("i18n/request.ts");
@@ -22,8 +23,12 @@ const securityHeaders = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
   },
-  // CSP is applied at runtime in middleware (`lib/security/csp.ts`) via
-  // CSP_ENFORCE so QA can flip Report-Only → enforce without a rebuild.
+  // Baseline CSP on every Next header-eligible response (SOC 3a consistency).
+  // Middleware also sets the same policy at request time (CSP_ENFORCE flip).
+  {
+    key: getCspHeaderName(),
+    value: CSP_POLICY,
+  },
   ...(process.env.NODE_ENV === 'production'
     ? [
         {
@@ -35,11 +40,81 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Hide framework fingerprint from response headers (SOC finding #5).
+  poweredByHeader: false,
   async headers() {
     return [
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      // Sensitive / personalized surfaces — never cache at shared proxies.
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/dealer/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      // Public metadata — explicit TTL (SOC called out robots.txt cache review).
+      {
+        source: '/robots.txt',
+        headers: [
+          { key: 'Content-Type', value: 'text/plain; charset=utf-8' },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/sitemap.xml',
+        headers: [
+          { key: 'Content-Type', value: 'application/xml; charset=utf-8' },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, must-revalidate',
+          },
+        ],
+      },
+      // Fingerprinted build assets — long-lived (URLs change on deploy).
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
     ];
   },

@@ -1,10 +1,12 @@
 /**
- * Content-Security-Policy for the whole app.
+ * Content-Security-Policy for the whole app (Edge-safe — no require()).
+ *
+ * Keep the directive list in sync with `csp-shared.js` (used by next.config.js)
+ * so middleware + Next headers() emit the same policy (SOC finding 3a).
  *
  * Set `CSP_ENFORCE=true` (or `1`) to switch from Report-Only → enforce.
- * Evaluated at request time in middleware so EB/self-hosted env can flip
- * without rebuild. Recommended rollout: enable on TQA first, watch for
- * violations (TipTap / GTM / inline scripts), then production.
+ * Middleware re-applies at request time; next.config adds a baseline on all
+ * header-eligible responses (including paths that skip the middleware matcher).
  *
  * Note: script-src still allows 'unsafe-inline'/'unsafe-eval' until a nonce
  * migration; tightening those is a separate breaking change.

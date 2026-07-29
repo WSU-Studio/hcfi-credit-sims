@@ -5,6 +5,7 @@ import { getSessionFromRequest } from "@/lib/auth-middleware";
 import { getClientIp, loginLimiter, tooManyRequestsResponse } from "@/lib/ratelimit";
 import { checkWriteOrigin } from "@/lib/security/origin-check";
 import { CSP_POLICY, getCspHeaderName } from "@/lib/security/csp";
+import { cacheControlForPath } from "@/lib/security/cache-headers";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -56,6 +57,10 @@ function getCorsHeaders(request: NextRequest): Record<string, string> | null {
 }
 
 function withCsp(response: NextResponse): NextResponse {
+  // Runtime env wins: drop both CSP header names then set the active one so we
+  // never emit Report-Only + Enforce together from next.config + middleware.
+  response.headers.delete("Content-Security-Policy");
+  response.headers.delete("Content-Security-Policy-Report-Only");
   response.headers.set(getCspHeaderName(), CSP_POLICY);
   return response;
 }
@@ -69,9 +74,39 @@ function withCors(response: NextResponse, request: NextRequest): NextResponse {
   return response;
 }
 
-/** CSP always; CORS only for API when ALLOWED_ORIGINS is set. */
+/** Cache-Control + nosniff on middleware-produced responses (redirects, 401 JSON, etc.). */
+function withCacheAndContentGuards(
+  response: NextResponse,
+  request: NextRequest
+): NextResponse {
+  if (!response.headers.has("X-Content-Type-Options")) {
+    response.headers.set("X-Content-Type-Options", "nosniff");
+  }
+
+  const cache = cacheControlForPath(request.nextUrl.pathname);
+  if (cache && !response.headers.has("Cache-Control")) {
+    response.headers.set("Cache-Control", cache);
+  }
+
+  // Only set Content-Type on middleware-owned redirects.
+  // Do NOT set text/plain on NextResponse.next() — that response has no
+  // Content-Type yet; forcing text/plain makes HTML pages render as source
+  // (especially with nosniff). Page/JSON handlers set their own types later.
+  const status = response.status;
+  if (
+    status >= 300 &&
+    status < 400 &&
+    !response.headers.has("Content-Type")
+  ) {
+    response.headers.set("Content-Type", "text/plain; charset=utf-8");
+  }
+
+  return response;
+}
+
+/** CSP always; CORS only for API when ALLOWED_ORIGINS is set; cache/type guards. */
 function finalize(response: NextResponse, request: NextRequest): NextResponse {
-  return withCsp(withCors(response, request));
+  return withCacheAndContentGuards(withCsp(withCors(response, request)), request);
 }
 
 export async function middleware(request: NextRequest) {
@@ -104,7 +139,8 @@ export async function middleware(request: NextRequest) {
         status: 204,
         headers: cors ?? {},
       });
-      return withCsp(res);
+      // Same CSP / cache / nosniff path as every other response (SOC 3a).
+      return finalize(res, request);
     }
   }
 
@@ -195,5 +231,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
+  // Include robots/sitemap (have a file extension) — previously skipped by
+  // the `.*\\..*` exclusion, so CSP was missing on those public metadata routes.
+  matcher: [
+    "/((?!_next/static|_next/image|_vercel|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?|ttf|eot|css|js|map)$).*)",
+    "/robots.txt",
+    "/sitemap.xml",
+  ],
 };
