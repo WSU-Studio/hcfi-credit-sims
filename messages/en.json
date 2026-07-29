@@ -201,6 +201,7 @@
     "summaryModalTitle": "Credit Simulation Summary",
     "summaryPdfFileName": "credit-simulation-summary",
     "summaryProductSectionTitle": "Product",
+    "summaryCreatedAt": "Created at",
     "summaryLeadNoLabel": "LeadNo",
     "summaryVehicleInfoSectionTitle": "Vehicle Info",
     "summaryVehicleModelLabel": "Vehicle Model",
