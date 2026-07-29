@@ -66,6 +66,7 @@ export default async function DashboardPage() {
   const showContent =
     canBanners || canProducts || canPromos || canArticles || canPages;
   const showMediaLeads = canMedia || canLeads;
+  const isEmpty = !showContent && !showMediaLeads;
 
   return (
     <div className="space-y-8">
@@ -75,6 +76,21 @@ export default async function DashboardPage() {
           Ringkasan data esensial CMS dan leads simulasi kredit
         </p>
       </div>
+
+      {isEmpty && (
+        <div className="flex min-h-[280px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-12">
+          <div className="max-w-md text-center">
+            <p className="text-lg font-semibold text-gray-900">
+              Siap berkontribusi hari ini?
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+              Dashboard ringkasan belum tersedia untuk akses Anda saat ini.
+              Gunakan menu di samping untuk mulai bekerja — setiap langkah
+              kecil Anda membantu tim bergerak lebih maju.
+            </p>
+          </div>
+        </div>
+      )}
 
       {showContent && (
         <section>
