@@ -838,7 +838,7 @@ export function ResultStep({
                   <div className="text-gray-500">{t('installmentPerMonth')}</div>
                   <div className="font-bold text-[#002c5f]">{formatCurrency(highlightedRow.InstallmentAmt)}</div>
                 </div>
-                <div>
+                {/* <div>
                   <div className="text-gray-500">{t('tenor')}</div>
                   <div className="font-semibold">{highlightedRow.Tenor} {t('months')}</div>
                 </div>
@@ -850,7 +850,7 @@ export function ResultStep({
                       ? Number(highlightedRow.FlatRatePrcnt)
                       : '—'}
                   </div>
-                </div>
+                </div> */}
                 {Number(highlightedRow.BalloonAmt) > 0 && (
                   <div className="col-span-2">
                     <div className="text-gray-500">{t('balloonAmount')}</div>
