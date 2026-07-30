@@ -36,6 +36,13 @@ export type LeadForAssign = {
   ktpUrl?: string | null;
   motherName?: string | null;
   homeOwnershipStatus?: string | null;
+  /** CMO terikat di user salesman — jika ada, dropdown CMO di-lock. */
+  salesUser?: {
+    id: string;
+    name: string;
+    email: string;
+    cmoEmpNo?: string | null;
+  } | null;
 };
 
 interface LeadAssignRowProps {
@@ -65,6 +72,8 @@ export function LeadAssignRow({
   const isSubmitted = lead.hyundaiAssignStatus === 'SUBMITTED' && !!lead.hyundaiLeadNo;
   const isSubmittingOnServer = lead.hyundaiAssignStatus === 'SUBMITTING';
   const scoringComplete = isLeadScoringComplete(lead);
+  const lockedSalesCmoEmpNo = lead.salesUser?.cmoEmpNo?.trim() || null;
+  const isCmoLocked = Boolean(lockedSalesCmoEmpNo);
 
   const [selection, setSelection] = useState<LeadAssignState>({
     vendorCode: lead.vendorCode ?? '',
@@ -113,16 +122,36 @@ export function LeadAssignRow({
         if (data.error) throw new Error(data.error);
         const list: CmoSelectOption[] = data.salesPersons ?? [];
         setSalesPersons(list);
-        if (!selection.cmoSelectKey && list.length > 0) {
-          const first = list[0];
-          const { CMOName } = resolveCmoAssignFields(first.Key, first.Value);
-          setSelection((prev) => ({
-            ...prev,
-            cmoSelectKey: first.Key,
-            cmoName: CMOName,
-            cmoOfficeCode: first.officeMemberCode,
-          }));
-        } else if (selection.cmoSelectKey && list.length > 0) {
+
+        if (lockedSalesCmoEmpNo) {
+          const locked = list.find(
+            (sp) => parseCmoSelectKey(sp.Key).cmoCode === lockedSalesCmoEmpNo
+          );
+          if (locked) {
+            const { CMOName } = resolveCmoAssignFields(locked.Key, locked.Value);
+            setSelection((prev) => ({
+              ...prev,
+              cmoSelectKey: locked.Key,
+              cmoName: CMOName,
+              cmoOfficeCode: locked.officeMemberCode,
+            }));
+          } else {
+            setSelection((prev) => ({
+              ...prev,
+              cmoSelectKey: lockedSalesCmoEmpNo,
+              cmoName: lockedSalesCmoEmpNo,
+              cmoOfficeCode: '',
+            }));
+            setError(
+              `CMO ${lockedSalesCmoEmpNo} dari user salesman tidak ditemukan di dealer ini.`
+            );
+          }
+          return;
+        }
+
+        // Tanpa CMO di user salesman: jangan auto-pilih. Admin memilih saat mau submit
+        // (setelah credit scoring lengkap).
+        if (selection.cmoSelectKey && list.length > 0) {
           const existing = list.find(
             (sp) =>
               sp.Key === selection.cmoSelectKey ||
@@ -137,6 +166,13 @@ export function LeadAssignRow({
               cmoOfficeCode: existing.officeMemberCode,
             }));
           }
+        } else {
+          setSelection((prev) => ({
+            ...prev,
+            cmoSelectKey: '',
+            cmoName: '',
+            cmoOfficeCode: '',
+          }));
         }
       })
       .catch((err: unknown) => {
@@ -153,7 +189,7 @@ export function LeadAssignRow({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selection.vendorCode, isSubmitted, vendors]);
+  }, [selection.vendorCode, isSubmitted, vendors, lockedSalesCmoEmpNo]);
 
   /*
   // Re-enable if Hyundai requests editable city/dealer assignment again.
@@ -333,38 +369,71 @@ export function LeadAssignRow({
         </div>
       </td>
       <td className="px-3 py-2 align-top">
-        <select
-          value={selection.cmoSelectKey}
-          onChange={(e) => {
-            const sp = salesPersons.find((s) => s.Key === e.target.value);
-            const { CMOName } = resolveCmoAssignFields(
-              e.target.value,
-              sp?.Value ?? ''
-            );
-            setSelection({
-              ...selection,
-              cmoSelectKey: e.target.value,
-              cmoName: CMOName,
-              cmoOfficeCode: sp?.officeMemberCode ?? '',
-            });
-          }}
-          disabled={
-            !canSubmit ||
-            submitting ||
-            !selection.vendorCode ||
-            cmoLoading ||
-            !scoringComplete
-          }
-          className={selectClass}
-          aria-label="Pilih CMO"
-        >
-          <option value="">{cmoLoading ? 'Memuat CMO...' : 'CMO'}</option>
-          {salesPersons.map((sp) => (
-            <option key={sp.Key} value={sp.Key}>
-              {sp.Value}
-            </option>
-          ))}
-        </select>
+        {isCmoLocked ? (
+          <div className="space-y-1">
+            <input
+              type="text"
+              readOnly
+              value={
+                cmoLoading
+                  ? 'Memuat CMO...'
+                  : selection.cmoName || lockedSalesCmoEmpNo || '-'
+              }
+              className={readonlyInputClass}
+              aria-label="CMO dari user salesman"
+              title={`CMO terikat ke user salesman (${lockedSalesCmoEmpNo}) — tidak dapat diubah`}
+            />
+            <p className="text-[10px] text-gray-500 leading-tight">
+              Dari user salesman ({lockedSalesCmoEmpNo})
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <select
+              value={selection.cmoSelectKey}
+              onChange={(e) => {
+                const sp = salesPersons.find((s) => s.Key === e.target.value);
+                const { CMOName } = resolveCmoAssignFields(
+                  e.target.value,
+                  sp?.Value ?? ''
+                );
+                setSelection({
+                  ...selection,
+                  cmoSelectKey: e.target.value,
+                  cmoName: CMOName,
+                  cmoOfficeCode: sp?.officeMemberCode ?? '',
+                });
+              }}
+              disabled={
+                !canSubmit ||
+                submitting ||
+                !selection.vendorCode ||
+                cmoLoading ||
+                !scoringComplete
+              }
+              className={selectClass}
+              aria-label="Pilih CMO"
+            >
+              <option value="">
+                {cmoLoading
+                  ? 'Memuat CMO...'
+                  : !scoringComplete
+                    ? 'Lengkapi data dulu'
+                    : 'Pilih CMO'}
+              </option>
+              {salesPersons.map((sp) => (
+                <option key={sp.Key} value={sp.Key}>
+                  {sp.Value}
+                </option>
+              ))}
+            </select>
+            {!scoringComplete && (
+              <p className="text-[10px] text-amber-700 leading-tight">
+                Pilih CMO setelah data credit scoring dilengkapi.
+              </p>
+            )}
+          </div>
+        )}
       </td>
       <td className="px-3 py-2 align-top max-w-[10rem]">
         {!scoringComplete ? (
