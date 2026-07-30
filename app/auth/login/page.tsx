@@ -82,7 +82,12 @@ function LoginForm() {
             Hyundai Capital Finance Indonesia
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form
+          className="mt-8 space-y-6"
+          method="post"
+          action="/auth/login"
+          onSubmit={handleSubmit}
+        >
           {error && (
             <div
               role="alert"

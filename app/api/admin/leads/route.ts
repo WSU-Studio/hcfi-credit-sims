@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           salesUser: {
-            select: { id: true, name: true, email: true },
+            select: { id: true, name: true, email: true, cmoEmpNo: true },
           },
         },
       }),
