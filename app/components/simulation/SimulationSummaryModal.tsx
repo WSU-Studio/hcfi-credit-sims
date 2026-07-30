@@ -232,8 +232,8 @@ export function SimulationSummaryModal({
     y += 6;
     doc.setFont('helvetica', 'normal');
     doc.text(`${t('summaryDownPaymentPercentLabel')}: ${summary.assetDownPaymentPrcnt}%`, left, (y += 5));
-    doc.text(`${t('tenor')}: ${t('tenorWithMonths', { tenor: summary.tenor })}`, left, (y += 5));
-    doc.text(`${t('summaryFlatRatePercentLabel')}: ${summary.flatRatePrcnt}%`, left, (y += 5));
+    // doc.text(`${t('tenor')}: ${t('tenorWithMonths', { tenor: summary.tenor })}`, left, (y += 5));
+    // doc.text(`${t('summaryFlatRatePercentLabel')}: ${summary.flatRatePrcnt}%`, left, (y += 5));
     doc.text(`${installLabel}: ${formatRp(summary.instAmt)}`, left, (y += 5));
     if (showBalloonAmt) {
       doc.text(`${t('balloonAmount')}: ${formatRp(balloonAmt)}`, left, (y += 5));
@@ -383,10 +383,10 @@ export function SimulationSummaryModal({
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <dt className="text-gray-500">{t('summaryDownPaymentPercentLabel')}</dt>
                   <dd className="font-medium text-gray-900">{summary.assetDownPaymentPrcnt}</dd>
-                  <dt className="text-gray-500">{t('tenor')}</dt>
+                  {/* <dt className="text-gray-500">{t('tenor')}</dt>
                   <dd className="font-medium text-gray-900">{summary.tenor}</dd>
                   <dt className="text-gray-500">{t('summaryFlatRatePercentLabel')}</dt>
-                  <dd className="font-medium text-gray-900">{summary.flatRatePrcnt}</dd>
+                  <dd className="font-medium text-gray-900">{summary.flatRatePrcnt}</dd> */}
                   <dt className="text-gray-500">{t('summaryInsuranceTypeLabel')}</dt>
                   <dd className="font-medium text-gray-900">{t('summaryInsuranceTypeValue')}</dd>
                   <dt className="text-gray-500">{t('summaryInsurancePaymentTypeLabel')}</dt>
