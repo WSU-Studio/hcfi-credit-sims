@@ -79,7 +79,12 @@ export function PreSimulationSummaryView({
           </div>
           <div>
             <p className="text-xs text-gray-500">{t('flatRateLabel')}</p>
-            <p className="font-semibold">{summary.flatRatePrcnt}%</p>
+            <p className="font-semibold">
+              {new Intl.NumberFormat(numberLocale, {
+                maximumFractionDigits: 2,
+              }).format(summary.flatRatePrcnt)}
+              %
+            </p>
           </div>
           {discount != null && discount > 0 && (
             <div>
