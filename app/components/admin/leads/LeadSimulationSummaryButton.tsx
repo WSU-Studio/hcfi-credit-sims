@@ -26,6 +26,7 @@ export type LeadSimulationSummarySource = {
   tenor: number | null;
   vehicleSummary?: string | null;
   assetSnapshot?: unknown;
+  createdAt?: string | null;
 };
 
 function resolveLeadNo(lead: LeadSimulationSummarySource): string | null {
@@ -158,6 +159,7 @@ export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButto
             open={open}
             onClose={handleClose}
             leadNo={leadNo}
+            createdAt={lead.createdAt}
             vehicle={vehicle}
             discount={discount}
             firstInstallment={firstInstallment}

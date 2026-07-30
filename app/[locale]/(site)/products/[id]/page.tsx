@@ -10,6 +10,7 @@ import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
 import { pickLocaleString } from '@/lib/pick-locale';
 import type { Locale } from '@/lib/pick-locale';
+import { getPublicSiteOrigin, ogImageEntry } from '@/lib/seo-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,34 +40,26 @@ export async function generateMetadata({
   const { id, locale } = await params;
   const product = await getProductById(id, locale as Locale);
   if (!product) return { title: 'Hyundai Capital' };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const ogImage = product.imageUrl?.trim() || '/images/main-banner.jpg';
+  const siteUrl = getPublicSiteOrigin();
+  const title = `Hyundai Capital - ${product.title}`;
+  const og = ogImageEntry(product.imageUrl, product.title);
   const url = siteUrl ? `${siteUrl}/${locale}/products/${id}` : undefined;
 
   return {
-    title: `Hyundai Capital - ${product.title}`,
+    title,
     description: product.subtitle ?? undefined,
     openGraph: {
-      title: `Hyundai Capital - ${product.title}`,
+      title,
       description: product.subtitle ?? undefined,
       type: 'website',
       url,
-      images: ogImage
-        ? [
-            {
-              url: ogImage,
-              width: 1200,
-              height: 630,
-              alt: product.title,
-            },
-          ]
-        : undefined,
+      images: og ? [og] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Hyundai Capital - ${product.title}`,
+      title,
       description: product.subtitle ?? undefined,
-      images: ogImage ? [ogImage] : undefined,
+      images: og ? [og.url] : undefined,
     },
   };
 }

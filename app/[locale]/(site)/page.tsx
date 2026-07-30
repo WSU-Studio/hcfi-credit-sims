@@ -9,19 +9,20 @@ import { prisma } from "@/lib/prisma";
 import { pickLocaleString } from "@/lib/pick-locale";
 import type { Locale } from "@/lib/pick-locale";
 import { getSiteSettings } from "@/lib/site-settings";
+import { getPublicSiteOrigin, ogImageEntry } from "@/lib/seo-url";
 
 // Agar banner, benefits, products selalu di-fetch fresh dari DB (tidak di-cache saat build).
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("home");
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = getPublicSiteOrigin();
   const locale = (await getLocale()) as Locale;
   const [firstBanner] = await getBanners(locale);
 
   const title = t("metaTitle");
   const description = t("metaDescription");
-  const ogImage = firstBanner?.image || "/images/main-banner.jpg";
+  const og = ogImageEntry(firstBanner?.image, title);
 
   return {
     title,
@@ -32,22 +33,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: title,
       url: siteUrl || undefined,
       type: "website",
-      images: ogImage
-        ? [
-            {
-              url: ogImage,
-              width: 1200,
-              height: 630,
-              alt: title,
-            },
-          ]
-        : undefined,
+      images: og ? [og] : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: ogImage ? [ogImage] : undefined,
+      images: og ? [og.url] : undefined,
     },
   };
 }

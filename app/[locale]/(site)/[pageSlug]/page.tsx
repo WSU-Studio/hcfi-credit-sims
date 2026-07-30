@@ -9,10 +9,19 @@ import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
 import { pickLocaleString } from '@/lib/pick-locale';
 import type { Locale } from '@/lib/pick-locale';
+import { getPublicSiteOrigin, ogImageEntry } from '@/lib/seo-url';
 
 export const dynamic = 'force-dynamic';
 
-const RESERVED_SLUGS = ['credit-simulation', 'admin', 'auth', 'api'];
+const RESERVED_SLUGS = [
+  'credit-simulation',
+  'admin',
+  'auth',
+  'api',
+  'graphql',
+  'graphiql',
+  'playground',
+];
 
 async function getPageBySlug(slug: string, locale: Locale) {
   if (RESERVED_SLUGS.includes(slug)) return null;
@@ -52,36 +61,31 @@ export async function generateMetadata({
   const { pageSlug, locale } = await params;
   const page = await getPageBySlug(pageSlug, locale as Locale);
   if (!page) return { title: 'Hyundai Capital' };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = getPublicSiteOrigin();
   const url = siteUrl ? `${siteUrl}/${locale}/${pageSlug}` : undefined;
   const rawContent = (page as { content?: string | null }).content ?? '';
   const description =
     rawContent.trim().length > 0
       ? rawContent.replace(/\s+/g, ' ').slice(0, 160).trim()
       : undefined;
+  const title = `Hyundai Capital - ${page.title}`;
+  const og = ogImageEntry(null, title);
 
   return {
-    title: `Hyundai Capital - ${page.title}`,
+    title,
     description,
     openGraph: {
-      title: `Hyundai Capital - ${page.title}`,
+      title,
       description,
       type: 'website',
       url,
-      images: [
-        {
-          url: '/images/main-banner.jpg',
-          width: 1200,
-          height: 630,
-          alt: `Hyundai Capital - ${page.title}`,
-        },
-      ],
+      images: og ? [og] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Hyundai Capital - ${page.title}`,
+      title,
       description,
-      images: ['/images/main-banner.jpg'],
+      images: og ? [og.url] : undefined,
     },
   };
 }

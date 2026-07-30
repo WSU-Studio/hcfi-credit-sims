@@ -11,6 +11,7 @@ import { SanitizedHtml } from '@/app/components/ui/SanitizedHtml';
 import { WidgetRenderer } from '@/app/components/page-builder/WidgetRenderer';
 import type { PageLayout, LayoutRow } from '@/app/types';
 import { IconQuoteFilled } from '@tabler/icons-react';
+import { getPublicSiteOrigin, ogImageEntry } from '@/lib/seo-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,34 +46,28 @@ export async function generateMetadata({
   const { slug, locale } = await params;
   const article = await getArticleBySlug(slug, locale as Locale);
   if (!article) return { title: 'Hyundai Capital' };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const ogImage = (article as { imageUrl?: string | null }).imageUrl?.trim() || '/images/main-banner.jpg';
+  const siteUrl = getPublicSiteOrigin();
+  const title = `Hyundai Capital - ${article.title}`;
+  const imageUrl = (article as { imageUrl?: string | null }).imageUrl;
+  const og = ogImageEntry(imageUrl, article.title);
   const url = siteUrl ? `${siteUrl}/${locale}/articles/${slug}` : undefined;
+  const description = article.metaDescription ?? article.excerpt ?? undefined;
 
   return {
-    title: `Hyundai Capital - ${article.title}`,
-    description: article.metaDescription ?? article.excerpt ?? undefined,
+    title,
+    description,
     openGraph: {
-      title: `Hyundai Capital - ${article.title}`,
-      description: article.metaDescription ?? article.excerpt ?? undefined,
+      title,
+      description,
       type: 'article',
       url,
-      images: ogImage
-        ? [
-            {
-              url: ogImage,
-              width: 1200,
-              height: 630,
-              alt: article.title,
-            },
-          ]
-        : undefined,
+      images: og ? [og] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Hyundai Capital - ${article.title}`,
-      description: article.metaDescription ?? article.excerpt ?? undefined,
-      images: ogImage ? [ogImage] : undefined,
+      title,
+      description,
+      images: og ? [og.url] : undefined,
     },
   };
 }

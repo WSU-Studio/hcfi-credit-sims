@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
+import { getPublicSiteOrigin } from "@/lib/seo-url";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3070";
+  const siteUrl = getPublicSiteOrigin();
+  // Without a public origin, emit nothing — never fall back to localhost.
+  if (!siteUrl) return [];
 
   const baseEntries = routing.locales.flatMap((locale) => {
     const prefix = `/${locale}`;
@@ -32,4 +35,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return baseEntries;
 }
-

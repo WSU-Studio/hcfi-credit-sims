@@ -23,6 +23,8 @@ interface SimulationSummaryModalProps {
   open: boolean;
   onClose: () => void;
   leadNo?: string | null;
+  /** ISO / Date — waktu lead atau saat ringkasan digenerate. */
+  createdAt?: string | Date | null;
   vehicle?: VehicleSummaryInfo;
   discount?: number;
   firstInstallment: 'ADDM' | 'ADDB';
@@ -70,10 +72,23 @@ function loadLogoAsDataUrl(logoPath: string): Promise<string | null> {
   });
 }
 
+function formatCreatedAt(
+  value: string | Date,
+  numberLocale: string
+): string | null {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString(numberLocale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
 export function SimulationSummaryModal({
   open,
   onClose,
   leadNo,
+  createdAt,
   vehicle,
   discount = 0,
   firstInstallment,
@@ -94,6 +109,8 @@ export function SimulationSummaryModal({
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(n);
+  const createdAtLabel =
+    createdAt != null ? formatCreatedAt(createdAt, numberLocale) : null;
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -190,6 +207,10 @@ export function SimulationSummaryModal({
     y += 12;
     if (leadNo) {
       doc.text(`${t('summaryLeadNoLabel')}: ${leadNo}`, left, (y += 5));
+      y += 4;
+    }
+    if (createdAtLabel) {
+      doc.text(`${t('summaryCreatedAt')}: ${createdAtLabel}`, left, (y += 5));
       y += 4;
     }
     y += 8;
@@ -313,6 +334,11 @@ export function SimulationSummaryModal({
                     <dt className="text-gray-500">{t('summaryLeadNoLabel')}</dt>
                     <dd className="font-semibold text-gray-900 font-mono tracking-wide">{leadNo}</dd>
                   </dl>
+                )}
+                {createdAtLabel && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {t('summaryCreatedAt')}: {createdAtLabel}
+                  </p>
                 )}
               </section>
 

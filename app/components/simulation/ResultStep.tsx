@@ -131,6 +131,7 @@ export function ResultStep({
   const [contactOpen, setContactOpen] = useState(false);
   const [whatsappLeadPhone, setWhatsappLeadPhone] = useState<string>('');
   const [finalSummary, setFinalSummary] = useState<FinalSummaryInfo | null>(null);
+  const [finalSummaryAt, setFinalSummaryAt] = useState<string | null>(null);
   const [finalSummaryLoading, setFinalSummaryLoading] = useState(false);
   const [finalSummaryError, setFinalSummaryError] = useState<string | null>(null);
   const [finalSummaryErrorId, setFinalSummaryErrorId] = useState<string | null>(null);
@@ -297,11 +298,13 @@ export function ResultStep({
         ...summary,
         balloonAmt: summaryBalloon > 0 ? summaryBalloon : rowBalloon > 0 ? rowBalloon : 0,
       });
+      setFinalSummaryAt(new Date().toISOString());
       setFinalSummaryCacheKey(cacheKey);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') return;
       if (generation !== finalSummaryGeneration.current) return;
       setFinalSummary(null);
+      setFinalSummaryAt(null);
       setFinalSummaryCacheKey(null);
       setFinalSummaryError(e instanceof Error ? e.message : t('summaryErrorFinal'));
     } finally {
@@ -367,6 +370,7 @@ export function ResultStep({
   // Invalidate cached final summary saat pilihan simulasi berubah.
   useEffect(() => {
     setFinalSummary(null);
+    setFinalSummaryAt(null);
     setFinalSummaryCacheKey(null);
     setFinalSummaryError(null);
     setFinalSummaryErrorId(null);
@@ -972,6 +976,7 @@ export function ResultStep({
                 open={summaryOpen}
                 onClose={() => setSummaryOpen(false)}
                 leadNo={leadNo}
+                createdAt={finalSummaryAt}
                 vehicle={vehicle}
                 discount={discount}
                 firstInstallment={firstInstallment}
