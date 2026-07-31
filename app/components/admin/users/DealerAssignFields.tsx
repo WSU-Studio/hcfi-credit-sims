@@ -90,9 +90,24 @@ export function DealerAssignFields({
     };
   }, [needsDealer]);
 
+  const dealersInCity = useMemo(
+    () =>
+      selectedCity
+        ? sortDealers(
+            uniqueDealersByCode((vendors ?? []).filter((v) => v.City === selectedCity))
+          )
+        : [],
+    [vendors, selectedCity]
+  );
+
+  /** Dealer benar-benar terpilih: vendorCode ada DAN masih valid untuk kota yang dipilih. */
+  const dealerSelected =
+    Boolean(value.vendorCode) &&
+    dealersInCity.some((d) => d.VendorCode === value.vendorCode);
+
   // Daftar Emp Number per vendor (Hyundai: Get List Sales Person).
   useEffect(() => {
-    if (!isSalesman || !value.vendorCode) {
+    if (!isSalesman || !dealerSelected) {
       setSalesPersons([]);
       return;
     }
@@ -117,7 +132,7 @@ export function DealerAssignFields({
     return () => {
       active = false;
     };
-  }, [isSalesman, value.vendorCode]);
+  }, [isSalesman, dealerSelected, value.vendorCode]);
 
   const cities = useMemo(
     () =>
@@ -125,41 +140,19 @@ export function DealerAssignFields({
     [vendors]
   );
 
-  const dealersInCity = useMemo(
-    () =>
-      selectedCity
-        ? sortDealers(
-            uniqueDealersByCode((vendors ?? []).filter((v) => v.City === selectedCity))
-          )
-        : [],
-    [vendors, selectedCity]
-  );
-
   if (!needsDealer) return null;
 
+  // Ganti kota: dealer harus dipilih ulang secara eksplisit, dan CMO ikut
+  // di-reset karena emp number berlaku per vendor.
   const handleCityChange = (city: string) => {
-    const first = sortDealers(
-      uniqueDealersByCode((vendors ?? []).filter((v) => v.City === city))
-    )[0];
-    if (first) {
-      onChange({
-        vendorCode: first.VendorCode,
-        vendorName: first.VendorName,
-        vendorCity: first.City,
-        oriOfficeCode: first.OriOfficeCode,
-        oriOfficeName: first.OriOfficeName,
-        cmoEmpNo: value.cmoEmpNo,
-      });
-    } else {
-      onChange({
-        vendorCode: '',
-        vendorName: '',
-        vendorCity: city,
-        oriOfficeCode: '',
-        oriOfficeName: '',
-        cmoEmpNo: value.cmoEmpNo,
-      });
-    }
+    onChange({
+      vendorCode: '',
+      vendorName: '',
+      vendorCity: city,
+      oriOfficeCode: '',
+      oriOfficeName: '',
+      cmoEmpNo: '',
+    });
   };
 
   const handleDealerSelect = (dealer: Vendor) => {
@@ -169,7 +162,8 @@ export function DealerAssignFields({
       vendorCity: dealer.City,
       oriOfficeCode: dealer.OriOfficeCode,
       oriOfficeName: dealer.OriOfficeName,
-      cmoEmpNo: value.cmoEmpNo,
+      // Dealer berubah → emp number dealer lama tidak berlaku lagi.
+      cmoEmpNo: dealer.VendorCode === value.vendorCode ? value.cmoEmpNo : '',
     });
   };
 
@@ -258,11 +252,11 @@ export function DealerAssignFields({
                   : ''
               }
               onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
-              disabled={disabled || salesPersonsLoading || !value.vendorCode}
+              disabled={disabled || salesPersonsLoading || !dealerSelected}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
             >
               <option value="">
-                {!value.vendorCode
+                {!dealerSelected
                   ? 'Pilih dealer dulu'
                   : salesPersonsLoading
                     ? 'Memuat...'
