@@ -1,5 +1,11 @@
 'use client';
 
+/**
+ * Sentinel pageSize untuk opsi "Semua". Angka besar (bukan Infinity) supaya
+ * tetap valid dikirim sebagai `limit` ke API dan aman untuk `take` Prisma.
+ */
+export const ALL_ROWS = 1_000_000;
+
 type TablePaginationProps = {
   page: number;
   pageSize: number;
@@ -7,6 +13,8 @@ type TablePaginationProps = {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   pageSizeOptions?: number[];
+  /** Tampilkan opsi "Semua" (pageSize = ALL_ROWS). Aktifkan hanya jika API-nya tidak membatasi limit. */
+  allowAll?: boolean;
 };
 
 export function TablePagination({
@@ -16,6 +24,7 @@ export function TablePagination({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50],
+  allowAll = false,
 }: TablePaginationProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);
@@ -64,6 +73,7 @@ export function TablePagination({
               {opt}
             </option>
           ))}
+          {allowAll && <option value={ALL_ROWS}>Semua</option>}
         </select>
 
         <button

@@ -605,6 +605,7 @@ export function LeadsTable() {
           setPage(1);
           setPageSize(size);
         }}
+        allowAll
       />
 
       {/* KTP Preview Modal */}
