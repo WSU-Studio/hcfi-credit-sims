@@ -242,7 +242,8 @@ export function DealerAssignFields({
               htmlFor="cmoEmpSelect"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Emp Number <span className="text-gray-400 font-normal">(dari dealer)</span>
+              Emp Number <span className="text-red-500">*</span>{' '}
+              <span className="text-gray-400 font-normal">(dari dealer)</span>
             </label>
             <select
               id="cmoEmpSelect"
@@ -274,7 +275,7 @@ export function DealerAssignFields({
 
           <div>
             <label htmlFor="cmoEmpNo" className="block text-sm font-medium text-gray-700 mb-1">
-              CMO Employee No <span className="text-gray-400 font-normal">(opsional)</span>
+              CMO Employee No <span className="text-red-500">*</span>
             </label>
             <input
               id="cmoEmpNo"

@@ -1,6 +1,7 @@
 import {
   isDealerPortalUserType,
   resolveUserTypeFromRoleNames,
+  USER_TYPES,
   type UserType,
 } from '@/lib/user-types';
 
@@ -47,6 +48,9 @@ export function validateDealerProfile(
   }
   if (!profile.vendorName || !profile.vendorCity) {
     return 'Data dealer tidak lengkap. Pilih ulang dealer dari daftar.';
+  }
+  if (userType === USER_TYPES.SALESMAN && !profile.cmoEmpNo) {
+    return 'Emp Number (CMO) wajib dipilih untuk user Salesman';
   }
   return null;
 }

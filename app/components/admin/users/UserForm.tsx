@@ -113,6 +113,15 @@ export function UserForm({ userId }: UserFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (
+      selectedRoleNames.includes(ROLE_NAMES.SALESMAN) &&
+      !dealerAssign.cmoEmpNo.trim()
+    ) {
+      setError('Emp Number wajib dipilih untuk user Salesman.');
+      return;
+    }
+
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
