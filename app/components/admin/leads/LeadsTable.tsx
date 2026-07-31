@@ -48,6 +48,8 @@ type Lead = {
   hyundaiAssignError?: string | null;
   ocrSnapshot?: unknown;
   source?: string | null;
+  /** SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding Adins). */
+  salesEmpNo?: string | null;
   salesUser?: { id: string; name: string; email: string; cmoEmpNo?: string | null } | null;
   createdAt: string;
   updatedAt: string;
@@ -246,6 +248,7 @@ export function LeadsTable() {
         Dealer: lead.vendorName ?? lead.vendorCode ?? '-',
         'Kota Dealer': lead.vendorCity ?? '-',
         Sales: lead.salesUser?.name ?? '-',
+        'Sales Emp No': lead.salesEmpNo ?? '-',
         CMO: lead.cmoName ?? lead.cmoEmpNo ?? '-',
         SLIK: lead.slikStatus ?? 'NOT_STARTED',
         Status: statusOpt.label,
@@ -458,6 +461,14 @@ export function LeadsTable() {
                           {lead.source === LEAD_SOURCES.DEALER_SALES && (
                             <span className="mt-1 inline-flex rounded bg-[#002c5f]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#002c5f]">
                               {LEAD_SOURCE_LABELS.DEALER_SALES}
+                            </span>
+                          )}
+                          {lead.salesEmpNo && (
+                            <span
+                              className="mt-1 inline-flex rounded bg-teal-50 px-1.5 py-0.5 text-[10px] font-mono font-medium text-teal-700"
+                              title="SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding Adins)"
+                            >
+                              Emp: {lead.salesEmpNo}
                             </span>
                           )}
                         </div>

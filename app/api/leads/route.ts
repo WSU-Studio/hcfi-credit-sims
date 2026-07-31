@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       partnerCode: true,
       discount: true,
       otrPrice: true,
+      salesEmpNo: true,
     },
   });
   if (!draft) {
@@ -190,6 +191,9 @@ export async function POST(request: NextRequest) {
       simulationLeadNo: data.simulationLeadNo,
       status: 'NEW',
       source,
+      // SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset — disimpan
+      // sebagai pembanding data dengan Adins.
+      salesEmpNo: draft.salesEmpNo ?? null,
       salesUserId,
     };
 

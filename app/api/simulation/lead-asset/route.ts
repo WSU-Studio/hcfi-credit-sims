@@ -239,6 +239,7 @@ export async function POST(request: NextRequest) {
           discount,
           partnerCode,
           assetPriceAmt,
+          salesEmpNo: supplierEmpNo || null,
           oemAccessoryCodes: oem.codes,
           rawRequest: requestBody as object,
           rawResponse: assetRes as unknown as object,
