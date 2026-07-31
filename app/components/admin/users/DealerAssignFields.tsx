@@ -21,6 +21,8 @@ type DealerAssignFieldsProps = {
   roleNames: string[];
   value: DealerAssignValue;
   onChange: (value: DealerAssignValue) => void;
+  /** Dipanggil saat Emp Number dipilih dari dropdown — membawa nama sales person dari API. */
+  onSalesPersonSelect?: (name: string) => void;
   disabled?: boolean;
 };
 
@@ -39,6 +41,7 @@ export function DealerAssignFields({
   roleNames,
   value,
   onChange,
+  onSalesPersonSelect,
   disabled = false,
 }: DealerAssignFieldsProps) {
   // null = belum selesai fetch; loading diturunkan dari state ini (bukan setState di effect).
@@ -252,7 +255,11 @@ export function DealerAssignFields({
                   ? value.cmoEmpNo
                   : ''
               }
-              onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
+              onChange={(e) => {
+                onChange({ ...value, cmoEmpNo: e.target.value });
+                const sp = salesPersons.find((s) => s.Key === e.target.value);
+                if (sp?.Value) onSalesPersonSelect?.(sp.Value);
+              }}
               disabled={disabled || salesPersonsLoading || !dealerSelected}
               className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
             >

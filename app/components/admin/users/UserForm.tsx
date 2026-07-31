@@ -316,6 +316,7 @@ export function UserForm({ userId }: UserFormProps) {
           roleNames={selectedRoleNames}
           value={dealerAssign}
           onChange={setDealerAssign}
+          onSalesPersonSelect={setName}
           disabled={saving}
         />
       </div>
