@@ -21,6 +21,7 @@ const EMPTY_DEALER: DealerAssignValue = {
   oriOfficeCode: '',
   oriOfficeName: '',
   cmoEmpNo: '',
+  salesEmpNo: '',
 };
 
 type UserFormProps = {
@@ -88,6 +89,7 @@ export function UserForm({ userId }: UserFormProps) {
               oriOfficeCode: user.oriOfficeCode ?? '',
               oriOfficeName: user.oriOfficeName ?? '',
               cmoEmpNo: user.cmoEmpNo ?? '',
+              salesEmpNo: user.salesEmpNo ?? '',
             });
           } else setError('User not found');
           setLoading(false);
@@ -116,7 +118,7 @@ export function UserForm({ userId }: UserFormProps) {
 
     if (
       selectedRoleNames.includes(ROLE_NAMES.SALESMAN) &&
-      !dealerAssign.cmoEmpNo.trim()
+      !dealerAssign.salesEmpNo.trim()
     ) {
       setError('Emp Number wajib dipilih untuk user Salesman.');
       return;
@@ -135,6 +137,7 @@ export function UserForm({ userId }: UserFormProps) {
         oriOfficeCode: dealerAssign.oriOfficeCode || null,
         oriOfficeName: dealerAssign.oriOfficeName || null,
         cmoEmpNo: dealerAssign.cmoEmpNo || null,
+        salesEmpNo: dealerAssign.salesEmpNo || null,
       };
       if (userId) {
         if (password.trim().length > 0) {

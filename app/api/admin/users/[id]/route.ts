@@ -129,6 +129,7 @@ export async function PUT(
       oriOfficeCode: string | null;
       oriOfficeName: string | null;
       cmoEmpNo: string | null;
+      salesEmpNo: string | null;
     } = {
       name: name.trim(),
       email: emailTrimmed,

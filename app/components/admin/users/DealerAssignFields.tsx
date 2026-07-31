@@ -14,7 +14,10 @@ export type DealerAssignValue = {
   vendorCity: string;
   oriOfficeCode: string;
   oriOfficeName: string;
+  /** Emp number CMO (HCFI) — opsional, diisi manual. Sumber berbeda dari salesEmpNo. */
   cmoEmpNo: string;
+  /** Emp number salesman dealer — dipilih dari API Get List Sales Person. */
+  salesEmpNo: string;
 };
 
 type DealerAssignFieldsProps = {
@@ -145,8 +148,8 @@ export function DealerAssignFields({
 
   if (!needsDealer) return null;
 
-  // Ganti kota: dealer harus dipilih ulang secara eksplisit, dan CMO ikut
-  // di-reset karena emp number berlaku per vendor.
+  // Ganti kota: dealer harus dipilih ulang secara eksplisit, dan emp number
+  // salesman ikut di-reset karena berlaku per vendor.
   const handleCityChange = (city: string) => {
     onChange({
       vendorCode: '',
@@ -154,7 +157,8 @@ export function DealerAssignFields({
       vendorCity: city,
       oriOfficeCode: '',
       oriOfficeName: '',
-      cmoEmpNo: '',
+      cmoEmpNo: value.cmoEmpNo,
+      salesEmpNo: '',
     });
   };
 
@@ -165,8 +169,9 @@ export function DealerAssignFields({
       vendorCity: dealer.City,
       oriOfficeCode: dealer.OriOfficeCode,
       oriOfficeName: dealer.OriOfficeName,
-      // Dealer berubah → emp number dealer lama tidak berlaku lagi.
-      cmoEmpNo: dealer.VendorCode === value.vendorCode ? value.cmoEmpNo : '',
+      cmoEmpNo: value.cmoEmpNo,
+      // Dealer berubah → emp number salesman dealer lama tidak berlaku lagi.
+      salesEmpNo: dealer.VendorCode === value.vendorCode ? value.salesEmpNo : '',
     });
   };
 
@@ -251,12 +256,12 @@ export function DealerAssignFields({
             <select
               id="cmoEmpSelect"
               value={
-                salesPersons.some((sp) => sp.Key === value.cmoEmpNo)
-                  ? value.cmoEmpNo
+                salesPersons.some((sp) => sp.Key === value.salesEmpNo)
+                  ? value.salesEmpNo
                   : ''
               }
               onChange={(e) => {
-                onChange({ ...value, cmoEmpNo: e.target.value });
+                onChange({ ...value, salesEmpNo: e.target.value });
                 const sp = salesPersons.find((s) => s.Key === e.target.value);
                 if (sp?.Value) onSalesPersonSelect?.(sp.Value);
               }}
@@ -282,7 +287,7 @@ export function DealerAssignFields({
 
           <div>
             <label htmlFor="cmoEmpNo" className="block text-sm font-medium text-gray-700 mb-1">
-              CMO Employee No <span className="text-red-500">*</span>
+              CMO Employee No <span className="text-gray-400 font-normal">(opsional)</span>
             </label>
             <input
               id="cmoEmpNo"
@@ -294,7 +299,8 @@ export function DealerAssignFields({
               className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Terisi otomatis dari pilihan Emp Number, atau isi manual.
+              Nomor CMO (HCFI) — berbeda dari Emp Number salesman. Jika diisi,
+              CMO di halaman leads terkunci ke nomor ini.
             </p>
           </div>
         </div>

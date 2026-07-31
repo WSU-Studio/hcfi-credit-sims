@@ -11,7 +11,10 @@ export type DealerProfileInput = {
   vendorCity?: string | null;
   oriOfficeCode?: string | null;
   oriOfficeName?: string | null;
+  /** Emp number CMO (HCFI) — opsional, sumber berbeda dari salesEmpNo. */
   cmoEmpNo?: string | null;
+  /** Emp number salesman dealer (Hyundai Get List Sales Person) — wajib untuk Salesman. */
+  salesEmpNo?: string | null;
 };
 
 export function requiresDealerProfile(userType: string | null | undefined): boolean {
@@ -35,6 +38,7 @@ export function parseDealerProfileInput(
     oriOfficeCode: str('oriOfficeCode'),
     oriOfficeName: str('oriOfficeName'),
     cmoEmpNo: str('cmoEmpNo'),
+    salesEmpNo: str('salesEmpNo'),
   };
 }
 
@@ -49,8 +53,8 @@ export function validateDealerProfile(
   if (!profile.vendorName || !profile.vendorCity) {
     return 'Data dealer tidak lengkap. Pilih ulang dealer dari daftar.';
   }
-  if (userType === USER_TYPES.SALESMAN && !profile.cmoEmpNo) {
-    return 'Emp Number (CMO) wajib dipilih untuk user Salesman';
+  if (userType === USER_TYPES.SALESMAN && !profile.salesEmpNo) {
+    return 'Emp Number wajib dipilih untuk user Salesman';
   }
   return null;
 }
@@ -66,6 +70,7 @@ export function buildUserDealerData(
   oriOfficeCode: string | null;
   oriOfficeName: string | null;
   cmoEmpNo: string | null;
+  salesEmpNo: string | null;
 } {
   const userType = resolveUserTypeFromRoleNames(roleNames);
 
@@ -78,6 +83,7 @@ export function buildUserDealerData(
       oriOfficeCode: null,
       oriOfficeName: null,
       cmoEmpNo: null,
+      salesEmpNo: null,
     };
   }
 
@@ -89,5 +95,6 @@ export function buildUserDealerData(
     oriOfficeCode: profile.oriOfficeCode ?? null,
     oriOfficeName: profile.oriOfficeName ?? null,
     cmoEmpNo: profile.cmoEmpNo ?? null,
+    salesEmpNo: profile.salesEmpNo ?? null,
   };
 }
