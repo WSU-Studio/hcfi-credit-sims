@@ -430,6 +430,8 @@ model Lead {
   hyundaiAssignedAt   DateTime?
   /// WEBSITE | DEALER_SALES
   source              String   @default("WEBSITE")
+  /// SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding data Adins)
+  salesEmpNo          String?
   salesUserId         String?
   salesUser           User?    @relation("SalesLeads", fields: [salesUserId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
@@ -528,6 +530,8 @@ model LeadAssetDraft {
   discount          Float?
   partnerCode       String?
   assetPriceAmt     Float?
+  /// SupplierEmpNo yang terkirim di AddLeadAsset (salesEmpNo salesman dealer)
+  salesEmpNo        String?
   oemAccessoryCodes String[] @default([])
   rawRequest        Json?
   rawResponse       Json?
