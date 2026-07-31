@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
@@ -220,6 +221,51 @@ export function LeadsTable() {
     doc.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [leads]);
 
+  const handleDownloadExcel = useCallback(() => {
+    const rows = leads.map((lead) => {
+      const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
+      return {
+        Tanggal: formatDate(lead.createdAt),
+        'LeadNo Simulasi': lead.simulationLeadNo ?? '-',
+        'LeadNo Hyundai': lead.hyundaiLeadNo ?? '-',
+        Nama: lead.name,
+        Telepon: lead.phone,
+        Email: lead.email,
+        Sumber: lead.source
+          ? LEAD_SOURCE_LABELS[lead.source as keyof typeof LEAD_SOURCE_LABELS] ?? lead.source
+          : '-',
+        Produk: lead.productName ?? '-',
+        Kendaraan: lead.vehicleSummary ?? '-',
+        OTR: lead.otrPrice ?? null,
+        'DP %': lead.dpPercent ?? null,
+        'Tenor (bln)': lead.tenor ?? null,
+        Lokasi:
+          lead.latitude != null && lead.longitude != null
+            ? `${lead.latitude.toFixed(4)}, ${lead.longitude.toFixed(4)}`
+            : '-',
+        Dealer: lead.vendorName ?? lead.vendorCode ?? '-',
+        'Kota Dealer': lead.vendorCity ?? '-',
+        Sales: lead.salesUser?.name ?? '-',
+        CMO: lead.cmoName ?? lead.cmoEmpNo ?? '-',
+        SLIK: lead.slikStatus ?? 'NOT_STARTED',
+        Status: statusOpt.label,
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    // Lebar kolom kira-kira mengikuti isi supaya tidak terpotong saat dibuka.
+    worksheet['!cols'] = Object.keys(rows[0] ?? { '': '' }).map((key) => ({
+      wch: Math.max(
+        key.length,
+        ...rows.map((row) => String(row[key as keyof typeof row] ?? '').length)
+      ) + 2,
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+    XLSX.writeFile(workbook, `leads-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }, [leads]);
+
   if (loading) {
     return <div className="text-center py-8 text-gray-500">Loading...</div>;
   }
@@ -230,15 +276,26 @@ export function LeadsTable() {
         <h2 className="text-lg font-semibold text-gray-900">Leads</h2>
         <div className="flex items-center gap-3">
           {canDownloadLeads && (
-            <button
-              type="button"
-              onClick={handleDownloadPdf}
-              disabled={leads.length === 0}
-              className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              <IconDownload size={18} />
-              Download PDF
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={leads.length === 0}
+                className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <IconDownload size={18} />
+                Download PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadExcel}
+                disabled={leads.length === 0}
+                className="inline-flex items-center gap-2 px-3 h-9 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <IconDownload size={18} />
+                Download Excel
+              </button>
+            </>
           )}
           <select
             value={sourceFilter}
