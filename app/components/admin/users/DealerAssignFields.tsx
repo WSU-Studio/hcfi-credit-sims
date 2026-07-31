@@ -6,6 +6,7 @@ import {
   fetchSimulationJson,
   isAbortError,
 } from '@/lib/simulation-client-fetch';
+import { parseCmoSelectKey, type CmoSelectOption } from '@/lib/hyundai-cmo-assign';
 import { ROLE_NAMES } from '@/lib/user-types';
 
 export type DealerAssignValue = {
@@ -52,6 +53,8 @@ export function DealerAssignFields({
   const [error, setError] = useState<string | null>(null);
   const [salesPersons, setSalesPersons] = useState<SalesPersonOption[]>([]);
   const [salesPersonsLoading, setSalesPersonsLoading] = useState(false);
+  const [cmoOptions, setCmoOptions] = useState<CmoSelectOption[]>([]);
+  const [cmoLoading, setCmoLoading] = useState(false);
 
   const needsDealer =
     roleNames.includes(ROLE_NAMES.DEALER_ADMIN) ||
@@ -140,6 +143,35 @@ export function DealerAssignFields({
     };
   }, [isSalesman, dealerSelected, value.vendorCode]);
 
+  // Daftar CMO per vendor (Hyundai: Get Office Member Cmo).
+  useEffect(() => {
+    if (!isSalesman || !dealerSelected) {
+      setCmoOptions([]);
+      return;
+    }
+
+    let active = true;
+    setCmoLoading(true);
+
+    fetch(`/api/admin/users/cmo-options?vendorCode=${encodeURIComponent(value.vendorCode)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.error) throw new Error(data.error);
+        setCmoOptions(Array.isArray(data.cmoOptions) ? data.cmoOptions : []);
+      })
+      .catch(() => {
+        if (active) setCmoOptions([]);
+      })
+      .finally(() => {
+        if (active) setCmoLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isSalesman, dealerSelected, value.vendorCode]);
+
   const cities = useMemo(
     () =>
       Array.from(new Set((vendors ?? []).map((v) => v.City).filter(Boolean))).sort(),
@@ -148,8 +180,8 @@ export function DealerAssignFields({
 
   if (!needsDealer) return null;
 
-  // Ganti kota: dealer harus dipilih ulang secara eksplisit, dan emp number
-  // salesman ikut di-reset karena berlaku per vendor.
+  // Ganti kota: dealer harus dipilih ulang secara eksplisit. Emp number salesman
+  // dan CMO ikut di-reset karena keduanya berlaku per vendor.
   const handleCityChange = (city: string) => {
     onChange({
       vendorCode: '',
@@ -157,21 +189,22 @@ export function DealerAssignFields({
       vendorCity: city,
       oriOfficeCode: '',
       oriOfficeName: '',
-      cmoEmpNo: value.cmoEmpNo,
+      cmoEmpNo: '',
       salesEmpNo: '',
     });
   };
 
   const handleDealerSelect = (dealer: Vendor) => {
+    const sameDealer = dealer.VendorCode === value.vendorCode;
     onChange({
       vendorCode: dealer.VendorCode,
       vendorName: dealer.VendorName,
       vendorCity: dealer.City,
       oriOfficeCode: dealer.OriOfficeCode,
       oriOfficeName: dealer.OriOfficeName,
-      cmoEmpNo: value.cmoEmpNo,
-      // Dealer berubah → emp number salesman dealer lama tidak berlaku lagi.
-      salesEmpNo: dealer.VendorCode === value.vendorCode ? value.salesEmpNo : '',
+      // Dealer berubah → emp number & CMO dealer lama tidak berlaku lagi.
+      cmoEmpNo: sameDealer ? value.cmoEmpNo : '',
+      salesEmpNo: sameDealer ? value.salesEmpNo : '',
     });
   };
 
@@ -289,15 +322,39 @@ export function DealerAssignFields({
             <label htmlFor="cmoEmpNo" className="block text-sm font-medium text-gray-700 mb-1">
               CMO Employee No <span className="text-gray-400 font-normal">(opsional)</span>
             </label>
-            <input
+            <select
               id="cmoEmpNo"
-              type="text"
-              value={value.cmoEmpNo}
-              onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
-              disabled={disabled}
-              placeholder="Nomor karyawan CMO"
-              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
-            />
+              value={
+                cmoOptions.find(
+                  (opt) => parseCmoSelectKey(opt.Key).cmoCode === value.cmoEmpNo
+                )?.Key ?? ''
+              }
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  cmoEmpNo: e.target.value
+                    ? parseCmoSelectKey(e.target.value).cmoCode
+                    : '',
+                })
+              }
+              disabled={disabled || cmoLoading || !dealerSelected}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
+            >
+              <option value="">
+                {!dealerSelected
+                  ? 'Pilih dealer dulu'
+                  : cmoLoading
+                    ? 'Memuat CMO...'
+                    : cmoOptions.length === 0
+                      ? 'Tidak ada CMO'
+                      : 'Tanpa CMO (pilih saat submit lead)'}
+              </option>
+              {cmoOptions.map((opt) => (
+                <option key={opt.Key} value={opt.Key}>
+                  {opt.Value}
+                </option>
+              ))}
+            </select>
             <p className="mt-1 text-xs text-gray-500">
               Nomor CMO (HCFI) — berbeda dari Emp Number salesman. Jika diisi,
               CMO di halaman leads terkunci ke nomor ini.
