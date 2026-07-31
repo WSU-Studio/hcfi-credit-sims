@@ -33,6 +33,8 @@ function uniqueDealersByCode(dealers: Vendor[]) {
   return Array.from(new Map(dealers.map((v) => [v.VendorCode, v])).values());
 }
 
+type SalesPersonOption = { Key: string; Value: string };
+
 export function DealerAssignFields({
   roleNames,
   value,
@@ -42,6 +44,8 @@ export function DealerAssignFields({
   // null = belum selesai fetch; loading diturunkan dari state ini (bukan setState di effect).
   const [vendors, setVendors] = useState<Vendor[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [salesPersons, setSalesPersons] = useState<SalesPersonOption[]>([]);
+  const [salesPersonsLoading, setSalesPersonsLoading] = useState(false);
 
   const needsDealer =
     roleNames.includes(ROLE_NAMES.DEALER_ADMIN) ||
@@ -85,6 +89,35 @@ export function DealerAssignFields({
       controller.abort();
     };
   }, [needsDealer]);
+
+  // Daftar Emp Number per vendor (Hyundai: Get List Sales Person).
+  useEffect(() => {
+    if (!isSalesman || !value.vendorCode) {
+      setSalesPersons([]);
+      return;
+    }
+
+    let active = true;
+    setSalesPersonsLoading(true);
+
+    fetch(`/api/admin/users/sales-persons?vendorCode=${encodeURIComponent(value.vendorCode)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.error) throw new Error(data.error);
+        setSalesPersons(Array.isArray(data.salesPersons) ? data.salesPersons : []);
+      })
+      .catch(() => {
+        if (active) setSalesPersons([]);
+      })
+      .finally(() => {
+        if (active) setSalesPersonsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isSalesman, value.vendorCode]);
 
   const cities = useMemo(
     () =>
@@ -209,19 +242,59 @@ export function DealerAssignFields({
       )}
 
       {isSalesman && (
-        <div>
-          <label htmlFor="cmoEmpNo" className="block text-sm font-medium text-gray-700 mb-1">
-            CMO Employee No <span className="text-gray-400 font-normal">(opsional)</span>
-          </label>
-          <input
-            id="cmoEmpNo"
-            type="text"
-            value={value.cmoEmpNo}
-            onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
-            disabled={disabled}
-            placeholder="Nomor karyawan CMO"
-            className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label
+              htmlFor="cmoEmpSelect"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Emp Number <span className="text-gray-400 font-normal">(dari dealer)</span>
+            </label>
+            <select
+              id="cmoEmpSelect"
+              value={
+                salesPersons.some((sp) => sp.Key === value.cmoEmpNo)
+                  ? value.cmoEmpNo
+                  : ''
+              }
+              onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
+              disabled={disabled || salesPersonsLoading || !value.vendorCode}
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
+            >
+              <option value="">
+                {!value.vendorCode
+                  ? 'Pilih dealer dulu'
+                  : salesPersonsLoading
+                    ? 'Memuat...'
+                    : salesPersons.length === 0
+                      ? 'Tidak ada sales person'
+                      : 'Pilih emp number'}
+              </option>
+              {salesPersons.map((sp) => (
+                <option key={sp.Key} value={sp.Key}>
+                  {sp.Value} ({sp.Key})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="cmoEmpNo" className="block text-sm font-medium text-gray-700 mb-1">
+              CMO Employee No <span className="text-gray-400 font-normal">(opsional)</span>
+            </label>
+            <input
+              id="cmoEmpNo"
+              type="text"
+              value={value.cmoEmpNo}
+              onChange={(e) => onChange({ ...value, cmoEmpNo: e.target.value })}
+              disabled={disabled}
+              placeholder="Nomor karyawan CMO"
+              className="w-full px-3 h-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#008AEC] focus:border-[#008AEC] disabled:opacity-60"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Terisi otomatis dari pilihan Emp Number, atau isi manual.
+            </p>
+          </div>
         </div>
       )}
     </div>
