@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth-server';
+import { isDealerPortalUser } from '@/lib/dealer-portal';
 import {
   isMockApiActive,
   shouldNotUseMockFallback,
@@ -27,7 +29,10 @@ import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
  * Dipanggil saat user submit Step 4 (PriceStep) untuk mendapatkan LeadNo (TrxNo)
  * yang akan dipakai pada semua call Fase 2 (Financial Data) di Step 5 (ResultStep).
  *
- * `SupplierEmpNo` di-set "" (kosong) — CMO assignment dilakukan di back-office admin.
+ * `SupplierEmpNo`:
+ *   - Website publik: "" (kosong) — CMO assignment dilakukan di back-office admin.
+ *   - Dealer quotation: diisi `salesEmpNo` salesman yang login (diambil dari DB
+ *     via session, bukan dari input client) selama dealer request = dealer user.
  *
  * Setiap submit menciptakan lead BARU di Hyundai LOS (sesuai konfirmasi klien:
  * jika user mundur ke Step 4 lalu submit ulang, buat lead baru — Postman tidak
@@ -130,6 +135,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Dealer quotation: kirim emp number salesman yang login sebagai SupplierEmpNo.
+  // Diambil dari DB via session (bukan body request) supaya tidak bisa di-spoof,
+  // dan hanya jika dealer yang diquotation sama dengan dealer penugasan user.
+  let supplierEmpNo = '';
+  try {
+    const session = await auth();
+    if (
+      session?.user?.id &&
+      isDealerPortalUser(session.user.userType) &&
+      session.user.vendorCode?.trim() === vendor.VendorCode
+    ) {
+      const salesUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { salesEmpNo: true },
+      });
+      supplierEmpNo = salesUser?.salesEmpNo?.trim() ?? '';
+    }
+  } catch (sessionErr) {
+    console.warn('[lead-asset] failed to resolve salesEmpNo from session:', sessionErr);
+  }
+
   let resolvedAsset: ResolvedLeadAsset;
   let oem: ResolvedOemAccessories;
   let assetPriceAmt: number;
@@ -166,7 +192,7 @@ export async function POST(request: NextRequest) {
       OriOfficeCode: vendor.OriOfficeCode,
       OriSupplierName: vendor.VendorName,
       OriSupplierCode: vendor.VendorCode,
-      SupplierEmpNo: '',
+      SupplierEmpNo: supplierEmpNo,
       MrAssetUsageCode: 'NON_COMM',
       MrAssetInteriorCode: resolvedAsset.interiorColorCode,
       MrAssetInteriorName: resolvedAsset.interiorColorName,
