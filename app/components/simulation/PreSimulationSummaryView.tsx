@@ -77,7 +77,7 @@ export function PreSimulationSummaryView({
             <p className="text-xs text-gray-500">{t('assetPriceLabel')}</p>
             <p className="font-semibold">{formatRp(summary.assetPriceAmt)}</p>
           </div>
-          <div>
+          {/* <div>
             <p className="text-xs text-gray-500">{t('flatRateLabel')}</p>
             <p className="font-semibold">
               {new Intl.NumberFormat(numberLocale, {
@@ -85,7 +85,7 @@ export function PreSimulationSummaryView({
               }).format(summary.flatRatePrcnt)}
               %
             </p>
-          </div>
+          </div> */}
           {discount != null && discount > 0 && (
             <div>
               <p className="text-xs text-gray-500">{t('discountLabel')}</p>
