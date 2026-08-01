@@ -69,6 +69,7 @@ jobs:
           source "$ENV_FILE"
           set +a
           npx prisma migrate deploy
+          npx prisma generate
 
       - name: Restart App with PM2
         run: |
