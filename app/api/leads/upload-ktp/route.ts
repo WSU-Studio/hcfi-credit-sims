@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
+import { applyKtpWatermark } from '@/lib/ktp-watermark';
 import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { isLocalKtpStorageEnabled } from '@/lib/ktp-storage-mode';
 import { buildLocalKtpPublicUrl, KTP_OBJECT_PREFIX, resolveKtpUploadOrigin } from '@/lib/ktp-url';
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const webpBuffer = await sharp(inputBuffer)
-      .webp({ quality: 80 })
-      .toBuffer();
+    // Stamp stored archive only — Contact Modal OCR still uses the original client file.
+    const stamped = await applyKtpWatermark(inputBuffer);
+    const webpBuffer = await stamped.webp({ quality: 80 }).toBuffer();
 
     const key = `${KTP_OBJECT_PREFIX}${randomUUID()}-${Date.now()}.webp`;
 
