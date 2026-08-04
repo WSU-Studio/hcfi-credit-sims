@@ -459,22 +459,24 @@ export function LeadsTable() {
                               Belum lengkap
                             </span>
                           )}
+                        </div>
+                        <div className="text-sm text-gray-900">{lead.phone}</div>
+                        <div className="text-xs text-gray-500">{lead.email}</div>
+                        <div className="text-xs text-gray-500">
                           {lead.source === LEAD_SOURCES.DEALER_SALES && (
-                            <span className="mt-1 inline-flex rounded bg-[#002c5f]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#002c5f]">
+                            <span className="inline-flex rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
                               {LEAD_SOURCE_LABELS.DEALER_SALES}
                             </span>
                           )}
                           {lead.salesEmpNo && (
                             <span
-                              className="mt-1 inline-flex rounded bg-teal-50 px-1.5 py-0.5 text-[10px] font-mono font-medium text-teal-700"
+                              className="inline-flex rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-mono font-medium text-green-800"
                               title="SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding Adins)"
                             >
                               Emp: {lead.salesEmpNo}
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-900">{lead.phone}</div>
-                        <div className="text-xs text-gray-500">{lead.email}</div>
                       </div>
                     </td>
                     <td className="px-3 py-2 align-top">
