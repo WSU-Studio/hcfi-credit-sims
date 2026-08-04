@@ -195,6 +195,10 @@ export async function POST(request: NextRequest) {
       // sebagai pembanding data dengan Adins.
       salesEmpNo: draft.salesEmpNo ?? null,
       salesUserId,
+      summarySnapshot:
+        data.summarySnapshot && typeof data.summarySnapshot === 'object'
+          ? (data.summarySnapshot as object)
+          : null,
     };
 
     // Server-derived IP only. We intentionally do NOT trust any client-supplied

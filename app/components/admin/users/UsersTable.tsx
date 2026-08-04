@@ -11,6 +11,7 @@ type User = {
   name: string;
   isActive: boolean;
   userType?: string | null;
+  salesEmpNo?: string | null;
   vendorName?: string | null;
   vendorCity?: string | null;
   createdAt: string;
@@ -145,11 +146,19 @@ export function UsersTable() {
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 align-top">
                   <div>{user.userRoles.map((ur) => ur.role.name).join(', ') || 'No roles'}</div>
-                  {user.userType && (
-                    <span className="mt-1 inline-flex rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                      {USER_TYPE_LABELS[user.userType] ?? user.userType}
-                    </span>
-                  )}
+                  <div className="flex gap-1 mt-1">
+                    {user.userType && (
+                      <span className="inline-flex rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
+                        {USER_TYPE_LABELS[user.userType] ?? user.userType}
+                      </span>
+                    )}
+                    {user.salesEmpNo && (
+                      <span className="inline-flex rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-mono font-medium text-green-800">
+                        Emp: {user.salesEmpNo}
+                      </span>
+                    )}
+
+                  </div>
                 </td>
                 <td className="px-3 py-2 text-xs text-gray-500 max-w-[12rem] align-top">
                   {user.vendorName ? (

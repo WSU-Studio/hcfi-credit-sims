@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { cleanString, looksMalicious } from '@/lib/security/sanitize';
 
-const finalSummarySchema = z.object({
+/** Shared FinalSummaryInfo shape — Lead.summarySnapshot & PreSimulation. */
+export const finalSummarySchema = z.object({
   productName: z.string().min(1).max(200),
   productCode: z.string().max(64).nullable().optional(),
   assetDownPaymentPrcnt: z.number(),
