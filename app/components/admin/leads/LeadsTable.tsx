@@ -471,7 +471,7 @@ export function LeadsTable() {
                           {lead.salesEmpNo && (
                             <span
                               className="inline-flex rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-mono font-medium text-green-800"
-                              title="SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding Adins)"
+                              title="Emp salesman dealer (SupplierEmpNo di AddLeadAsset)"
                             >
                               Emp: {lead.salesEmpNo}
                             </span>

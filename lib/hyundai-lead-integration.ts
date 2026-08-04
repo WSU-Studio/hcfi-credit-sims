@@ -27,8 +27,10 @@
  *   match master Confins (mis. OCR "Jakarta Pusat" → "JAKARTA PUSAT").
  *
  * Catatan:
- *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via SupplierEmpNo di
- *     AddLeadAsset.
+ *   - ForwardLeadToCMO tidak dipakai. Assignment CMO via `CMOCode`/`CMOName`
+ *     di AddLeadCust (bukan SupplierEmpNo).
+ *   - `SupplierEmpNo` di AddLeadAsset = emp number salesman dealer
+ *     (`Lead.salesEmpNo` dari quotation), bukan nomor CMO.
  *   - Branching office (Richard 2026-07): jika 2 digit awal `simulationLeadNo`
  *     cocok dengan `OfficeMemberCode` CMO terpilih → reuse lead simulasi, hanya
  *     jalankan Fase 3 (OCR + AddLeadCust). Jika beda cabang → AddLeadAsset baru
@@ -197,6 +199,11 @@ export type LeadRecordForHyundai = {
   /** LeadNo dari simulasi Step 4 — dipakai untuk reuse saat office CMO cocok. */
   simulationLeadNo?: string | null;
   /**
+   * Emp number salesman dealer (SupplierEmpNo di AddLeadAsset).
+   * Diisi saat quotation dealer; dipakai ulang saat admin submit cross-office.
+   */
+  salesEmpNo?: string | null;
+  /**
    * Nanti: true untuk lead dari perusahaan partner Hyundai (diskon khusus).
    * Saat ini belum ada sumber di DB — default false via resolveIsPartner().
    */
@@ -205,7 +212,8 @@ export type LeadRecordForHyundai = {
 
 function buildAddLeadAssetBody(
   vendor: Vendor,
-  cmoEmpNo: string,
+  /** Emp number salesman dealer — dikirim sebagai SupplierEmpNo (bukan CMO). */
+  salesEmpNo: string,
   asset: ResolvedLeadAsset,
   oem: ResolvedOemAccessories,
   assetPriceAmt: number,
@@ -226,7 +234,7 @@ function buildAddLeadAssetBody(
     OriOfficeCode: officeOverride?.OriOfficeCode ?? vendor.OriOfficeCode,
     OriSupplierName: vendor.VendorName,
     OriSupplierCode: vendor.VendorCode,
-    SupplierEmpNo: cmoEmpNo,
+    SupplierEmpNo: salesEmpNo,
     MrAssetUsageCode: 'NON_COMM',
     MrAssetInteriorCode: asset.interiorColorCode,
     MrAssetInteriorName: asset.interiorColorName,
@@ -562,6 +570,14 @@ export async function submitLeadToHyundai(params: {
       cmoRow.OfficeMemberCode
     );
 
+    const salesEmpNo = params.lead.salesEmpNo?.trim() || '';
+    if (!salesEmpNo) {
+      console.warn(
+        '[submitLeadToHyundai] Cross-office AddLeadAsset tanpa salesEmpNo (SupplierEmpNo akan kosong). leadId=%s',
+        params.lead.id
+      );
+    }
+
     const resolvedAsset = await resolveLeadAsset({
       dealerCode: params.vendor.VendorCode,
       vehicleSummary: params.lead.vehicleSummary,
@@ -594,7 +610,7 @@ export async function submitLeadToHyundai(params: {
       '/v1/IntegrationWebsite/AddLeadAsset',
       buildAddLeadAssetBody(
         params.vendor,
-        params.cmoEmpNo,
+        salesEmpNo,
         resolvedAsset,
         oemAccessories,
         assetPriceAmt,

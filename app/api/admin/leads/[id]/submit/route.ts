@@ -155,6 +155,7 @@ export async function POST(
         ktpUrl: lead.ktpUrl,
         ocrSnapshot: parseOcrKtpSnapshot(lead.ocrSnapshot),
         simulationLeadNo: lead.simulationLeadNo,
+        salesEmpNo: lead.salesEmpNo,
       },
       vendor,
       cmoEmpNo,
