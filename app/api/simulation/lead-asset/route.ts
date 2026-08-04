@@ -125,7 +125,12 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.warn('[lead-asset] failed to persist mock draft:', e);
     }
-    return NextResponse.json({ leadNo: mockLeadNo, dataSource: 'mock' });
+    return NextResponse.json({
+      leadNo: mockLeadNo,
+      dataSource: 'mock',
+      supplierEmpNoUsed: null,
+      supplierEmpNoSource: 'mock',
+    });
   }
 
   if (shouldNotUseMockFallback() && !process.env.CREDIT_SIMULATION_USERNAME) {
@@ -252,7 +257,11 @@ export async function POST(request: NextRequest) {
       console.warn('[lead-asset] failed to persist draft (LeadNo masih valid):', persistErr);
     }
 
-    return NextResponse.json({ leadNo });
+    return NextResponse.json({
+      leadNo,
+      supplierEmpNoUsed: supplierEmpNo || null,
+      supplierEmpNoSource: supplierEmpNo ? 'session-user' : 'empty',
+    });
   } catch (error: unknown) {
     const rawMessage =
       error instanceof Error ? error.message : 'Gagal membuat lead di Hyundai LOS.';
