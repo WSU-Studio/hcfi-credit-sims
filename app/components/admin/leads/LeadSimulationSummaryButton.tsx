@@ -14,6 +14,7 @@ import { parseVehicleSummaryParts } from '@/lib/hyundai-asset-resolve';
 import idMessages from '@/messages/id.json';
 
 export type LeadSimulationSummarySource = {
+  id?: string;
   simulationLeadNo?: string | null;
   hyundaiLeadNo?: string | null;
   productName: string | null;
@@ -77,11 +78,18 @@ function canOpenSummary(lead: LeadSimulationSummarySource): boolean {
 
 interface LeadSimulationSummaryButtonProps {
   lead: LeadSimulationSummarySource;
+  /** Dipanggil setelah hitungan ulang sukses supaya parent update state lead. */
+  onSummaryCached?: (summary: FinalSummaryInfo) => void;
 }
 
-export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButtonProps) {
+export function LeadSimulationSummaryButton({
+  lead,
+  onSummaryCached,
+}: LeadSimulationSummaryButtonProps) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<FinalSummaryInfo | null>(null);
+  /** Cache lokal hasil hitungan ulang di sesi ini (sebelum prop parent ter-update / refresh). */
+  const [sessionSnapshot, setSessionSnapshot] = useState<FinalSummaryInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
@@ -91,13 +99,15 @@ export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButto
   const firstInstallment = resolveFirstInstallment(lead.firstInstallment);
   const discount = Number(lead.discount) || 0;
   const vehicle = resolveVehicle(lead);
-  const storedSummary = parseLeadSummarySnapshot(lead.summarySnapshot);
+  const storedSummary =
+    parseLeadSummarySnapshot(lead.summarySnapshot) ?? sessionSnapshot;
 
   const fetchSummary = useCallback(async () => {
-    // Prefer snapshot tersimpan — tidak hit Hyundai, instant.
-    const fromDb = parseLeadSummarySnapshot(lead.summarySnapshot);
-    if (fromDb) {
-      setSummary(fromDb);
+    // Prefer snapshot DB / cache sesi — tidak hit Hyundai.
+    const fromStore =
+      parseLeadSummarySnapshot(lead.summarySnapshot) ?? sessionSnapshot;
+    if (fromStore) {
+      setSummary(fromStore);
       setError(null);
       setErrorId(null);
       setLoading(false);
@@ -131,14 +141,18 @@ export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButto
         if (data?.errorId) setErrorId(String(data.errorId));
         throw new Error(data.error || data.message || 'Gagal memuat ringkasan kredit');
       }
-      setSummary(data.summary as FinalSummaryInfo);
+      const next = data.summary as FinalSummaryInfo;
+      setSummary(next);
+      // Simpan di sesi UI; API final-summary juga menulis ke Lead.summarySnapshot.
+      setSessionSnapshot(next);
+      onSummaryCached?.(next);
     } catch (e) {
       setSummary(null);
       setError(e instanceof Error ? e.message : 'Gagal memuat ringkasan kredit');
     } finally {
       setLoading(false);
     }
-  }, [enabled, leadNo, lead, firstInstallment]);
+  }, [enabled, leadNo, lead, firstInstallment, sessionSnapshot, onSummaryCached]);
 
   const handleOpen = () => {
     if (!enabled) return;

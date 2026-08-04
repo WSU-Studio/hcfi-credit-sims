@@ -491,7 +491,18 @@ export function LeadsTable() {
                           {lead.otrPrice && <div>OTR: {formatCurrency(lead.otrPrice)}</div>}
                           {lead.dpPercent && <div>DP: {lead.dpPercent}%</div>}
                           {lead.tenor && <div>Tenor: {lead.tenor} bln</div>}
-                          <LeadSimulationSummaryButton lead={lead} />
+                          <LeadSimulationSummaryButton
+                            lead={lead}
+                            onSummaryCached={(summary) => {
+                              setLeads((prev) =>
+                                prev.map((row) =>
+                                  row.id === lead.id
+                                    ? { ...row, summarySnapshot: summary }
+                                    : row
+                                )
+                              );
+                            }}
+                          />
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">-</span>
