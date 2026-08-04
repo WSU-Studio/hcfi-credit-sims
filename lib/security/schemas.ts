@@ -161,6 +161,7 @@ const ktpStorageUrlSchema = z
 
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import { isOcrKtpSnapshotComplete, ocrKtpSnapshotSchema } from '@/lib/ocr-ktp-snapshot';
+import { finalSummarySchema } from '@/lib/security/pre-simulation-schemas';
 
 export const HOME_OWNERSHIP_VALUES = ['OWN', 'FAMILY', 'RENT', 'COMPANY', 'OTHER'] as const;
 
@@ -265,6 +266,9 @@ export const leadCreateSchema = z
       .enum([LEAD_SOURCES.WEBSITE, LEAD_SOURCES.DEALER_SALES])
       .optional()
       .default(LEAD_SOURCES.WEBSITE),
+
+    /** Snapshot ringkasan kredit saat submit — supaya admin tidak hit ulang Hyundai. */
+    summarySnapshot: finalSummarySchema.optional().nullable(),
 
     // Honeypot — must be empty for legit submissions.
     [HONEYPOT_FIELD]: z.string().optional(),

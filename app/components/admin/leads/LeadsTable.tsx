@@ -27,6 +27,7 @@ type Lead = {
   partnerCode?: string | null;
   vehicleSummary?: string | null;
   assetSnapshot?: unknown;
+  summarySnapshot?: unknown;
   otrPrice: number | null;
   discount?: number | null;
   dpPercent: number | null;

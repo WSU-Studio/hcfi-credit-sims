@@ -13,6 +13,7 @@ import {
 } from '@/app/components/simulation/SimulationSummaryModal';
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
+import { buildSummaryFromProductRow } from '@/lib/lead-summary-snapshot';
 import {
   getAvailableFirstInstallments,
   normalizeFirstInstallment,
@@ -1014,6 +1015,21 @@ export function ResultStep({
                     : undefined
                 }
                 assetSnapshot={assetSnapshot}
+                summarySnapshot={
+                  finalSummary ??
+                  (selectedProduct && highlightedRow && otrPrice
+                    ? buildSummaryFromProductRow({
+                        productName: selectedProduct.ProductName,
+                        productCode: selectedProduct.ProductCode,
+                        otrPrice,
+                        discount,
+                        dpPercent,
+                        tenor: highlightedRow.Tenor,
+                        firstInstallment,
+                        row: highlightedRow,
+                      })
+                    : null)
+                }
                 onSubmit={() => {
                   setLeadSubmitted(true);
                 }}

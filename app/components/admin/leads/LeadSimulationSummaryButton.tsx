@@ -9,6 +9,7 @@ import {
 } from '@/app/components/simulation/SimulationSummaryModal';
 import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
 import { parseLeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
+import { parseLeadSummarySnapshot } from '@/lib/lead-summary-snapshot';
 import { parseVehicleSummaryParts } from '@/lib/hyundai-asset-resolve';
 import idMessages from '@/messages/id.json';
 
@@ -26,6 +27,7 @@ export type LeadSimulationSummarySource = {
   tenor: number | null;
   vehicleSummary?: string | null;
   assetSnapshot?: unknown;
+  summarySnapshot?: unknown;
   createdAt?: string | null;
 };
 
@@ -60,6 +62,7 @@ function resolveVehicle(lead: LeadSimulationSummarySource): VehicleSummaryInfo {
 }
 
 function canOpenSummary(lead: LeadSimulationSummarySource): boolean {
+  if (parseLeadSummarySnapshot(lead.summarySnapshot)) return true;
   return Boolean(
     resolveLeadNo(lead) &&
       lead.otrPrice != null &&
@@ -88,8 +91,19 @@ export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButto
   const firstInstallment = resolveFirstInstallment(lead.firstInstallment);
   const discount = Number(lead.discount) || 0;
   const vehicle = resolveVehicle(lead);
+  const storedSummary = parseLeadSummarySnapshot(lead.summarySnapshot);
 
   const fetchSummary = useCallback(async () => {
+    // Prefer snapshot tersimpan — tidak hit Hyundai, instant.
+    const fromDb = parseLeadSummarySnapshot(lead.summarySnapshot);
+    if (fromDb) {
+      setSummary(fromDb);
+      setError(null);
+      setErrorId(null);
+      setLoading(false);
+      return;
+    }
+
     if (!enabled || !leadNo) return;
 
     setLoading(true);
@@ -144,7 +158,9 @@ export function LeadSimulationSummaryButton({ lead }: LeadSimulationSummaryButto
         disabled={!enabled}
         title={
           enabled
-            ? 'Lihat ringkasan simulasi'
+            ? storedSummary
+              ? 'Lihat ringkasan simulasi (tersimpan)'
+              : 'Lihat ringkasan simulasi'
             : 'Data simulasi belum lengkap untuk menampilkan ringkasan'
         }
         className="mt-1.5 inline-flex items-center gap-1 px-1 py-1 border border-blue-500 text-blue-500 rounded text-[11px] font-medium hover:bg-blue-500/5 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"

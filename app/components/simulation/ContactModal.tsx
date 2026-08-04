@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { IconX, IconCheck } from '@tabler/icons-react';
 import type { Vendor } from '@/app/types/credit-simulation';
+import type { FinalSummaryInfo } from '@/app/types/credit-simulation';
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
 import type { LeadAssetSnapshot } from '@/lib/lead-asset-snapshot';
@@ -45,6 +46,8 @@ interface ContactModalProps {
   dealer?: Vendor | null;
   userLocation?: UserLocation; // Fallback jika sudah di-capture di parent
   leadSource?: LeadSource;
+  /** Snapshot ringkasan kredit (FinalSummaryInfo) — disimpan ke Lead.summarySnapshot. */
+  summarySnapshot?: FinalSummaryInfo | null;
   onSubmit?: (data: { name: string; phone: string; email: string }) => void;
 }
 
@@ -65,6 +68,7 @@ export function ContactModal({
   dealer,
   userLocation,
   leadSource = LEAD_SOURCES.WEBSITE,
+  summarySnapshot,
   onSubmit,
 }: ContactModalProps) {
   const t = useTranslations('creditSimulation');
@@ -443,6 +447,7 @@ export function ContactModal({
           latitude: (modalLocation ?? userLocation)?.latitude ?? null,
           longitude: (modalLocation ?? userLocation)?.longitude ?? null,
           source: leadSource,
+          summarySnapshot: summarySnapshot ?? null,
           [HONEYPOT_FIELD]: honeypot,
         }),
       });

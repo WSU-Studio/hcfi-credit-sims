@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import {
   isMockApiActive,
   simulateDelay,
@@ -143,6 +144,24 @@ export async function POST(request: NextRequest) {
         isPromotion: Boolean(isPromotion),
         isPartner: resolveIsPartner({ partnerCode }),
       });
+
+      // Simpan ke Lead agar Ringkasan di admin tidak hit ulang Hyundai.
+      try {
+        await prisma.lead.updateMany({
+          where: {
+            OR: [
+              { simulationLeadNo: leadNo.trim() },
+              { hyundaiLeadNo: leadNo.trim() },
+            ],
+          },
+          data: { summarySnapshot: summary as object },
+        });
+      } catch (persistErr) {
+        console.warn(
+          '[final-summary] failed to persist summarySnapshot (non-fatal):',
+          persistErr instanceof Error ? persistErr.message : persistErr
+        );
+      }
 
       return NextResponse.json({ summary });
     } catch (e) {
