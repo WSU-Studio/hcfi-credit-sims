@@ -195,6 +195,8 @@ export function LeadTrackingForm() {
               statusCompleted: t('stageStatusCompleted'),
               statusCurrent: t('stageStatusCurrent'),
               statusPending: t('stageStatusPending'),
+              statusRejected: t('stageStatusRejected'),
+              rejectedBanner: t('rejectedBanner'),
             }}
           />
         </div>

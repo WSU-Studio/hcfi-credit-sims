@@ -84,6 +84,8 @@
     "stageStatusCompleted": "Selesai",
     "stageStatusCurrent": "Sedang diproses",
     "stageStatusPending": "Belum dimulai",
+    "stageStatusRejected": "Ditolak",
+    "rejectedBanner": "Pengajuan kredit Anda ditolak.",
     "stages": {
       "Application Submitted": "Pengajuan Dikirim",
       "Data Verification": "Verifikasi Data",

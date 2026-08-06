@@ -84,6 +84,8 @@
     "stageStatusCompleted": "Completed",
     "stageStatusCurrent": "In progress",
     "stageStatusPending": "Not started",
+    "stageStatusRejected": "Rejected",
+    "rejectedBanner": "Your credit application was rejected.",
     "stages": {
       "Application Submitted": "Application Submitted",
       "Data Verification": "Data Verification",
