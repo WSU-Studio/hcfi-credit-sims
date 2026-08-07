@@ -28,20 +28,40 @@ export type TrackingStageProgress = {
 /** Terminal rejection task (setelah Update Lead KYC) — mapping Richard Fam. */
 export const REJECTED_TRACKING_TASK_NAMES = [
   'Update Lead Stat to Rejected',
+  'Update Lead Status to Rejected',
+  'Update App Status to Rejected',
 ] as const;
 
 type TaskStageCandidate = { order: number; stageId: TrackingStageId };
 
 /** Normalize task name for lookup (trim + collapse whitespace). */
 export function normalizeTrackingTaskName(name: string): string {
-  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+  return name
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
 }
 
 export function isRejectedTrackingTask(taskName: string): boolean {
   const key = normalizeTrackingTaskName(taskName);
-  return REJECTED_TRACKING_TASK_NAMES.some(
-    (name) => normalizeTrackingTaskName(name) === key
-  );
+  if (!key) return false;
+  if (
+    REJECTED_TRACKING_TASK_NAMES.some(
+      (name) => normalizeTrackingTaskName(name) === key
+    )
+  ) {
+    return true;
+  }
+  // Fallback variants dari LOS/Hyundai (spelling / wording sedikit beda).
+  if (key.includes('rejected') && (key.includes('lead') || key.includes('app'))) {
+    return true;
+  }
+  if (key.includes('stat to rejected') || key.includes('status to rejected')) {
+    return true;
+  }
+  return false;
 }
 
 const TASK_STAGE_CANDIDATES: Record<string, TaskStageCandidate[]> = {
@@ -210,13 +230,24 @@ export type TaskLike = {
   EndTime?: string | null;
 };
 
+/** Cari task reject terakhir secara kronologis. */
+export function findRejectedTrackingTask<T extends TaskLike>(
+  tasks: T[]
+): T | null {
+  let found: T | null = null;
+  for (const task of tasks) {
+    if (isRejectedTrackingTask(task.Name)) found = task;
+  }
+  return found;
+}
+
 /**
  * Collapse raw Hyundai task history into the 7 customer-facing stages.
  * Stages before the furthest reached stage are completed; the furthest is
  * current (unless fully ended and is the final stage → completed).
  *
- * Jika ada task terminal "Update Lead Stat to Rejected", tahap tempat reject
- * terjadi ditandai `rejected` (bukan "sedang diproses").
+ * Jika ada task terminal reject (mis. "Update Lead Stat to Rejected"), tahap
+ * tempat reject terjadi ditandai `rejected` (bukan "sedang diproses").
  */
 export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStageProgress[] {
   const sorted = [...tasks].sort((a, b) => {
@@ -228,6 +259,18 @@ export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStagePro
     return ta - tb;
   });
 
+  // Pass 1: temukan reject terminal (pakai yang terakhir secara waktu).
+  let rejectAtSortedIndex = -1;
+  for (let i = 0; i < sorted.length; i++) {
+    if (isRejectedTrackingTask(sorted[i].Name)) {
+      rejectAtSortedIndex = i;
+    }
+  }
+  const rejectTask =
+    rejectAtSortedIndex >= 0 ? sorted[rejectAtSortedIndex] : null;
+  const tasksToProcess =
+    rejectAtSortedIndex >= 0 ? sorted.slice(0, rejectAtSortedIndex + 1) : sorted;
+
   const stageMeta = new Map<
     TrackingStageId,
     { startedAt: string | null; endedAt: string | null; maxOrder: number; openCount: number; seen: number }
@@ -236,9 +279,8 @@ export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStagePro
   let cursorOrder = 1;
   let furthestIndex = -1;
   let rejectedIndex = -1;
-  let rejectedAt: { startedAt: string | null; endedAt: string | null } | null = null;
 
-  for (const task of sorted) {
+  for (const task of tasksToProcess) {
     const isReject = isRejectedTrackingTask(task.Name);
     const resolved = isReject
       ? resolveTaskStage(task.Name, cursorOrder) ?? {
@@ -255,10 +297,6 @@ export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStagePro
 
     if (isReject) {
       rejectedIndex = idx;
-      rejectedAt = {
-        startedAt: task.StartTime ?? null,
-        endedAt: task.EndTime ?? null,
-      };
     }
 
     const prev = stageMeta.get(stageId) ?? {
@@ -291,12 +329,14 @@ export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStagePro
     }
 
     stageMeta.set(stageId, prev);
-
-    // Reject adalah terminal — jangan lanjutkan progress ke tahap berikutnya.
-    if (isReject) break;
   }
 
-  if (rejectedIndex >= 0) {
+  // Safety: reject task ketemu tapi tidak ter-map ke stage manapun.
+  if (rejectTask && rejectedIndex < 0) {
+    rejectedIndex = Math.max(furthestIndex, getTrackingStageIndex('Data Verification'));
+  }
+
+  if (rejectedIndex >= 0 && rejectTask) {
     return TRACKING_STAGE_IDS.map((id, index) => {
       const meta = stageMeta.get(id);
       let status: TrackingStageStatus = 'pending';
@@ -309,11 +349,11 @@ export function collapseTaskHistoryToStages(tasks: TaskLike[]): TrackingStagePro
         status,
         startedAt:
           index === rejectedIndex
-            ? rejectedAt?.startedAt ?? meta?.startedAt ?? null
+            ? rejectTask.StartTime ?? meta?.startedAt ?? null
             : meta?.startedAt ?? null,
         endedAt:
           index === rejectedIndex
-            ? rejectedAt?.endedAt ?? meta?.endedAt ?? null
+            ? rejectTask.EndTime ?? meta?.endedAt ?? null
             : meta?.endedAt ?? null,
       };
     });

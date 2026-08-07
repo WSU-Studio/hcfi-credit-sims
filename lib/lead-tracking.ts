@@ -25,6 +25,8 @@ export type LeadMonitoringResult = {
    * jika berbeda dari LeadNo yang dipantau di MLoan/Confins.
    */
   SimulationLeadNo?: string | null;
+  /** True jika histori mengandung task terminal reject. */
+  HasRejectedTask?: boolean;
 };
 
 export type LocalLeadTrackingRef = {
@@ -54,12 +56,6 @@ export type ResolvedTrackingLead = {
  * Cross-office submit membuat LeadNo baru (`hyundaiLeadNo`) berbeda dari
  * LeadNo simulasi (`simulationLeadNo`). User sering hanya punya nomor simulasi
  * (ditampilkan di ResultStep) — harus diarahkan ke nomor submitted.
- *
- * Aturan:
- * - Input = simulationLeadNo, dan hyundaiLeadNo sudah ada (beda) → monitor hyundaiLeadNo
- * - Local ketemu via draft/simulasi tapi `simulationLeadNo` kosong, sementara
- *   `hyundaiLeadNo` beda dari input → tetap anggap input = simulasi, monitor submitted
- * - Input = simulationLeadNo, belum SUBMITTED / belum ada hyundaiLeadNo → pending
  */
 export function resolveTrackingLeadNo(
   inputLeadNo: string,
@@ -80,13 +76,14 @@ export function resolveTrackingLeadNo(
   const assignStatus = local.hyundaiAssignStatus?.trim().toUpperCase() || '';
   const isSubmittedStatus = assignStatus === 'SUBMITTED';
 
-  // findLocalLead hanya match simulationLeadNo / hyundaiLeadNo / draft.
-  // Jika submitted ada dan beda dari input, input pasti nomor simulasi (atau draft).
-  const inputIsSimulation =
-    (sim != null && sim === input) ||
-    (submitted != null && submitted !== input);
+  const inputMatchesSim = sim != null && sim === input;
+  const inputMatchesSubmitted = submitted != null && submitted === input;
+  // Local ketemu via draft/simulasi: ada submitted yang beda dari input.
+  const inputIsSimulationSide =
+    inputMatchesSim || (submitted != null && submitted !== input && !inputMatchesSubmitted);
 
-  if (inputIsSimulation) {
+  // Input = nomor simulasi → selalu pakai nomor submitted bila sudah beda.
+  if (inputIsSimulationSide) {
     if (submitted && submitted !== input) {
       return {
         monitorLeadNo: submitted,
@@ -100,15 +97,14 @@ export function resolveTrackingLeadNo(
       monitorLeadNo: input,
       simulationLeadNo: sim || input,
       resolvedFromSimulation: false,
-      // Belum ada LeadNo submitted (atau status belum selesai submit).
       pendingSubmit: !isSubmittedStatus || !submitted,
     };
   }
 
-  // User input = LeadNo submitted (atau same-office: sim === submitted).
-  if (submitted && submitted === input) {
+  // Input = LeadNo submitted (atau same-office: sim === submitted).
+  if (inputMatchesSubmitted) {
     return {
-      monitorLeadNo: submitted,
+      monitorLeadNo: submitted!,
       simulationLeadNo: sim && sim !== submitted ? sim : null,
       resolvedFromSimulation: false,
       pendingSubmit: false,
@@ -146,20 +142,26 @@ export function normalizeTaskHistory(raw: unknown): LeadTaskHistoryItem[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
-    .map((row) => ({
-      Name: String(row.Name ?? '').trim(),
-      IndicatorSLA:
-        row.IndicatorSLA == null || row.IndicatorSLA === ''
-          ? null
-          : String(row.IndicatorSLA),
-      StartTime:
-        row.StartTime == null || row.StartTime === '' ? null : String(row.StartTime),
-      EndTime: row.EndTime == null || row.EndTime === '' ? null : String(row.EndTime),
-      Assignee:
-        row.Assignee == null || row.Assignee === '' ? null : String(row.Assignee),
-      Due: row.Due == null || row.Due === '' ? null : String(row.Due),
-      TrxNo: row.TrxNo == null || row.TrxNo === '' ? null : String(row.TrxNo),
-    }))
+    .map((row) => {
+      const nameRaw = row.Name ?? row.TaskName ?? row.taskName ?? row.name;
+      return {
+        Name: String(nameRaw ?? '').trim(),
+        IndicatorSLA:
+          row.IndicatorSLA == null || row.IndicatorSLA === ''
+            ? null
+            : String(row.IndicatorSLA),
+        StartTime:
+          row.StartTime == null || row.StartTime === ''
+            ? null
+            : String(row.StartTime),
+        EndTime:
+          row.EndTime == null || row.EndTime === '' ? null : String(row.EndTime),
+        Assignee:
+          row.Assignee == null || row.Assignee === '' ? null : String(row.Assignee),
+        Due: row.Due == null || row.Due === '' ? null : String(row.Due),
+        TrxNo: row.TrxNo == null || row.TrxNo === '' ? null : String(row.TrxNo),
+      };
+    })
     .filter((row) => row.Name.length > 0);
 }
 

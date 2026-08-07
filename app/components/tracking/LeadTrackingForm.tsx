@@ -7,7 +7,7 @@ import {
   consentStatusTone,
   type LeadMonitoringResult,
 } from '@/lib/lead-tracking';
-import { collapseTaskHistoryToStages } from '@/lib/lead-tracking-stages';
+import { collapseTaskHistoryToStages, findRejectedTrackingTask } from '@/lib/lead-tracking-stages';
 import { HONEYPOT_FIELD } from '@/lib/security/honeypot';
 import { HoneypotField } from '@/app/components/security/HoneypotField';
 import { TrackingStageTimeline } from '@/app/components/tracking/TrackingStageTimeline';
@@ -24,10 +24,37 @@ export function LeadTrackingForm() {
   const [queriedLeadNo, setQueriedLeadNo] = useState<string | null>(null);
   const [resolvedFromSimulation, setResolvedFromSimulation] = useState(false);
 
-  const stages = useMemo(
-    () => (result ? collapseTaskHistoryToStages(result.ListTaskHistory) : []),
-    [result]
-  );
+  const stages = useMemo(() => {
+    if (!result) return [];
+    const collapsed = collapseTaskHistoryToStages(result.ListTaskHistory);
+    const rejectTask = findRejectedTrackingTask(result.ListTaskHistory);
+    const hasReject = Boolean(result.HasRejectedTask || rejectTask);
+    if (!hasReject || collapsed.some((s) => s.status === 'rejected')) {
+      return collapsed;
+    }
+
+    // Safety net jika flag reject ada tapi collapse terlewat (cache/bundle mismatch).
+    let targetIndex = collapsed.findIndex((s) => s.id === 'Data Verification');
+    const furthest = collapsed.reduce(
+      (acc, s, i) => (s.status !== 'pending' ? i : acc),
+      -1
+    );
+    if (furthest >= 0) targetIndex = furthest;
+    if (targetIndex < 0) targetIndex = 1;
+
+    return collapsed.map((s, i) => {
+      if (i < targetIndex) return { ...s, status: 'completed' as const };
+      if (i === targetIndex) {
+        return {
+          ...s,
+          status: 'rejected' as const,
+          startedAt: rejectTask?.StartTime ?? s.startedAt,
+          endedAt: rejectTask?.EndTime ?? s.endedAt,
+        };
+      }
+      return { ...s, status: 'pending' as const, startedAt: null, endedAt: null };
+    });
+  }, [result]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

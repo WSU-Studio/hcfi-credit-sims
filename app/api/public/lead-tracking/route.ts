@@ -22,6 +22,7 @@ import {
   type LeadTaskHistoryItem,
   type LocalLeadTrackingRef,
 } from '@/lib/lead-tracking';
+import { findRejectedTrackingTask } from '@/lib/lead-tracking-stages';
 import { prisma } from '@/lib/prisma';
 
 type MonitoringEnvelope = {
@@ -78,62 +79,164 @@ function mockMonitoring(
   leadNo: string,
   opts?: { simulationLeadNo?: string | null; custName?: string | null; vehicleSummary?: string | null }
 ): LeadMonitoringResult {
+  const history = mockTaskHistory(leadNo);
   return {
     LeadNo: leadNo,
     CustConsentStatus: 'SCS',
-    ListTaskHistory: mockTaskHistory(leadNo),
+    ListTaskHistory: history,
     CustName: opts?.custName ?? 'DEMO CUSTOMER',
     VehicleSummary: opts?.vehicleSummary ?? 'THE ALL NEW SANTA FE',
     SimulationLeadNo: opts?.simulationLeadNo ?? null,
+    HasRejectedTask: Boolean(findRejectedTrackingTask(history)),
   };
 }
 
-async function findLocalLead(leadNo: string): Promise<LocalLeadTrackingRef | null> {
-  const normalized = leadNo.trim().toUpperCase();
+function normalizeLeadNo(value: string | null | undefined): string | null {
+  const v = value?.trim().toUpperCase() || '';
+  return v.length > 0 ? v : null;
+}
 
-  const direct = await prisma.lead.findFirst({
+function toTrackingRef(row: {
+  simulationLeadNo: string | null;
+  hyundaiLeadNo: string | null;
+  hyundaiAssignStatus: string;
+  name: string | null;
+  vehicleSummary: string | null;
+}): LocalLeadTrackingRef {
+  return {
+    simulationLeadNo: row.simulationLeadNo,
+    hyundaiLeadNo: row.hyundaiLeadNo,
+    hyundaiAssignStatus: row.hyundaiAssignStatus,
+    name: row.name,
+    vehicleSummary: row.vehicleSummary,
+  };
+}
+
+/**
+ * Jika ada beberapa baris Lead untuk LeadNo yang sama, prioritaskan yang
+ * sudah SUBMITTED + punya hyundaiLeadNo berbeda dari nomor simulasi
+ * (cross-office / nomor final untuk monitoring).
+ */
+function pickBestTrackingLead(
+  candidates: Array<{
+    simulationLeadNo: string | null;
+    hyundaiLeadNo: string | null;
+    hyundaiAssignStatus: string;
+    name: string | null;
+    vehicleSummary: string | null;
+  }>,
+  inputNormalized: string
+): LocalLeadTrackingRef | null {
+  if (candidates.length === 0) return null;
+
+  const scored = candidates.map((row) => {
+    const sim = normalizeLeadNo(row.simulationLeadNo);
+    const submitted = normalizeLeadNo(row.hyundaiLeadNo);
+    const status = row.hyundaiAssignStatus?.trim().toUpperCase() || '';
+    let score = 0;
+    if (status === 'SUBMITTED' && submitted) score += 100;
+    if (submitted && submitted !== inputNormalized) score += 50;
+    if (sim === inputNormalized && submitted && submitted !== sim) score += 40;
+    if (submitted === inputNormalized) score += 20;
+    if (sim === inputNormalized) score += 10;
+    return { row, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return toTrackingRef(scored[0].row);
+}
+
+async function findLocalLead(leadNo: string): Promise<LocalLeadTrackingRef | null> {
+  const normalized = normalizeLeadNo(leadNo);
+  if (!normalized) return null;
+
+  const select = {
+    simulationLeadNo: true,
+    hyundaiLeadNo: true,
+    hyundaiAssignStatus: true,
+    name: true,
+    vehicleSummary: true,
+  } as const;
+
+  // 1) Match langsung di tabel leads (bisa lebih dari 1 baris).
+  const directMatches = await prisma.lead.findMany({
     where: {
       OR: [
         { simulationLeadNo: { equals: normalized, mode: 'insensitive' } },
         { hyundaiLeadNo: { equals: normalized, mode: 'insensitive' } },
       ],
     },
-    select: {
-      simulationLeadNo: true,
-      hyundaiLeadNo: true,
-      hyundaiAssignStatus: true,
-      name: true,
-      vehicleSummary: true,
-    },
+    select,
     orderBy: { createdAt: 'desc' },
+    take: 20,
   });
-  if (direct) return direct;
+  const bestDirect = pickBestTrackingLead(directMatches, normalized);
+  if (bestDirect) {
+    const submitted = normalizeLeadNo(bestDirect.hyundaiLeadNo);
+    const sim = normalizeLeadNo(bestDirect.simulationLeadNo);
+    // Jika ketemu via simulasi dan sudah ada nomor submitted yang beda — siap monitor.
+    if (sim === normalized && submitted && submitted !== normalized) {
+      return bestDirect;
+    }
+    // Jika ketemu via nomor submitted — OK.
+    if (submitted === normalized) {
+      return bestDirect;
+    }
+    // Ketemu baris simulasi tanpa submitted yang beda — tetap kembalikan
+    // (resolve akan set pendingSubmit). Tapi cek draft dulu untuk jaga-jaga.
+  }
 
-  // Fallback: LeadNo simulasi tersimpan di LeadAssetDraft, link via convertedLeadId.
+  // 2) LeadAssetDraft.hyundaiLeadNo = LeadNo simulasi PriceStep.
   const draft = await prisma.leadAssetDraft.findFirst({
     where: { hyundaiLeadNo: { equals: normalized, mode: 'insensitive' } },
     select: { convertedLeadId: true },
     orderBy: { createdAt: 'desc' },
   });
-  if (!draft?.convertedLeadId) return null;
+  if (draft?.convertedLeadId) {
+    const fromDraft = await prisma.lead.findUnique({
+      where: { id: draft.convertedLeadId },
+      select,
+    });
+    if (fromDraft) {
+      return {
+        ...toTrackingRef(fromDraft),
+        simulationLeadNo: fromDraft.simulationLeadNo?.trim() || normalized,
+      };
+    }
+  }
 
-  const fromDraft = await prisma.lead.findUnique({
-    where: { id: draft.convertedLeadId },
-    select: {
-      simulationLeadNo: true,
-      hyundaiLeadNo: true,
-      hyundaiAssignStatus: true,
-      name: true,
-      vehicleSummary: true,
-    },
-  });
-  if (!fromDraft) return null;
+  if (bestDirect) return bestDirect;
 
-  return {
-    ...fromDraft,
-    // Draft.hyundaiLeadNo = LeadNo simulasi PriceStep; isi jika Lead belum menyimpan field-nya.
-    simulationLeadNo: fromDraft.simulationLeadNo?.trim() || normalized,
-  };
+  // 3) Fallback SQL: TRIM + UPPER (antisipasi spasi / casing aneh di DB).
+  try {
+    const rows = await prisma.$queryRaw<
+      Array<{
+        simulationLeadNo: string | null;
+        hyundaiLeadNo: string | null;
+        hyundaiAssignStatus: string;
+        name: string | null;
+        vehicleSummary: string | null;
+      }>
+    >`
+      SELECT
+        "simulationLeadNo",
+        "hyundaiLeadNo",
+        "hyundaiAssignStatus",
+        name,
+        "vehicleSummary"
+      FROM leads
+      WHERE UPPER(TRIM(COALESCE("simulationLeadNo", ''))) = ${normalized}
+         OR UPPER(TRIM(COALESCE("hyundaiLeadNo", ''))) = ${normalized}
+      ORDER BY "createdAt" DESC
+      LIMIT 20
+    `;
+    const bestRaw = pickBestTrackingLead(rows, normalized);
+    if (bestRaw) return bestRaw;
+  } catch (err) {
+    console.warn('[lead-tracking] raw lead lookup failed:', err);
+  }
+
+  return null;
 }
 
 function enrichWithLocal(
@@ -153,10 +256,12 @@ function buildMonitoringResult(
   leadNo: string,
   envelope: MonitoringEnvelope
 ): LeadMonitoringResult {
+  const history = sortTaskHistory(normalizeTaskHistory(envelope.ListTaskHistory));
   return {
     LeadNo: leadNo,
     CustConsentStatus: String(envelope.CustConsentStatus ?? '').trim(),
-    ListTaskHistory: sortTaskHistory(normalizeTaskHistory(envelope.ListTaskHistory)),
+    ListTaskHistory: history,
+    HasRejectedTask: Boolean(findRejectedTrackingTask(history)),
   };
 }
 
@@ -213,6 +318,13 @@ export async function POST(request: NextRequest) {
   const inputLeadNo = parsed.data.leadNo.trim().toUpperCase();
   const local = await findLocalLead(inputLeadNo);
   const resolved = resolveTrackingLeadNo(inputLeadNo, local);
+
+  if (!local && /^(13|12)[A-Z0-9]+$/i.test(inputLeadNo)) {
+    console.warn(
+      '[lead-tracking] no local DB mapping for simulation-like LeadNo; monitoring raw input',
+      { inputLeadNo }
+    );
+  }
 
   if (resolved.pendingSubmit) {
     return NextResponse.json({
