@@ -6,13 +6,16 @@ import sharp from 'sharp';
  * first-pass OCR still uses the original client file.
  */
 const DEFAULT_TEXT = 'HCFI · INTERNAL USE ONLY';
-/** Keep low enough that fallback re-OCR on stored image remains usable. */
-const DEFAULT_OPACITY = 0.2;
-const BRAND_RGB = '0,44,95'; // #002c5f
+/**
+ * Dual-tone (light fill + dark stroke) stays readable on blue KTP faces.
+ * Keep moderate so fallback re-OCR on stored image remains usable.
+ */
+const DEFAULT_FILL_OPACITY = 0.38;
+const DEFAULT_STROKE_OPACITY = 0.28;
 
 export type KtpWatermarkOptions = {
   text?: string;
-  /** 0–1 overlay opacity. Default 0.2. */
+  /** 0–1 fill opacity for the light stamp. Default 0.38. */
   opacity?: number;
 };
 
@@ -35,19 +38,25 @@ export function buildKtpWatermarkSvg(
   options: KtpWatermarkOptions = {}
 ): Buffer {
   const text = escapeXml(options.text?.trim() || DEFAULT_TEXT);
-  const opacity = clampOpacity(options.opacity ?? DEFAULT_OPACITY);
+  const fillOpacity = clampOpacity(options.opacity ?? DEFAULT_FILL_OPACITY);
+  const strokeOpacity = Math.min(1, fillOpacity * (DEFAULT_STROKE_OPACITY / DEFAULT_FILL_OPACITY));
   const shortest = Math.min(width, height);
   const fontSize = Math.max(22, Math.round(shortest * 0.048));
   const patternW = Math.round(fontSize * 9);
   const patternH = Math.round(fontSize * 4.2);
+  const y = Math.round(patternH * 0.62);
+  const strokeWidth = Math.max(1, Math.round(fontSize * 0.06));
 
   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <pattern id="ktp-wm" width="${patternW}" height="${patternH}" patternUnits="userSpaceOnUse" patternTransform="rotate(-32)">
       <text
         x="0"
-        y="${Math.round(patternH * 0.62)}"
-        fill="rgba(${BRAND_RGB},${opacity})"
+        y="${y}"
+        fill="rgba(255,255,255,${fillOpacity})"
+        stroke="rgba(0,44,95,${strokeOpacity})"
+        stroke-width="${strokeWidth}"
+        paint-order="stroke"
         font-family="Arial, Helvetica, sans-serif"
         font-size="${fontSize}"
         font-weight="700"
@@ -62,7 +71,7 @@ export function buildKtpWatermarkSvg(
 }
 
 function clampOpacity(value: number): number {
-  if (!Number.isFinite(value)) return DEFAULT_OPACITY;
+  if (!Number.isFinite(value)) return DEFAULT_FILL_OPACITY;
   return Math.min(1, Math.max(0, value));
 }
 

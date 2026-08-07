@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin } from '@tabler/icons-react';
+import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin, IconRubberStamp } from '@tabler/icons-react';
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
@@ -80,6 +80,9 @@ export function LeadsTable() {
   const [canDownloadLeads, setCanDownloadLeads] = useState<boolean>(false);
   const [canEditOcrSnapshot, setCanEditOcrSnapshot] = useState<boolean>(false);
   const [ktpPreviewLeadId, setKtpPreviewLeadId] = useState<string | null>(null);
+  const [ktpPreviewBust, setKtpPreviewBust] = useState(0);
+  const [watermarkingKtp, setWatermarkingKtp] = useState(false);
+  const [watermarkMessage, setWatermarkMessage] = useState<string | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -101,6 +104,43 @@ export function LeadsTable() {
       document.body.style.overflow = '';
     };
   }, [ktpPreviewLeadId]);
+
+  useEffect(() => {
+    setWatermarkMessage(null);
+    setWatermarkingKtp(false);
+  }, [ktpPreviewLeadId]);
+
+  const handleWatermarkKtp = useCallback(async (force = false) => {
+    if (!ktpPreviewLeadId || watermarkingKtp) return;
+    setWatermarkingKtp(true);
+    setWatermarkMessage(null);
+    try {
+      const res = await fetch(
+        `/api/admin/leads/${encodeURIComponent(ktpPreviewLeadId)}/watermark-ktp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force }),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal menerapkan watermark');
+      }
+      if (data.status === 'already_watermarked') {
+        setWatermarkMessage(
+          'KTP sudah berwatermark. Klik “Stamp ulang” jika ingin menerapkan lagi.'
+        );
+        return;
+      }
+      setKtpPreviewBust(Date.now());
+      setWatermarkMessage('Watermark berhasil diterapkan (tanpa file duplikat).');
+    } catch (err) {
+      setWatermarkMessage(err instanceof Error ? err.message : 'Gagal menerapkan watermark');
+    } finally {
+      setWatermarkingKtp(false);
+    }
+  }, [ktpPreviewLeadId, watermarkingKtp]);
 
   useEffect(() => {
     fetch('/api/admin/me/activities')
@@ -656,13 +696,38 @@ export function LeadsTable() {
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element -- same-origin API proxy; avoids /_next/image + private S3 */}
             <img
-              src={`/api/admin/lead-ktp?id=${encodeURIComponent(ktpPreviewLeadId)}`}
+              src={`/api/admin/lead-ktp?id=${encodeURIComponent(ktpPreviewLeadId)}&t=${ktpPreviewBust}`}
               alt="Foto KTP"
               width={800}
               height={600}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-xl bg-white"
+              className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-xl bg-white"
             />
-            <p className="mt-2 text-center text-sm text-white/90">Foto KTP - Klik di luar untuk menutup</p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleWatermarkKtp(false)}
+                disabled={watermarkingKtp}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <IconRubberStamp size={16} />
+                {watermarkingKtp ? 'Menerapkan...' : 'Terapkan watermark'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleWatermarkKtp(true)}
+                disabled={watermarkingKtp}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/40 px-3 py-2 text-sm font-medium text-white hover:bg-white/10 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Paksa stamp ulang meskipun sudah pernah di-watermark"
+              >
+                Stamp ulang
+              </button>
+            </div>
+            {watermarkMessage && (
+              <p className="mt-2 text-center text-sm text-white/95">{watermarkMessage}</p>
+            )}
+            <p className="mt-1 text-center text-xs text-white/70">
+              Overwrite file yang sama di storage — tidak membuat duplikat. Klik di luar untuk menutup.
+            </p>
           </div>
         </div>
       )}

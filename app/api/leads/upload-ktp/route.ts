@@ -3,6 +3,10 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import { validateImageFile } from '@/lib/image-utils';
 import { applyKtpWatermark } from '@/lib/ktp-watermark';
+import {
+  KTP_WATERMARK_META_KEY,
+  KTP_WATERMARK_META_VALUE,
+} from '@/lib/ktp-watermark-storage';
 import { getClientIp, leadsLimiter, tooManyRequestsResponse } from '@/lib/ratelimit';
 import { isLocalKtpStorageEnabled } from '@/lib/ktp-storage-mode';
 import { buildLocalKtpPublicUrl, KTP_OBJECT_PREFIX, resolveKtpUploadOrigin } from '@/lib/ktp-url';
@@ -51,7 +55,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // Stamp stored archive only — Contact Modal OCR still uses the original client file.
     const stamped = await applyKtpWatermark(inputBuffer);
     const webpBuffer = await stamped.webp({ quality: 80 }).toBuffer();
 
@@ -72,6 +75,9 @@ export async function POST(request: NextRequest) {
         Key: key,
         Body: webpBuffer,
         ContentType: 'image/webp',
+        Metadata: {
+          [KTP_WATERMARK_META_KEY]: KTP_WATERMARK_META_VALUE,
+        },
       })
     );
 
