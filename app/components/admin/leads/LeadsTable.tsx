@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconMapPin, IconRubberStamp } from '@tabler/icons-react';
+import { downloadSpreadsheet } from '@/lib/download-xlsx';
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
@@ -209,39 +209,39 @@ export function LeadsTable() {
     }
   };
 
-  const runSlik = async (id: string) => {
-    setRunningSlikId(id);
-    try {
-      const res = await fetch('/api/admin/leads/run-slik', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        console.error('Failed to run SLIK', await res.json());
-      }
-      await fetchLeads();
-    } catch (err) {
-      console.error('Error running SLIK:', err);
-    } finally {
-      setRunningSlikId((current) => (current === id ? null : current));
-    }
-  };
+  // const runSlik = async (id: string) => {
+  //   setRunningSlikId(id);
+  //   try {
+  //     const res = await fetch('/api/admin/leads/run-slik', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ id }),
+  //     });
+  //     if (!res.ok) {
+  //       console.error('Failed to run SLIK', await res.json());
+  //     }
+  //     await fetchLeads();
+  //   } catch (err) {
+  //     console.error('Error running SLIK:', err);
+  //   } finally {
+  //     setRunningSlikId((current) => (current === id ? null : current));
+  //   }
+  // };
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    try {
-      const res = await fetch('/api/admin/leads', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status: newStatus }),
-      });
-      if (res.ok) {
-        fetchLeads();
-      }
-    } catch (err) {
-      console.error('Error updating status:', err);
-    }
-  };
+  // const updateStatus = async (id: string, newStatus: string) => {
+  //   try {
+  //     const res = await fetch('/api/admin/leads', {
+  //       method: 'PATCH',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ id, status: newStatus }),
+  //     });
+  //     if (res.ok) {
+  //       fetchLeads();
+  //     }
+  //   } catch (err) {
+  //     console.error('Error updating status:', err);
+  //   }
+  // };
 
   const handleDownloadPdf = useCallback(() => {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -285,50 +285,64 @@ export function LeadsTable() {
     doc.save(`leads-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [leads]);
 
-  const handleDownloadExcel = useCallback(() => {
+  const handleDownloadExcel = useCallback(async () => {
     const rows = leads.map((lead) => {
       const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
       return {
-        Tanggal: formatDate(lead.createdAt),
-        'LeadNo Simulasi': lead.simulationLeadNo ?? '-',
-        'LeadNo Hyundai': lead.hyundaiLeadNo ?? '-',
-        Nama: lead.name,
-        Telepon: lead.phone,
-        Email: lead.email,
-        Sumber: lead.source
+        tanggal: formatDate(lead.createdAt),
+        simulationLeadNo: lead.simulationLeadNo ?? '-',
+        hyundaiLeadNo: lead.hyundaiLeadNo ?? '-',
+        nama: lead.name,
+        telepon: lead.phone,
+        email: lead.email,
+        sumber: lead.source
           ? LEAD_SOURCE_LABELS[lead.source as keyof typeof LEAD_SOURCE_LABELS] ?? lead.source
           : '-',
-        Produk: lead.productName ?? '-',
-        Kendaraan: lead.vehicleSummary ?? '-',
-        OTR: lead.otrPrice ?? null,
-        'DP %': lead.dpPercent ?? null,
-        'Tenor (bln)': lead.tenor ?? null,
-        Lokasi:
+        produk: lead.productName ?? '-',
+        kendaraan: lead.vehicleSummary ?? '-',
+        otr: lead.otrPrice ?? null,
+        dpPercent: lead.dpPercent ?? null,
+        tenor: lead.tenor ?? null,
+        lokasi:
           lead.latitude != null && lead.longitude != null
             ? `${lead.latitude.toFixed(4)}, ${lead.longitude.toFixed(4)}`
             : '-',
-        Dealer: lead.vendorName ?? lead.vendorCode ?? '-',
-        'Kota Dealer': lead.vendorCity ?? '-',
-        Sales: lead.salesUser?.name ?? '-',
-        'Sales Emp No': lead.salesEmpNo ?? '-',
-        CMO: lead.cmoName ?? lead.cmoEmpNo ?? '-',
-        SLIK: lead.slikStatus ?? 'NOT_STARTED',
-        Status: statusOpt.label,
+        dealer: lead.vendorName ?? lead.vendorCode ?? '-',
+        kotaDealer: lead.vendorCity ?? '-',
+        sales: lead.salesUser?.name ?? '-',
+        salesEmpNo: lead.salesEmpNo ?? '-',
+        cmo: lead.cmoName ?? lead.cmoEmpNo ?? '-',
+        slik: lead.slikStatus ?? 'NOT_STARTED',
+        status: statusOpt.label,
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    // Lebar kolom kira-kira mengikuti isi supaya tidak terpotong saat dibuka.
-    worksheet['!cols'] = Object.keys(rows[0] ?? { '': '' }).map((key) => ({
-      wch: Math.max(
-        key.length,
-        ...rows.map((row) => String(row[key as keyof typeof row] ?? '').length)
-      ) + 2,
-    }));
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
-    XLSX.writeFile(workbook, `leads-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    await downloadSpreadsheet({
+      fileName: `leads-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      rows,
+      columns: [
+        { header: 'Tanggal', key: 'tanggal' },
+        { header: 'LeadNo Simulasi', key: 'simulationLeadNo' },
+        { header: 'LeadNo Hyundai', key: 'hyundaiLeadNo' },
+        { header: 'Nama', key: 'nama' },
+        { header: 'Telepon', key: 'telepon' },
+        { header: 'Email', key: 'email' },
+        { header: 'Sumber', key: 'sumber' },
+        { header: 'Produk', key: 'produk' },
+        { header: 'Kendaraan', key: 'kendaraan' },
+        { header: 'OTR', key: 'otr' },
+        { header: 'DP %', key: 'dpPercent' },
+        { header: 'Tenor (bln)', key: 'tenor' },
+        { header: 'Lokasi', key: 'lokasi' },
+        { header: 'Dealer', key: 'dealer' },
+        { header: 'Kota Dealer', key: 'kotaDealer' },
+        { header: 'Sales', key: 'sales' },
+        { header: 'Sales Emp No', key: 'salesEmpNo' },
+        { header: 'CMO', key: 'cmo' },
+        { header: 'SLIK', key: 'slik' },
+        { header: 'Status', key: 'status' },
+      ],
+    });
   }, [leads]);
 
   if (loading) {
@@ -448,8 +462,8 @@ export function LeadsTable() {
               </tr>
             ) : (
               leads.map((lead) => {
-                const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
-                const StatusIcon = statusOpt.icon;
+                // const statusOpt = STATUS_OPTIONS.find((s) => s.value === lead.status) || STATUS_OPTIONS[0];
+                // const StatusIcon = statusOpt.icon;
                 return (
                   <tr key={lead.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 align-top">

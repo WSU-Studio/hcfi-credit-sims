@@ -82,7 +82,7 @@ function clampOpacity(value: number): number {
 export async function applyKtpWatermark(
   inputBuffer: Buffer,
   options: KtpWatermarkOptions = {}
-): Promise<sharp.Sharp> {
+): Promise<ReturnType<typeof sharp>> {
   const meta = await sharp(inputBuffer).rotate().metadata();
   const width = meta.width;
   const height = meta.height;

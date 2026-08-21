@@ -36,7 +36,7 @@
     "@tiptap/starter-kit": "^3.27.1",
     "bcryptjs": "^3.0.3",
     "isomorphic-dompurify": "^2.35.0",
-    "jspdf": "^3.0.2",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "next": "16.2.12",
     "next-auth": "5.0.0-beta.32",
@@ -48,9 +48,9 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.68.0",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "undici": "^7.28.0",
-    "xlsx": "^0.18.5",
+    "write-excel-file": "^4.1.1",
     "zod": "^4.2.1"
   },
   "devDependencies": {
@@ -64,10 +64,13 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.12",
     "typescript": "^5"
   },
   "overrides": {
-    "effect": ">=3.20.0"
+    "effect": ">=3.20.0",
+    "esbuild": ">=0.28.1",
+    "postcss": ">=8.5.23",
+    "sharp": "^0.35.3"
   }
 }
