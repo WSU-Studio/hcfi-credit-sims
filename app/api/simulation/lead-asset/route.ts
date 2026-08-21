@@ -23,6 +23,7 @@ import {
 } from '@/lib/hyundai-known-errors';
 import { leadAssetDraftSchema } from '@/lib/security/schemas';
 import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
+import { resolveAddLeadAssetChannelCode } from '@/lib/hyundai-channel-code';
 
 /**
  * Hyundai Fase 1: Add Lead Asset.
@@ -33,6 +34,10 @@ import { isHoneypotTripped, HONEYPOT_FIELD } from '@/lib/security/honeypot';
  *   - Website publik: "" (kosong) — CMO assignment dilakukan di back-office admin.
  *   - Dealer quotation: diisi `salesEmpNo` salesman yang login (diambil dari DB
  *     via session, bukan dari input client) selama dealer request = dealer user.
+ *
+ * `MrChannelCode` (Postman v1.10, ref_master MR_CHANNEL_CODE):
+ *   - Website publik / pre-sim: `WEBSITE_CUST`
+ *   - Dealer quotation (session salesman valid): `WEBSITE_SALES`
  *
  * Setiap submit menciptakan lead BARU di Hyundai LOS (sesuai konfirmasi klien:
  * jika user mundur ke Step 4 lalu submit ulang, buat lead baru — Postman tidak
@@ -144,6 +149,7 @@ export async function POST(request: NextRequest) {
   // Diambil dari DB via session (bukan body request) supaya tidak bisa di-spoof,
   // dan hanya jika dealer yang diquotation sama dengan dealer penugasan user.
   let supplierEmpNo = '';
+  let isAuthenticatedDealerSales = false;
   try {
     const session = await auth();
     if (
@@ -151,6 +157,7 @@ export async function POST(request: NextRequest) {
       isDealerPortalUser(session.user.userType) &&
       session.user.vendorCode?.trim() === vendor.VendorCode
     ) {
+      isAuthenticatedDealerSales = true;
       const salesUser = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: { salesEmpNo: true },
@@ -160,6 +167,11 @@ export async function POST(request: NextRequest) {
   } catch (sessionErr) {
     console.warn('[lead-asset] failed to resolve salesEmpNo from session:', sessionErr);
   }
+
+  const mrChannelCode = resolveAddLeadAssetChannelCode({
+    leadSource: parsed.data.source,
+    isAuthenticatedDealerSales,
+  });
 
   let resolvedAsset: ResolvedLeadAsset;
   let oem: ResolvedOemAccessories;
@@ -211,6 +223,7 @@ export async function POST(request: NextRequest) {
       OEMWarrantyName: '',
       OEMWarrantyPriceAmt: 0,
       listAssetOEMAccessory: oem.list,
+      MrChannelCode: mrChannelCode,
     };
 
     const assetRes = await hyundaiPost<HyundaiApiEnvelope>(

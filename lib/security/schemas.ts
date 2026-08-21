@@ -364,6 +364,11 @@ export const leadAssetDraftSchema = z
         const code = normalizePartnerCode(String(v));
         return code || null;
       }),
+    /** WEBSITE | DEALER_SALES — dipetakan ke Confins MrChannelCode di server. */
+    source: z
+      .enum([LEAD_SOURCES.WEBSITE, LEAD_SOURCES.DEALER_SALES])
+      .optional()
+      .default(LEAD_SOURCES.WEBSITE),
     [HONEYPOT_FIELD]: z.string().optional(),
   })
   .strip();

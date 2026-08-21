@@ -267,6 +267,7 @@ export function SimulationWizard({
             otrPrice: params.netPrice,
             discount: params.discountAmount,
             partnerCode: params.partnerCode,
+            source: leadSource,
           }),
         });
         const data = await res.json();
@@ -283,7 +284,14 @@ export function SimulationWizard({
         setLeadNoLoading(false);
       }
     },
-    [selectedDealer, selectedAsset, specs, buildLeadAssetSnapshot, labels.leadAssetError]
+    [
+      selectedDealer,
+      selectedAsset,
+      specs,
+      buildLeadAssetSnapshot,
+      labels.leadAssetError,
+      leadSource,
+    ]
   );
 
   const handlePriceComplete = async (
