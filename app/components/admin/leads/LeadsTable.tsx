@@ -8,6 +8,10 @@ import { IconCheck, IconX, IconClock, IconUserCheck, IconDownload, IconId, IconM
 import Link from 'next/link';
 import type { Vendor } from '@/app/types/credit-simulation';
 import { LEAD_SOURCE_LABELS, LEAD_SOURCES } from '@/lib/lead-source';
+import {
+  HYUNDAI_CHANNEL_CODES,
+  mrChannelCodeFromLeadSource,
+} from '@/lib/hyundai-channel-code';
 import { LeadAssignRow } from '@/app/components/admin/leads/LeadAssignRow';
 import { LeadSimulationSummaryButton } from '@/app/components/admin/leads/LeadSimulationSummaryButton';
 import { TablePagination } from '@/app/components/admin/TablePagination';
@@ -69,6 +73,23 @@ const formatCurrency = (n: number | null) =>
     : '-';
 
 const formatDate = (date: string) => new Date(date).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+
+function ConfinsChannelBadge({ source }: { source?: string | null }) {
+  const channel = mrChannelCodeFromLeadSource(source);
+  const isSales = channel === HYUNDAI_CHANNEL_CODES.SALES;
+  return (
+    <span
+      className={
+        isSales
+          ? 'inline-flex rounded bg-blue-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-blue-700'
+          : 'inline-flex rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-700'
+      }
+      title="Confins MrChannelCode (AddLeadAsset)"
+    >
+      {channel}
+    </span>
+  );
+}
 
 export function LeadsTable() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -502,12 +523,8 @@ export function LeadsTable() {
                         </div>
                         <div className="text-sm text-gray-900">{lead.phone}</div>
                         <div className="text-xs text-gray-500">{lead.email}</div>
-                        <div className="text-xs text-gray-500">
-                          {lead.source === LEAD_SOURCES.DEALER_SALES && (
-                            <span className="inline-flex rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                              {LEAD_SOURCE_LABELS.DEALER_SALES}
-                            </span>
-                          )}
+                        <div className="mt-1 flex flex-wrap items-center gap-1 text-xs text-gray-500">
+                          <ConfinsChannelBadge source={lead.source} />
                           {lead.salesEmpNo && (
                             <span
                               className="inline-flex rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-mono font-medium text-green-800"
