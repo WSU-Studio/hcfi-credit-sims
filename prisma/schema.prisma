@@ -16,36 +16,36 @@ datasource db {
 // ============================================
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  isActive  Boolean  @default(true)
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  password            String
+  name                String
+  isActive            Boolean   @default(true)
   /// HCFI_ADMIN | DEALER_ADMIN | SALESMAN — derived from assigned roles
-  userType        String?
+  userType            String?
   /// Hyundai vendor/dealer assignment (required for DEALER_ADMIN & SALESMAN)
-  vendorCode      String?
-  vendorName      String?
-  vendorCity      String?
-  oriOfficeCode   String?
-  oriOfficeName   String?
+  vendorCode          String?
+  vendorName          String?
+  vendorCity          String?
+  oriOfficeCode       String?
+  oriOfficeName       String?
   /// Emp number CMO (HCFI) — jika terisi, CMO di leads terkunci ke nomor ini
-  cmoEmpNo        String?
+  cmoEmpNo            String?
   /// Emp number salesman dealer (Hyundai Get List Sales Person, mis. H104299)
-  salesEmpNo      String?
+  salesEmpNo          String?
   // Account lockout / login hardening
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   lastLoginAt         DateTime?
   lastFailedLoginAt   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  userRoles UserRole[]
-  articles  Article[]
+  userRoles        UserRole[]
+  articles         Article[]
   dealerPromotions DealerPromotion[]
-  salesLeads Lead[] @relation("SalesLeads")
-  preSimulations PreSimulation[] @relation("PreSimulationCreator")
+  salesLeads       Lead[]            @relation("SalesLeads")
+  preSimulations   PreSimulation[]   @relation("PreSimulationCreator")
 
   @@index([userType])
   @@index([vendorCode])
@@ -104,7 +104,7 @@ model Permission {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  menu          Menu            @relation(fields: [menuCode], references: [code], onDelete: Cascade)
+  menu            Menu             @relation(fields: [menuCode], references: [code], onDelete: Cascade)
   rolePermissions RolePermission[]
 
   @@unique([menuCode])
@@ -128,23 +128,23 @@ model RolePermission {
 // ============================================
 
 model Banner {
-  id           String    @id @default(uuid())
-  title        String
-  titleEn      String?
-  highlight    String?
-  highlightEn  String?
-  description  String?
+  id            String    @id @default(uuid())
+  title         String
+  titleEn       String?
+  highlight     String?
+  highlightEn   String?
+  description   String?
   descriptionEn String?
-  imageUrl     String
-  ctaLabel     String?
-  ctaLabelEn   String?
-  ctaUrl       String?
-  isActive     Boolean   @default(true)
-  order        Int       @default(0)
-  startDate    DateTime?
-  endDate      DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  imageUrl      String
+  ctaLabel      String?
+  ctaLabelEn    String?
+  ctaUrl        String?
+  isActive      Boolean   @default(true)
+  order         Int       @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@map("banners")
 }
@@ -166,19 +166,19 @@ model Benefit {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  title       String
-  titleEn     String?
-  subtitle    String?
-  subtitleEn  String?
-  imageUrl    String
-  content     String?  @db.Text
-  contentEn   String?  @db.Text
-  layout      Json?
-  order       Int      @default(0)
-  isFeatured  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  title      String
+  titleEn    String?
+  subtitle   String?
+  subtitleEn String?
+  imageUrl   String
+  content    String?  @db.Text
+  contentEn  String?  @db.Text
+  layout     Json?
+  order      Int      @default(0)
+  isFeatured Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("products")
 }
@@ -191,9 +191,9 @@ model Promo {
   description        String?
   descriptionEn      String?
   imageUrl           String?
-  bannerImageRatio   String?   // default | 1:1 | 4:3 | 16:9 | 3:1 | 4:1 | 5:1
-  bannerUseContainer Boolean   @default(true)  // false = image to edge
-  showBannerImage    Boolean   @default(true)  // false = hide cover image on detail page
+  bannerImageRatio   String? // default | 1:1 | 4:3 | 16:9 | 3:1 | 4:1 | 5:1
+  bannerUseContainer Boolean   @default(true) // false = image to edge
+  showBannerImage    Boolean   @default(true) // false = hide cover image on detail page
   content            String?   @db.Text
   contentEn          String?   @db.Text
   layout             Json?
@@ -209,32 +209,32 @@ model Promo {
 }
 
 model Article {
-  id               String    @id @default(uuid())
-  title            String
-  titleEn          String?
-  slug             String    @unique
-  subtitle         String?
-  subtitleEn       String?
-  excerpt          String?
-  excerptEn        String?
-  content          String    @db.Text
-  contentEn        String?   @db.Text
-  layout           Json?     // widget-based layout (same as StaticPage/Promo)
-  imageUrl         String?
-  bannerImageRatio String?   // default | 1:1 | 4:3 | 16:9 | 3:1 | 4:1 | 5:1
-  bannerUseContainer Boolean @default(true) // false = image to edge
-  showBannerImage   Boolean  @default(true)   // false = sembunyikan banner di halaman artikel
-  metaDescription   String?
-  metaDescriptionEn String?
-  category         String?
-  tags             String[]  @default([])
-  readingTime      Int?      // minutes
-  featured         Boolean   @default(false)
-  authorId         String?
-  isPublished      Boolean   @default(false)
-  publishedAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  title              String
+  titleEn            String?
+  slug               String    @unique
+  subtitle           String?
+  subtitleEn         String?
+  excerpt            String?
+  excerptEn          String?
+  content            String    @db.Text
+  contentEn          String?   @db.Text
+  layout             Json? // widget-based layout (same as StaticPage/Promo)
+  imageUrl           String?
+  bannerImageRatio   String? // default | 1:1 | 4:3 | 16:9 | 3:1 | 4:1 | 5:1
+  bannerUseContainer Boolean   @default(true) // false = image to edge
+  showBannerImage    Boolean   @default(true) // false = sembunyikan banner di halaman artikel
+  metaDescription    String?
+  metaDescriptionEn  String?
+  category           String?
+  tags               String[]  @default([])
+  readingTime        Int? // minutes
+  featured           Boolean   @default(false)
+  authorId           String?
+  isPublished        Boolean   @default(false)
+  publishedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
@@ -279,13 +279,13 @@ model SiteSetting {
 }
 
 model Announcement {
-  id          String    @id @default(uuid())
-  message     String
-  isActive    Boolean   @default(true)
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(uuid())
+  message   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("announcements")
 }
@@ -295,12 +295,12 @@ model Announcement {
 /// (avoid storing secrets / PII verbatim).
 model AuditLog {
   id           String   @id @default(uuid())
-  actorUserId  String?  // null if the actor is gone / a system process
-  actorEmail   String?  // denormalized so log survives user deletion
-  action       String   // e.g. "user.unlock", "lead.statusChange"
-  resourceType String?  // e.g. "User", "Lead", "Role"
+  actorUserId  String? // null if the actor is gone / a system process
+  actorEmail   String? // denormalized so log survives user deletion
+  action       String // e.g. "user.unlock", "lead.statusChange"
+  resourceType String? // e.g. "User", "Lead", "Role"
   resourceId   String?
-  metadata     Json?    // diff / context (NEVER stores password)
+  metadata     Json? // diff / context (NEVER stores password)
   ipAddress    String?
   userAgent    String?  @db.Text
   createdAt    DateTime @default(now())
@@ -313,16 +313,16 @@ model AuditLog {
 }
 
 model Media {
-  id          String   @id @default(uuid())
-  filename    String
-  url         String
+  id           String   @id @default(uuid())
+  filename     String
+  url          String
   cloudinaryId String?
-  mimeType    String?
-  size        Int?
-  width       Int?
-  height      Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mimeType     String?
+  size         Int?
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   vehicleModelImages VehicleModelImage[]
 
@@ -358,7 +358,7 @@ model DealerPromotion {
   vendorName    String?
   assetCode     String
   assetName     String?
-  discountType  String    // FIXED | PERCENT
+  discountType  String // FIXED | PERCENT
   discountValue Float
   maxDiscount   Float?
   validFrom     DateTime?
@@ -380,38 +380,38 @@ model DealerPromotion {
 // ============================================
 
 model Lead {
-  id          String   @id @default(uuid())
-  name        String
-  phone       String
-  email       String
-  productName String?
-  productCode String?  // Kode produk kredit Hyundai (RF, BL, 50:50, dst.)
-  firstInstallment String? // ADDM | ADDB — skema cicilan pertama
-  isPromotion Boolean @default(false) // true jika user pilih tab Promotion
-  vehicleSummary String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
-  assetSnapshot  Json?   // Kode model/trim/warna untuk Hyundai AddLeadAsset
+  id                  String    @id @default(uuid())
+  name                String
+  phone               String
+  email               String
+  productName         String?
+  productCode         String? // Kode produk kredit Hyundai (RF, BL, 50:50, dst.)
+  firstInstallment    String? // ADDM | ADDB — skema cicilan pertama
+  isPromotion         Boolean   @default(false) // true jika user pilih tab Promotion
+  vehicleSummary      String? // Ringkasan kendaraan yang dipilih (model, trim, warna)
+  assetSnapshot       Json? // Kode model/trim/warna untuk Hyundai AddLeadAsset
   /// Snapshot FinalSummaryInfo (Cust Consent) setelah user pilih tenor di ResultStep.
-  summarySnapshot Json?
-  otrPrice    Float?
-  discount    Float?   // Potongan harga (nominal)
-  partnerCode String?  // Kode partner Hyundai (opsional, dari PriceStep)
-  dpPercent   Float?
-  tenor       Int?
-  notes       String?  @db.Text
-  ktpUrl      String?  // URL gambar KTP yang diupload
-  ocrSnapshot Json?    // Hasil OCR KTP yang ditinjau/dikoreksi user di ContactModal
-  citizenType String?  // LOCAL | FOREIGNER
-  motherName  String?  // Nama ibu kandung
+  summarySnapshot     Json?
+  otrPrice            Float?
+  discount            Float? // Potongan harga (nominal)
+  partnerCode         String? // Kode partner Hyundai (opsional, dari PriceStep)
+  dpPercent           Float?
+  tenor               Int?
+  notes               String?   @db.Text
+  ktpUrl              String? // URL gambar KTP yang diupload
+  ocrSnapshot         Json? // Hasil OCR KTP yang ditinjau/dikoreksi user di ContactModal
+  citizenType         String? // LOCAL | FOREIGNER
+  motherName          String? // Nama ibu kandung
   homeOwnershipStatus String? // Status kepemilikan rumah/bangunan
-  consentAccepted     Boolean  @default(false) // Persetujuan pemrosesan data
-  ipAddress           String?  // IP user saat submit (dari request)
-  latitude            Float?   // Lokasi: latitude (dengan consent user)
-  longitude           Float?   // Lokasi: longitude (dengan consent user)
-  slikStatus          String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, QUALIFIED, NOT_QUALIFIED, ERROR
+  consentAccepted     Boolean   @default(false) // Persetujuan pemrosesan data
+  ipAddress           String? // IP user saat submit (dari request)
+  latitude            Float? // Lokasi: latitude (dengan consent user)
+  longitude           Float? // Lokasi: longitude (dengan consent user)
+  slikStatus          String    @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, QUALIFIED, NOT_QUALIFIED, ERROR
   slikResultCode      String?
   slikResultDescr     String?
   slikRawResponse     Json?
-  status      String   @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
+  status              String    @default("NEW") // NEW, CONTACTED, QUALIFIED, CLOSED
   vendorCode          String?
   vendorName          String?
   vendorCity          String?
@@ -425,52 +425,51 @@ model Lead {
   /// (admin submit memicu AddLeadAsset baru → LeadNo baru lagi).
   simulationLeadNo    String?
   hyundaiLeadNo       String?
-  hyundaiAssignStatus String   @default("PENDING") // PENDING, SUBMITTED, FAILED
-  hyundaiAssignError  String?  @db.Text
+  hyundaiAssignStatus String    @default("PENDING") // PENDING, SUBMITTED, FAILED
+  hyundaiAssignError  String?   @db.Text
   hyundaiAssignedAt   DateTime?
   /// WEBSITE | DEALER_SALES
-  source              String   @default("WEBSITE")
+  source              String    @default("WEBSITE")
   /// SupplierEmpNo yang terkirim ke Hyundai saat AddLeadAsset (pembanding data Adins)
   salesEmpNo          String?
   salesUserId         String?
-  salesUser           User?    @relation("SalesLeads", fields: [salesUserId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  salesUser           User?     @relation("SalesLeads", fields: [salesUserId], references: [id], onDelete: SetNull)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  ocrResults    LeadOcrResult[]
-  hyundaiCalls  HyundaiApiCallLog[]
+  ocrResults   LeadOcrResult[]
+  hyundaiCalls HyundaiApiCallLog[]
 
   @@index([simulationLeadNo])
   @@index([source])
   @@index([salesUserId])
-
   @@map("leads")
 }
 
 model LeadOcrResult {
-  id               String   @id @default(uuid())
-  leadId           String
-  lead             Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  hyundaiLeadNo    String?
-  ktpFileName      String?
-  status           String   @default("SUCCESS")
-  errorMessage     String?  @db.Text
-  rawResponse      Json?
-  nik              String?
-  nama             String?
-  tempatLahir      String?
-  tanggalLahir     String?
-  jenisKelamin     String?
-  alamat           String?
-  kotaKabupaten    String?
-  kecamatan        String?
-  kelurahanDesa    String?
-  zipCode          String?
-  agama            String?
-  statusPerkawinan String?
-  mrNationalityCode String?
+  id                 String   @id @default(uuid())
+  leadId             String
+  lead               Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  hyundaiLeadNo      String?
+  ktpFileName        String?
+  status             String   @default("SUCCESS")
+  errorMessage       String?  @db.Text
+  rawResponse        Json?
+  nik                String?
+  nama               String?
+  tempatLahir        String?
+  tanggalLahir       String?
+  jenisKelamin       String?
+  alamat             String?
+  kotaKabupaten      String?
+  kecamatan          String?
+  kelurahanDesa      String?
+  zipCode            String?
+  agama              String?
+  statusPerkawinan   String?
+  mrNationalityCode  String?
   addLeadCustPayload Json?
-  createdAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
 
   @@index([leadId])
   @@index([createdAt])
@@ -484,21 +483,21 @@ model LeadOcrResult {
 /// Tidak meng-cover SEMUA call—cuma yang dilist di `hyundai-api-log.ts:LoggedEndpoint`.
 /// Whitelist supaya tabel tidak membengkak dengan call repetitive (Login, dropdown, dst).
 model HyundaiApiCallLog {
-  id              String   @id @default(uuid())
-  leadId          String?
-  lead            Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
-  hyundaiLeadNo   String?
-  endpoint        String   // "SaveFinalCalculateResult" | "FinalCalculateByLeadNo" | "AddLeadCust"
-  url             String
-  status          String   // "SUCCESS" | "FAILED"
-  httpStatus      Int?     // bisa null kalau request belum sampai/Hyundai unreachable
-  hyundaiStatus   String?  // dari envelope.StatusCode (bisa "200", "500", dll)
-  hyundaiMessage  String?  @db.Text
-  requestBody     Json
-  responseBody    Json?
-  errorMessage    String?  @db.Text
-  durationMs      Int?
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  leadId         String?
+  lead           Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  hyundaiLeadNo  String?
+  endpoint       String // "SaveFinalCalculateResult" | "FinalCalculateByLeadNo" | "AddLeadCust"
+  url            String
+  status         String // "SUCCESS" | "FAILED"
+  httpStatus     Int? // bisa null kalau request belum sampai/Hyundai unreachable
+  hyundaiStatus  String? // dari envelope.StatusCode (bisa "200", "500", dll)
+  hyundaiMessage String?  @db.Text
+  requestBody    Json
+  responseBody   Json?
+  errorMessage   String?  @db.Text
+  durationMs     Int?
+  createdAt      DateTime @default(now())
 
   @@index([hyundaiLeadNo])
   @@index([leadId])
@@ -511,8 +510,8 @@ model HyundaiApiCallLog {
 /// Linked to a `Lead` record once user submits contact info via ResultStep — at that point,
 /// `convertedLeadId` is set and `Lead.hyundaiLeadNo` mirrors `hyundaiLeadNo` here.
 model LeadAssetDraft {
-  id                String   @id @default(uuid())
-  hyundaiLeadNo     String   @unique
+  id                String    @id @default(uuid())
+  hyundaiLeadNo     String    @unique
   vendorCode        String?
   vendorName        String?
   oriOfficeCode     String?
@@ -532,16 +531,16 @@ model LeadAssetDraft {
   assetPriceAmt     Float?
   /// SupplierEmpNo yang terkirim di AddLeadAsset (salesEmpNo salesman dealer)
   salesEmpNo        String?
-  oemAccessoryCodes String[] @default([])
+  oemAccessoryCodes String[]  @default([])
   rawRequest        Json?
   rawResponse       Json?
   ipAddress         String?
-  userAgent         String?  @db.Text
-  status            String   @default("CREATED") // CREATED | CONVERTED | ABANDONED | FAILED
+  userAgent         String?   @db.Text
+  status            String    @default("CREATED") // CREATED | CONVERTED | ABANDONED | FAILED
   convertedLeadId   String?
   expiresAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([status, createdAt])
   @@index([convertedLeadId])
@@ -551,43 +550,43 @@ model LeadAssetDraft {
 /// Pre-simulated credit quotation for event/motorshow QR sharing.
 /// Admin fills the full simulation wizard once; visitors open the public slug and see the summary.
 model PreSimulation {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   title       String
-  slug        String   @unique
-  isPublished Boolean  @default(true)
+  slug        String  @unique
+  isPublished Boolean @default(true)
 
-  vendorCode      String?
-  vendorName      String?
-  vendorCity      String?
-  oriOfficeCode   String?
-  oriOfficeName   String?
+  vendorCode    String?
+  vendorName    String?
+  vendorCity    String?
+  oriOfficeCode String?
+  oriOfficeName String?
 
-  modelCode           String?
-  modelName           String?
-  manufacturingYear   Int?
-  fscCode             String?
-  trimName            String?
-  exteriorColorCode   String?
-  exteriorColorName   String?
-  interiorColorCode   String?
-  interiorColorName   String?
-  vehicleSummary      String?
-  assetSnapshot       Json?
+  modelCode         String?
+  modelName         String?
+  manufacturingYear Int?
+  fscCode           String?
+  trimName          String?
+  exteriorColorCode String?
+  exteriorColorName String?
+  interiorColorCode String?
+  interiorColorName String?
+  vehicleSummary    String?
+  assetSnapshot     Json?
 
-  otrPrice           Float?
-  discount           Float?
-  partnerCode        String?
-  simulationLeadNo   String?
+  otrPrice         Float?
+  discount         Float?
+  partnerCode      String?
+  simulationLeadNo String?
 
-  productCode        String?
-  productName        String?
-  dpPercent          Float?
-  tenor              Int?
-  firstInstallment   String? // ADDM | ADDB
-  isPromotion        Boolean  @default(false)
+  productCode      String?
+  productName      String?
+  dpPercent        Float?
+  tenor            Int?
+  firstInstallment String? // ADDM | ADDB
+  isPromotion      Boolean @default(false)
 
   /// FinalSummaryInfo snapshot for public display (no live Hyundai call required).
-  summarySnapshot    Json?
+  summarySnapshot Json?
 
   createdById String?
   createdBy   User?    @relation("PreSimulationCreator", fields: [createdById], references: [id], onDelete: SetNull)
