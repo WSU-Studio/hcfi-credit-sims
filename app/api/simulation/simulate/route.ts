@@ -57,12 +57,11 @@ function buildSimulatePayload(
  * "Result per Tenor" (Step 5). Field yang dikembalikan sudah lengkap:
  * TdpAmt, InstallmentAmt, EffRatePrcnt, BalloonAmt, dst.
  *
- * Catatan tentang `SimulateFinancialCalculate` (2026-06-03):
+ * Catatan tentang `SimulateFinancialCalculate` (Postman v1.10):
  * - Endpoint berbeda di Hyundai LOS, dipakai untuk simulasi detail SATU tenor
  *   spesifik (perlu field `Tenor` & `FirstInstallment` di body).
- * - Body wajib `MrChannelCode` (mis. "WEBSITE"); tanpa itu service balas
- *   HTTP 500 LINQ exception (sudah dikonfirmasi tim Hyundai, belum ter-
- *   dokumentasi di Postman collection v1.1).
+ * - `MrChannelCode` sudah tidak dikirim di endpoint ini — field itu hanya
+ *   ada di `AddLeadAsset`.
  * - Karena tabel multi-tenor butuh semua varian sekaligus, kita TIDAK pakai
  *   `SimulateFinancialCalculate` di route ini—itu akan dipakai nanti saat
  *   user men-finalize satu tenor (mis. submit/save final calc).

@@ -52,8 +52,6 @@ type SimulateFinancialResponse = {
   ListProductObj?: SimulateFinancialRow[];
 };
 
-const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
-
 function numField(obj: Record<string, unknown>, ...keys: string[]): number {
   for (const key of keys) {
     const v = obj[key];
@@ -325,9 +323,8 @@ function countProducts(res: ProductsByLeadResponse): number {
 async function fetchDefaultProductsByName(
   leadNo: string,
   tenor: number,
-  options?: { mrChannelCode?: string; isPartner?: boolean }
+  options?: { isPartner?: boolean }
 ): Promise<ProductsByLeadResponse> {
-  const channelCode = options?.mrChannelCode ?? HYUNDAI_CHANNEL_CODE;
   const isPartner = resolveIsPartner({ isPartner: options?.isPartner });
 
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
@@ -335,7 +332,6 @@ async function fetchDefaultProductsByName(
       path: '/v2/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
       body: {
         LeadNo: leadNo,
-        MrChannelCode: channelCode,
         IsPartner: isPartner,
       },
     },
@@ -343,7 +339,6 @@ async function fetchDefaultProductsByName(
       path: '/v1/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
       body: {
         LeadNo: leadNo,
-        MrChannelCode: channelCode,
         IsPartner: isPartner,
       },
     },
@@ -450,9 +445,9 @@ async function fetchDefaultProducts(
  * Postman Fase 2 — chain finansial lengkap (5 step):
  *   1. CalculateProductFromRule  — priming rule produk
  *   2. SimulateFinancialCalculate — kalkulasi detail tenor terpilih
- *      (wajib `MrChannelCode: "WEBSITE"`, `FirstInstallment`, `Tenor` —
- *      tanpa `MrChannelCode` Hyundai balas HTTP 500 LINQ exception per
- *      konfirmasi tim Hyundai 2026-06-03; field belum ada di Postman v1.1)
+ *      (wajib `FirstInstallment` + `Tenor`; Postman v1.10 tidak lagi
+ *      mengirim `MrChannelCode` di endpoint ini)
+
  *   3. SaveFinancialData         — commit pilihan finansial user
  *   4. FinalCalculateByLeadNo    — final compute
  *   5. SaveFinalCalculateResult  — persist ke Adins
@@ -472,7 +467,6 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   productCode?: string | null;
   firstInstallment?: 'ADDM' | 'ADDB';
   isPromotion?: boolean;
-  mrChannelCode?: string;
   /**
    * Postman v1.4 — `IsPartner` di product-rule APIs.
    * Default false (non-partner). Nanti diisi dari flag lead/user partner.
@@ -506,7 +500,6 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
 
   const dpAmt = Math.round(params.otrPrice * (params.dpPercent / 100));
   const firstInstallment: 'ADDM' | 'ADDB' = params.firstInstallment ?? 'ADDM';
-  const channelCode = params.mrChannelCode || HYUNDAI_CHANNEL_CODE;
 
   // Step 1 — priming rule produk untuk Hyundai DB.
   try {
@@ -541,7 +534,6 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
       IsPromotion: isPromotion,
       FirstInstallment: firstInstallment,
       Tenor: params.tenor,
-      MrChannelCode: channelCode,
     })
   );
 
@@ -590,8 +582,7 @@ export async function bootstrapLeadFinancialAndInsurance(params: {
   // tidak dikirim, Hyundai-side LINQ query lempar:
   //   "An exception was thrown while attempting to evaluate a LINQ query
   //    parameter expression"
-  // Pola yang sama dengan SimulateFinancialCalculate sebelum kita tambah
-  // MrChannelCode. Maka kita forward `finalRes` apa adanya + inject LeadNo.
+  // Maka kita forward `finalRes` apa adanya + inject LeadNo.
   await hyundaiPostLogged(
     '/v1/IntegrationWebsite/SaveFinalCalculateResult',
     integrationRequestBody({
