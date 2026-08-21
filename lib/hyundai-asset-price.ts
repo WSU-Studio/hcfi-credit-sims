@@ -41,13 +41,11 @@ export async function resolveAssetPriceAmt(params: {
 }
 
 export async function verifyLeadAssetExists(leadNo: string): Promise<void> {
-  // Postman v1.4 sample menyertakan mrChannelCode: "WEBSITE".
   await hyundaiPost(
     '/v1/IntegrationWebsite/GetLeadAssetSummaryInfoByLeadNo',
     integrationRequestBody({
       leadNo,
       LeadNo: leadNo,
-      mrChannelCode: 'WEBSITE',
     })
   );
 }
