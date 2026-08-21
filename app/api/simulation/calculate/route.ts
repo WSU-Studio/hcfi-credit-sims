@@ -52,14 +52,12 @@ type ProductNameListResponse = {
   ListDefaultPromotionProductObj?: ProductNameRow[];
 };
 
-const HYUNDAI_CHANNEL_CODE = 'WEBSITE';
-
 /**
  * Step 5 product cards.
  *
- * Postman (partner filter yang benar) memakai:
+ * Postman v1.10 (partner filter):
  *   GetListDefaultProductNameFromRuleByLeadNo
- *   { LeadNo, MrChannelCode: "WEBSITE", IsPartner }
+ *   { LeadNo, IsPartner }
  *
  * GetListDefaultProductFromRuleByLeadNo bisa mengembalikan lebih banyak produk
  * meski IsPartner=true — jadi Name endpoint = sumber daftar,
@@ -161,13 +159,12 @@ async function fetchProductNamesFromHyundai(
   leadNo: string,
   isPartner: boolean
 ): Promise<ProductNameListResponse | null> {
-  // Exact Postman body — MrChannelCode wajib untuk filter partner yang benar.
+  // Postman v1.10 — MrChannelCode sudah dihapus dari endpoint ini.
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
     {
       path: '/v2/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
       body: {
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       },
     },
@@ -176,7 +173,6 @@ async function fetchProductNamesFromHyundai(
       body: {
         leadNo,
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       },
     },
@@ -184,7 +180,6 @@ async function fetchProductNamesFromHyundai(
       path: '/v1/IntegrationWebsite/GetListDefaultProductNameFromRuleByLeadNo',
       body: {
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       },
     },
@@ -198,7 +193,7 @@ async function fetchProductNamesFromHyundai(
         (result.ListDefaultPromotionProductObj?.length ?? 0);
       if (count > 0) {
         console.info(
-          `[calculate] product names OK path=${path} isPartner=${isPartner} MrChannelCode=${HYUNDAI_CHANNEL_CODE} standard=${
+          `[calculate] product names OK path=${path} isPartner=${isPartner} standard=${
             result.ListDefaultStandardProductObj?.length ?? 0
           } promo=${result.ListDefaultPromotionProductObj?.length ?? 0}`
         );
@@ -218,15 +213,12 @@ async function fetchProductDetailsFromHyundai(
   leadNo: string,
   isPartner: boolean
 ): Promise<ProductListResponse | null> {
-  // MrChannelCode ikut dikirim — beberapa environment Hyundai mengabaikan
-  // IsPartner tanpa channel code (mirip CalculateProductFromRule).
   const attempts: Array<{ path: string; body: Record<string, unknown> }> = [
     {
       path: '/v2/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
       body: integrationRequestBody({
         leadNo,
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       }),
     },
@@ -234,7 +226,6 @@ async function fetchProductDetailsFromHyundai(
       path: '/v2/IntegrationWebsite/GetListDefaultProductFromRuleByLeadNo',
       body: integrationRequestBody({
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       }),
     },
@@ -243,7 +234,6 @@ async function fetchProductDetailsFromHyundai(
       body: integrationRequestBody({
         leadNo,
         LeadNo: leadNo,
-        MrChannelCode: HYUNDAI_CHANNEL_CODE,
         IsPartner: isPartner,
       }),
     },
@@ -254,7 +244,7 @@ async function fetchProductDetailsFromHyundai(
       const result = await hyundaiPost<ProductListResponse>(path, body);
       if (countProducts(result) > 0) {
         console.info(
-          `[calculate] product details OK path=${path} isPartner=${isPartner} MrChannelCode=${HYUNDAI_CHANNEL_CODE} standard=${
+          `[calculate] product details OK path=${path} isPartner=${isPartner} standard=${
             result.ListDefaultStandardProductObj?.length ?? 0
           } promo=${result.ListDefaultPromotionProductObj?.length ?? 0}`
         );
@@ -284,7 +274,7 @@ async function fetchDefaultProductsFromHyundai(
   const detailStandardCount = details?.ListDefaultStandardProductObj?.length ?? 0;
   const detailPromoCount = details?.ListDefaultPromotionProductObj?.length ?? 0;
 
-  // Name endpoint = sumber kebenaran daftar (Postman partner filter + MrChannelCode).
+  // Name endpoint = sumber kebenaran daftar (Postman partner filter).
   if (names) {
     const merged: FetchProductsResult = {
       ListDefaultStandardProductObj: mergeNameWithDetails(
@@ -307,7 +297,7 @@ async function fetchDefaultProductsFromHyundai(
   // Partner mode: jangan pernah tampilkan FromRule mentah (bisa 3+ produk).
   if (isPartner) {
     throw new Error(
-      'Gagal memuat daftar produk partner dari GetListDefaultProductNameFromRuleByLeadNo (MrChannelCode=WEBSITE).'
+      'Gagal memuat daftar produk partner dari GetListDefaultProductNameFromRuleByLeadNo.'
     );
   }
 
