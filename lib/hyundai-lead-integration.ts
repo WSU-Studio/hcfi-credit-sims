@@ -6,6 +6,7 @@
  *
  *   Fase 1 — Lead Asset
  *     1. AddLeadAsset                            → return TrxNo (= LeadNo)
+ *        Postman v1.10: wajib `MrChannelCode` (`WEBSITE_CUST` | `WEBSITE_SALES`)
  *     2. GetLeadAssetSummaryInfoByLeadNo (verify)
  *
  *   Fase 2 — Financial Data (lihat lib/hyundai-lead-financial.ts)
@@ -79,6 +80,7 @@ import {
   type OcrKtpSnapshot,
 } from '@/lib/ocr-ktp-snapshot';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
+import { mrChannelCodeFromLeadSource } from '@/lib/hyundai-channel-code';
 import {
   HYUNDAI_VENDOR_LIST_PATH,
   buildHyundaiVendorListBody,
@@ -204,6 +206,10 @@ export type LeadRecordForHyundai = {
    */
   salesEmpNo?: string | null;
   /**
+   * WEBSITE | DEALER_SALES — dipetakan ke Confins MrChannelCode di AddLeadAsset.
+   */
+  source?: string | null;
+  /**
    * Nanti: true untuk lead dari perusahaan partner Hyundai (diskon khusus).
    * Saat ini belum ada sumber di DB — default false via resolveIsPartner().
    */
@@ -218,7 +224,8 @@ function buildAddLeadAssetBody(
   oem: ResolvedOemAccessories,
   assetPriceAmt: number,
   assetDiscAmt: number = 0,
-  officeOverride?: { OriOfficeCode: string; OriOfficeName: string }
+  officeOverride?: { OriOfficeCode: string; OriOfficeName: string },
+  mrChannelCode?: string
 ): Record<string, unknown> {
   return {
     SerialNo1: null,
@@ -248,6 +255,7 @@ function buildAddLeadAssetBody(
     OEMWarrantyName: '',
     OEMWarrantyPriceAmt: 0,
     listAssetOEMAccessory: oem.list,
+    MrChannelCode: mrChannelCode ?? mrChannelCodeFromLeadSource(null),
   };
 }
 
@@ -615,7 +623,8 @@ export async function submitLeadToHyundai(params: {
         oemAccessories,
         assetPriceAmt,
         assetDiscAmt,
-        officeOverride
+        officeOverride,
+        mrChannelCodeFromLeadSource(params.lead.source)
       )
     );
 
