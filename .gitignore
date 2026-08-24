@@ -47,3 +47,6 @@ next-env.d.ts
 
 /ignored
 /actions-runner
+
+# OpenMemory - IDE/Assistant specific rules
+.cursor/rules/openmemory.mdc

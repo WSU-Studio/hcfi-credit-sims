@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import { signIn, signOut } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { Providers } from '@/app/providers';
 import { DEALER_PORTAL_HOME } from '@/lib/dealer-portal';
 
@@ -12,6 +13,7 @@ function DealerLoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,17 +104,28 @@ function DealerLoginForm() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2.5 pr-11 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-[#002c5f] focus:border-[#002c5f]"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700 transition-colors"
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+                </button>
+              </div>
             </div>
           </div>
 

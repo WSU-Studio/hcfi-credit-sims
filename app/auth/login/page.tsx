@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { resolveLoginErrorMessage } from '@/lib/auth-login-errors';
 
 function LoginForm() {
@@ -11,6 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -113,21 +115,30 @@ function LoginForm() {
                 placeholder="Email address"
               />
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
                 id="password"
                 name="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 z-20 flex items-center px-3 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+              </button>
             </div>
           </div>
 
