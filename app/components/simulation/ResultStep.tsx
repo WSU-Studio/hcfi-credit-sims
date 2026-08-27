@@ -152,7 +152,9 @@ export function ResultStep({
   const products = tab === 'Standard' ? listStandard : listPromo;
   const minDpPercent = resolveMinDpPercent(selectedProduct);
   const maxDpPercent = resolveMaxDpPercent(selectedProduct);
-  const dpFloor = Math.max(5, minDpPercent);
+  // Floor DP mengikuti rule API (DPPrcnt + DPPrcntBhv MIN). Tidak ada pengaman
+  // hardcoded 5% — kalau rule bilang 0, input boleh 0.
+  const dpFloor = minDpPercent;
   // Hyundai: produk Balloon (BL) max DP 49%; selain itu tidak ada rule max eksplisit.
   // 100% tetap mustahil secara matematis (DP melebihi harga kendaraan).
   const DP_MAX = maxDpPercent;
@@ -214,8 +216,15 @@ export function ResultStep({
 
   // Auto-calculate setiap kali firstInstallment, selectedProduct, atau dpPercent berubah.
   // Stale response di-drop via generation counter di `handleCalculate`.
+  // DP 0% diizinkan kalau rule API MIN = 0 — jangan skip calculate.
   useEffect(() => {
-    if (selectedProduct && otrPrice && dpPercent > 0 && selectedProduct.ProductCode) {
+    if (
+      selectedProduct &&
+      otrPrice &&
+      Number.isFinite(dpPercent) &&
+      dpPercent >= 0 &&
+      selectedProduct.ProductCode
+    ) {
       if (skipNextCalculateRef.current) {
         skipNextCalculateRef.current = false;
         return;
