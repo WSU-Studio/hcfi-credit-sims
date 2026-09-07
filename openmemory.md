@@ -14,6 +14,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Hyundai API: `lib/hyundai-api-client.ts`, `lib/hyundai-lead-integration.ts`
 - Auth: `lib/nextauth.ts` (JWT session). Dealer/salesman cannot skip OTP.
 - Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb + provision 0.5%. Values sent as Hyundai `AdminFeeAmt` / `ProvisionFee` (`PRCNT`) on CalculateProductFromRule, SimulateFinancialCalculate, and SaveFinancialData. Caps from CMS `maxAdminFeeAmt` / `maxProvisionPrcnt`.
+- Promo banner live landing (Phase 2 Poin 3): one PreSimulation record, two public URLs. Snapshot `/pre-sim/[slug]` stays QR/read-only. Live `/credit-simulation?promo=[slug]` hydrates the public wizard to ResultStep (Jakarta dealer, new AddLeadAsset, editable, submittable). Banner CMS picks live vs snapshot vs custom CTA. Do not reuse `simulationLeadNo` from the template.
 
 ## User Defined Namespaces
 
@@ -30,6 +31,9 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - `LoginOtpChallenge` Prisma model (`login_otp_challenges`)
 - `FeeStepper` + `CustomerPaidFees` — stepper fee quotation salesman
 - `lib/salesman-fee.ts` — clamp, provision % vs amount, Hyundai fee request fields
+- `PromoLandingWizard` + `usePromoLanding` — bootstrap live step-5 sim from published pre-sim slug
+- `BannerCtaFields` — banner CTA: live promo / snapshot QR / custom URL
+- `lib/promo-simulation.ts` — Jakarta dealer picker, seed from PreSimulation row, live vs snapshot hrefs
 
 ## Patterns
 
@@ -37,6 +41,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Rate limits: in-memory `lib/ratelimit.ts` + middleware per-IP on login/OTP
 - Dealer vs CMS: `USER_TYPES` in `lib/user-types.ts`; OTP required only for `DEALER_ADMIN` and `SALESMAN`
 - Email send is best-effort (`sendEmail` returns boolean). OTP issue fails closed if SMTP send fails in production. Local without SMTP logs the code to the server console.
+- Pre-sim dual links: snapshot `/pre-sim/[slug]` vs live `/credit-simulation?promo=[slug]` — never mix submit onto the QR page
 
 ## Auth OTP flow
 
@@ -45,3 +50,11 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 3. Dealer/salesman → email OTP, `{ challengeId, emailHint }`
 4. `signIn('credentials', { challengeId, otp })` consumes the challenge once
 5. Password-only `signIn` for dealer/salesman is rejected (`otp_required`)
+
+## Promo live vs snapshot
+
+1. Admin creates a pre-sim with the live wizard (unchanged) and publishes it
+2. Snapshot link `/id/pre-sim/{slug}` — frozen summary + QR; CTA “Lanjutkan simulasi ini” goes to live
+3. Live link `/id/credit-simulation?promo={slug}` — pick any Jakarta dealer, AddLeadAsset, ResultStep with seeded product/DP/tenor
+4. Banner CTA can point to live, snapshot, or a custom URL
+5. Visitor can go back to steps 1–4, edit, and submit a real lead
