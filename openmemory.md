@@ -13,6 +13,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Dealer portal: `app/(dealer-portal)/dealer` — promotions, quotation, leads
 - Hyundai API: `lib/hyundai-api-client.ts`, `lib/hyundai-lead-integration.ts`
 - Auth: `lib/nextauth.ts` (JWT session). Dealer/salesman cannot skip OTP.
+- Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb + provision 0.5%. Values sent as Hyundai `AdminFeeAmt` / `ProvisionFee` (`PRCNT`) on CalculateProductFromRule, SimulateFinancialCalculate, and SaveFinancialData. Caps from CMS `maxAdminFeeAmt` / `maxProvisionPrcnt`.
 
 ## User Defined Namespaces
 
@@ -27,6 +28,8 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - SMTP mailer (`lib/email.ts`) — Office 365 SMTP AUTH, same env as workxpace
 - Login OTP (`lib/login-otp.ts`, `lib/auth-otp.ts`) — issue/resend/consume hashed 6-digit codes
 - `LoginOtpChallenge` Prisma model (`login_otp_challenges`)
+- `FeeStepper` + `CustomerPaidFees` — stepper fee quotation salesman
+- `lib/salesman-fee.ts` — clamp, provision % vs amount, Hyundai fee request fields
 
 ## Patterns
 
