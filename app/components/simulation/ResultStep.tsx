@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { FinalSummaryInfo, ProductCalculation, Vendor } from '@/app/types/credit-simulation';
 import type { LeadSource } from '@/lib/lead-source';
 import { LEAD_SOURCES } from '@/lib/lead-source';
@@ -32,6 +32,8 @@ import {
   type SalesmanFeeCaps,
 } from '@/lib/salesman-fee';
 import Link from 'next/link';
+import { usePathname } from '@/i18n/navigation';
+import { track } from '@/lib/first-party-tracker/client';
 
 type TabKind = 'Standard' | 'Promotion';
 
@@ -111,6 +113,8 @@ export function ResultStep({
   onCapturePreSimulation,
 }: ResultStepProps) {
   const t = useTranslations('creditSimulation');
+  const pathname = usePathname();
+  const locale = useLocale();
   const isDealerSales = leadSource === LEAD_SOURCES.DEALER_SALES;
   const isPreSimulation = variant === 'pre-simulation';
   const [tab, setTab] = useState<TabKind>(
@@ -1173,6 +1177,13 @@ export function ResultStep({
                 }
                 onSubmit={() => {
                   setLeadSubmitted(true);
+                  if (!isPreSimulation && !isDealerSales) {
+                    track('sim_submit', {
+                      path: pathname,
+                      locale,
+                      payload: { step: 'result' },
+                    });
+                  }
                 }}
               />
               )}
