@@ -7,6 +7,7 @@ import { Container } from "@/app/components/ui/Container";
 import Image from "next/image";
 import { Link, usePathname } from "@/i18n/navigation";
 import { IconMenu2 } from "@tabler/icons-react";
+import FirstPartyPageview from "@/app/components/layout/FirstPartyPageview";
 
 type HeaderProps = {
   items: NavItem[];
@@ -19,7 +20,9 @@ export function Header({ items, locale }: HeaderProps) {
   const pathname = usePathname();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
+    <>
+      <FirstPartyPageview />
+      <header className="fixed top-0 left-0 right-0 z-40 bg-[#002c5f] shadow-lg">
       <Container className="flex items-center justify-between h-14 px-4 md:px--0 gap-3">
         <div className="flex items-center gap-2">
           <Link href="/">
@@ -95,5 +98,6 @@ export function Header({ items, locale }: HeaderProps) {
         </div>
       ) : null}
     </header>
+    </>
   );
 }
