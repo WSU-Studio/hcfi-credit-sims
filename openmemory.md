@@ -15,6 +15,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Auth: `lib/nextauth.ts` (JWT session). Dealer/salesman cannot skip OTP.
 - Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb + provision 0.5%. Values sent as Hyundai `AdminFeeAmt` / `ProvisionFee` (`PRCNT`) on CalculateProductFromRule, SimulateFinancialCalculate, and SaveFinancialData. Caps from CMS `maxAdminFeeAmt` / `maxProvisionPrcnt`.
 - Promo banner live landing (Phase 2 Poin 3): one PreSimulation record, two public URLs. Snapshot `/pre-sim/[slug]` stays QR/read-only. Live `/credit-simulation?promo=[slug]` hydrates the public wizard to ResultStep (Jakarta dealer, new AddLeadAsset, editable, submittable). Banner CMS picks live vs snapshot vs custom CTA. Do not reuse `simulationLeadNo` from the template.
+- First-party visitor analytics (Phase 2 Poin 5): in-app tracker under `lib/first-party-tracker/` (not a standalone product). Ingest `POST /api/t/e`. Admin `/admin/analytics` (menu `ANALYTICS`). GA/GTM stays optional marketing, not CMS source of truth. Retention purge is a 90-day follow-up (not in this slice).
 
 ## User Defined Namespaces
 
@@ -34,6 +35,10 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - `PromoLandingWizard` + `usePromoLanding` — bootstrap live step-5 sim from published pre-sim slug
 - `BannerCtaFields` — banner CTA: live promo / snapshot QR / custom URL
 - `lib/promo-simulation.ts` — Jakarta dealer picker, seed from PreSimulation row, live vs snapshot hrefs
+- First-party tracker (`lib/first-party-tracker/`) — client `track()` via sendBeacon, Zod ingest schema, admin summary queries
+- `AnalyticsEvent` (`analytics_events`) — `page_view` | `product_click` | `sim_start` | `sim_step` | `sim_submit`; anonymous `visitorId` cookie `hcfi_fp_vid` (not Lead id)
+- `Lead.hyundaiGoLiveAt` — first time monitoring shows Contract Activation completed
+- Admin Visitor Analytics (`app/(back-office)/admin/analytics/page.tsx`) — traffic, product clicks, funnel, three conversion ratios
 
 ## Patterns
 
@@ -42,6 +47,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Dealer vs CMS: `USER_TYPES` in `lib/user-types.ts`; OTP required only for `DEALER_ADMIN` and `SALESMAN`
 - Email send is best-effort (`sendEmail` returns boolean). OTP issue fails closed if SMTP send fails in production. Local without SMTP logs the code to the server console.
 - Pre-sim dual links: snapshot `/pre-sim/[slug]` vs live `/credit-simulation?promo=[slug]` — never mix submit onto the QR page
+- First-party analytics: public site only (ignore `/admin`, `/dealer`, `/auth`); DNT/bots dropped; no name/email/phone in events
 
 ## Auth OTP flow
 
@@ -58,3 +64,11 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 3. Live link `/id/credit-simulation?promo={slug}` — pick any Jakarta dealer, AddLeadAsset, ResultStep with seeded product/DP/tenor
 4. Banner CTA can point to live, snapshot, or a custom URL
 5. Visitor can go back to steps 1–4, edit, and submit a real lead
+
+## First-party visitor analytics
+
+1. Public pages fire `page_view`; `ProductCard` fires `product_click`; public + promo-landing wizard fires `sim_start` / `sim_step`; ContactModal success fires `sim_submit`. Dealer quotation and admin pre-sim do not.
+2. Events POST to same-origin `/api/t/e` (cookie set on ingest). Rate-limited per IP.
+3. Go-live write-back: public lead tracking + admin **Sinkron go-live** (batch of 10 submitted leads) set `hyundaiGoLiveAt` when Adins stage Contract Activation is completed.
+4. CMS conversions (numerator = go-live in range): go-live / unique visitors, go-live / simulation starts, go-live / submitted leads. Dashboard CMS counts are unchanged.
+5. Follow-up: 90-day event retention/purge is not automatic in this slice.
