@@ -27,7 +27,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 
 - `OtpChallengeForm` (`app/components/auth/OtpChallengeForm.tsx`) — reusable OTP step for CMS and dealer login
 - `usePortalLogin` (`app/hooks/usePortalLogin.ts`) — password → `/api/otp/request` → optional OTP → `signIn`
-- SMTP mailer (`lib/email.ts`) — Office 365 SMTP AUTH, same env as workxpace
+- SMTP mailer (`lib/email.ts`) — Office 365 SMTP AUTH, same env as workxpace; IPv4-only (`family: 4`)
 - Login OTP (`lib/login-otp.ts`, `lib/auth-otp.ts`) — issue/resend/consume hashed 6-digit codes
 - `LoginOtpChallenge` Prisma model (`login_otp_challenges`)
 - `FeeStepper` + `CustomerPaidFees` — stepper fee quotation salesman
@@ -51,7 +51,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 
 ## Auth OTP flow
 
-1. `USE_OTP=true` enables dealer/salesman email OTP. Missing, empty, or any other value skips OTP (password-only after `/api/otp/request`). TQA writes `USE_OTP` from GitHub secret (omit/false for testing without SMTP). Prod workflow hardcodes `USE_OTP=true`. SMTP send uses 8s/12s timeouts so login does not hang if Office 365 is unreachable.
+1. `USE_OTP=true` enables dealer/salesman email OTP. Missing, empty, or any other value skips OTP (password-only after `/api/otp/request`). TQA writes `USE_OTP` from GitHub secret (omit/false for testing without SMTP). Prod workflow hardcodes `USE_OTP=true`. SMTP send uses 8s/12s timeouts so login does not hang if Office 365 is unreachable. Nodemailer `family: 4` forces IPv4 — TQA resolves `smtp.office365.com` to IPv6 then fails with `ENETUNREACH` (IPv6 stack, no route).
 2. POST `/api/otp/request` with email + password
 3. HCFI admin → `{ otpRequired: false }` then normal `signIn`
 4. Dealer/salesman with OTP on → `{ challengeId, emailHint }`; with OTP off → `{ otpRequired: false }` then password `signIn`
