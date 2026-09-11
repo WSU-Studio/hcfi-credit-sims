@@ -9,6 +9,7 @@
  */
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export interface SendEmailInput {
   to: string | string[];
@@ -53,11 +54,13 @@ function getTransporter(): Transporter | null {
       connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
       greetingTimeout: SMTP_CONNECTION_TIMEOUT_MS,
       socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
+      // TQA has IPv6 sockets but no route to Microsoft AAAA (ENETUNREACH …::587).
+      family: 4,
       auth: {
         user: config.user,
         pass: config.pass,
       },
-    });
+    } as SMTPTransport.Options);
   }
 
   return cachedTransporter;
@@ -114,8 +117,6 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('[email] send failed', {
-      subject: input.subject,
-      to: recipients,
       error: error instanceof Error ? error.message : error,
     });
     return false;
