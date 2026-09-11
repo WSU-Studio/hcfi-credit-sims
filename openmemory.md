@@ -13,9 +13,9 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Dealer portal: `app/(dealer-portal)/dealer` — promotions, quotation, leads
 - Hyundai API: `lib/hyundai-api-client.ts`, `lib/hyundai-lead-integration.ts`
 - Auth: `lib/nextauth.ts` (JWT session). Dealer/salesman cannot skip OTP.
-- Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb + provision 0.5%. Values sent as Hyundai `AdminFeeAmt` / `ProvisionFee` (`PRCNT`) on CalculateProductFromRule, SimulateFinancialCalculate, and SaveFinancialData. Caps from CMS `maxAdminFeeAmt` / `maxProvisionPrcnt`.
+- Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb. Bounds come from Hyundai `AdminFeeAmt` + `AdminFeeBhv` (Lock / Min / Max / Def) on the product row — not CMS `maxAdminFeeAmt`. Provision still uses CMS `maxProvisionPrcnt` (0.5% steps) until Harry confirms amt vs prcnt.
 - Promo banner live landing (Phase 2 Poin 3): one PreSimulation record, two public URLs. Snapshot `/pre-sim/[slug]` stays QR/read-only. Live `/credit-simulation?promo=[slug]` hydrates the public wizard to ResultStep (Jakarta dealer, new AddLeadAsset, editable, submittable). Banner CMS picks live vs snapshot vs custom CTA. Do not reuse `simulationLeadNo` from the template.
-- Salesman PriceStep discount is editable (Harry finding). Promo lookup still prefills; salesman may override. Admin fee default on quotation is Hyundai `AdminFeeAmt` from CalculateProductFromRule (often 4jt from their credit rule), not a CMS hardcoded 4.000.000. CMS only caps the stepper (`maxAdminFeeAmt` default 9jt, step 500rb) and provision (`maxProvisionPrcnt` in Settings → Fee Quotation Salesman).
+- Salesman PriceStep discount is editable (Harry finding). Promo lookup still prefills; salesman may override. Admin fee on quotation is Hyundai `AdminFeeAmt` + `AdminFeeBhv` from CalculateProductFromRule. CMS no longer caps admin fee.
 - First-party visitor analytics (Phase 2 Poin 5): in-app tracker under `lib/first-party-tracker/` (not a standalone product). Ingest `POST /api/t/e`. Admin `/admin/analytics` (menu `ANALYTICS`). GA/GTM stays optional marketing, not CMS source of truth. Retention purge is a 90-day follow-up (not in this slice).
 
 ## User Defined Namespaces
