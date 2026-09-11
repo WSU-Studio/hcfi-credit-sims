@@ -23,12 +23,15 @@ import {
   type FirstInstallmentType,
 } from '@/lib/product-calculation-rows';
 import {
+  ADMIN_FEE_STEP_AMT,
   DEFAULT_MAX_ADMIN_FEE_AMT,
   DEFAULT_MAX_PROVISION_PRCNT,
   ntfFromAsset,
   parseSalesmanFeeCaps,
   provisionAmountOf,
   provisionPercentOf,
+  resolveAdminFeeRule,
+  snapToStep,
   type SalesmanFeeCaps,
 } from '@/lib/salesman-fee';
 import Link from 'next/link';
@@ -184,6 +187,8 @@ export function ResultStep({
     resultSelection?.tenor != null ? resultSelection.tenor : null
   );
   const seedProductCodeRef = useRef(resultSelection?.productCode ?? null);
+
+  const adminFeeRule = resolveAdminFeeRule(selectedProduct);
 
   const hasPromo = listPromo.length > 0;
   const products = tab === 'Standard' ? listStandard : listPromo;
@@ -343,7 +348,11 @@ export function ResultStep({
           isPromotion,
           partnerCode,
           ...(isDealerSales && feeTouchedRef.current
-            ? { adminFeeAmt, provisionFee: provisionPrcnt }
+            ? {
+                adminFeeAmt,
+                adminFeeBhv: selectedProduct.AdminFeeBhv,
+                provisionFee: provisionPrcnt,
+              }
             : {}),
         }),
         signal: controller.signal,
@@ -407,7 +416,11 @@ export function ResultStep({
           isPromotion,
           partnerCode,
           ...(isDealerSales && feeTouchedRef.current
-            ? { adminFeeAmt, provisionFee: provisionPrcnt }
+            ? {
+                adminFeeAmt,
+                adminFeeBhv: selectedProduct.AdminFeeBhv,
+                provisionFee: provisionPrcnt,
+              }
             : {}),
         }),
       });
@@ -558,7 +571,11 @@ export function ResultStep({
           isPromotion,
           partnerCode,
           ...(isDealerSales && feeTouchedRef.current
-            ? { adminFeeAmt, provisionFee: provisionPrcnt }
+            ? {
+                adminFeeAmt,
+                adminFeeBhv: selectedProduct.AdminFeeBhv,
+                provisionFee: provisionPrcnt,
+              }
             : {}),
         }),
         signal: controller.signal,
@@ -603,7 +620,10 @@ export function ResultStep({
       const seedRow = rows.find((r) => r.Tenor === nextTenor) ?? row36 ?? first;
       if (seedRow && !feeTouchedRef.current) {
         const ntf = ntfFromAsset(Number(otrPrice) || 0, dpPercent);
-        setAdminFeeAmt(Number(seedRow.AdminFeeAmt) || 0);
+        const rule = resolveAdminFeeRule(seedRow);
+        setAdminFeeAmt(
+          snapToStep(Number(seedRow.AdminFeeAmt) || 0, ADMIN_FEE_STEP_AMT, rule.min, rule.max)
+        );
         setProvisionPrcnt(Math.round(provisionPercentOf(seedRow, ntf) * 2) / 2);
       }
     } catch (e) {
@@ -623,7 +643,10 @@ export function ResultStep({
 
   const selectProduct = (product: ProductCalculation) => {
     feeTouchedRef.current = false;
-    setAdminFeeAmt(Number(product.AdminFeeAmt) || 0);
+    const rule = resolveAdminFeeRule(product);
+    setAdminFeeAmt(
+      snapToStep(Number(product.AdminFeeAmt) || 0, ADMIN_FEE_STEP_AMT, rule.min, rule.max)
+    );
     setProvisionPrcnt(Number(product.ProvisionFee) || 0);
     setSelectedProduct(product);
     setDpPercent(resolveDefaultDpPercent(product));
@@ -859,8 +882,12 @@ export function ResultStep({
               )}
               showProvision
               caps={feeCaps}
+              adminFeeMin={adminFeeRule.min}
+              adminFeeMax={adminFeeRule.max}
+              adminFeeLocked={adminFeeRule.locked}
               disabled={simulateLoading}
               onAdminFeeChange={(next) => {
+                if (adminFeeRule.locked) return;
                 feeTouchedRef.current = true;
                 setAdminFeeAmt(next);
               }}
@@ -872,7 +899,13 @@ export function ResultStep({
               labels={{
                 sectionTitle: t('customerPaidFeesTitle'),
                 adminFee: t('adminFeeLabel'),
-                adminFeeHint: t('adminFeeHint'),
+                adminFeeHint: adminFeeRule.locked
+                  ? t('adminFeeLockedHint')
+                  : adminFeeRule.bhv === 'MIN'
+                    ? t('adminFeeMinHint', { min: formatCurrency(adminFeeRule.min) })
+                    : adminFeeRule.bhv === 'MAX'
+                      ? t('adminFeeMaxHint', { max: formatCurrency(adminFeeRule.max) })
+                      : t('adminFeeHint'),
                 provision: t('provisionFeeLabel'),
                 provisionHint: t('provisionFeeHint'),
                 provisionAmount: t('provisionAmountLabel'),
