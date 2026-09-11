@@ -11,8 +11,15 @@ export {
   OTP_RESEND_COOLDOWN_SEC,
 } from '@/lib/auth-otp-constants';
 
+function readUseOtpFlag(): string | undefined {
+  // Build the key at runtime so Next/webpack cannot inline a stale .env value
+  // (otp/request and NextAuth would disagree, and login looks like a bad password).
+  const key = ['USE', 'OTP'].join('_');
+  return process.env[key];
+}
+
 export function isLoginOtpEnabled(): boolean {
-  return process.env.USE_OTP?.trim().toLowerCase() === 'true';
+  return readUseOtpFlag()?.trim().toLowerCase() === 'true';
 }
 
 export function dealerRequiresEmailOtp(

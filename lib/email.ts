@@ -35,6 +35,9 @@ export function isEmailConfigured(): boolean {
   return readSmtpConfig() !== null;
 }
 
+const SMTP_CONNECTION_TIMEOUT_MS = 8_000;
+const SMTP_SOCKET_TIMEOUT_MS = 12_000;
+
 let cachedTransporter: Transporter | null = null;
 
 function getTransporter(): Transporter | null {
@@ -47,6 +50,9 @@ function getTransporter(): Transporter | null {
       port: config.port,
       secure: config.port === 465,
       requireTLS: config.port === 587,
+      connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+      greetingTimeout: SMTP_CONNECTION_TIMEOUT_MS,
+      socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
       auth: {
         user: config.user,
         pass: config.pass,
