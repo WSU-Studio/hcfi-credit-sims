@@ -51,11 +51,12 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 
 ## Auth OTP flow
 
-1. POST `/api/otp/request` with email + password
-2. HCFI admin → `{ otpRequired: false }` then normal `signIn`
-3. Dealer/salesman → email OTP, `{ challengeId, emailHint }`
-4. `signIn('credentials', { challengeId, otp })` consumes the challenge once
-5. Password-only `signIn` for dealer/salesman is rejected (`otp_required`)
+1. `USE_OTP=true` enables dealer/salesman email OTP. Missing or any other value skips OTP (password-only after `/api/otp/request`).
+2. POST `/api/otp/request` with email + password
+3. HCFI admin → `{ otpRequired: false }` then normal `signIn`
+4. Dealer/salesman with OTP on → `{ challengeId, emailHint }`; with OTP off → `{ otpRequired: false }` then password `signIn`
+5. `signIn('credentials', { challengeId, otp })` consumes the challenge once
+6. Password-only `signIn` for dealer/salesman is rejected (`otp_required`) only when `USE_OTP=true`
 
 ## Promo live vs snapshot
 
