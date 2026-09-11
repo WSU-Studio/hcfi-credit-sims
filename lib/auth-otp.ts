@@ -11,10 +11,14 @@ export {
   OTP_RESEND_COOLDOWN_SEC,
 } from '@/lib/auth-otp-constants';
 
+export function isLoginOtpEnabled(): boolean {
+  return process.env.USE_OTP?.trim().toLowerCase() === 'true';
+}
+
 export function dealerRequiresEmailOtp(
   userType: string | null | undefined
 ): boolean {
-  return isDealerPortalUserType(userType);
+  return isLoginOtpEnabled() && isDealerPortalUserType(userType);
 }
 
 function otpPepper(): string {
