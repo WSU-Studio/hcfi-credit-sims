@@ -51,6 +51,7 @@ jobs:
             echo "SMTP_USER=\"${{ secrets.SMTP_USER }}\""
             echo "SMTP_PASS='${{ secrets.SMTP_PASS }}'"
             echo "SMTP_FROM=\"${{ secrets.SMTP_FROM }}\""
+            echo "USE_OTP=true"
             echo "NODE_ENV=production"
             echo "CSP_ENFORCE=${{ secrets.CSP_ENFORCE }}"
           } > "$ENV_FILE"
