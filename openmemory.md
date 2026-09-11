@@ -51,12 +51,12 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 
 ## Auth OTP flow
 
-1. `USE_OTP=true` enables dealer/salesman email OTP. Missing or any other value skips OTP (password-only after `/api/otp/request`).
+1. `USE_OTP=true` enables dealer/salesman email OTP. Missing, empty, or any other value skips OTP (password-only after `/api/otp/request`). TQA writes `USE_OTP` from GitHub secret (omit/false for testing without SMTP). Prod workflow hardcodes `USE_OTP=true`. SMTP send uses 8s/12s timeouts so login does not hang if Office 365 is unreachable.
 2. POST `/api/otp/request` with email + password
 3. HCFI admin → `{ otpRequired: false }` then normal `signIn`
 4. Dealer/salesman with OTP on → `{ challengeId, emailHint }`; with OTP off → `{ otpRequired: false }` then password `signIn`
 5. `signIn('credentials', { challengeId, otp })` consumes the challenge once
-6. Password-only `signIn` for dealer/salesman is rejected (`otp_required`) only when `USE_OTP=true`
+6. Password-only `signIn` for dealer/salesman is rejected (`otp_required`) only when `USE_OTP=true`. Auth.js still reports that as `CredentialsSignin`; the UI must not treat it as a wrong password. Read `USE_OTP` at runtime (do not let Next inline a stale value) so `/api/otp/request` and NextAuth stay in sync.
 
 ## Promo live vs snapshot
 
