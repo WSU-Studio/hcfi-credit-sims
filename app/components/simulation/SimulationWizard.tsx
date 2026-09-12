@@ -499,6 +499,7 @@ export function SimulationWizard({
                   suggestedPrice={specs.variantPrice ?? selectedAsset!.Price}
                   assetCode={selectedAsset!.AssetCode}
                   initialPartnerCode={partnerCode}
+                  lockPromotionDiscount={false}
                   allowDiscountOverride={isDealerSales}
                   onComplete={handlePriceComplete}
                 />
