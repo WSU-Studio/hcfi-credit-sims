@@ -96,12 +96,21 @@ export function PriceStep({
     }).format(value);
   };
 
+  const discountLocked =
+    !allowDiscountOverride && lockPromotionDiscount && effectiveDiscount > 0;
+  const showManualInput =
+    allowDiscountOverride ||
+    (promotionDiscountProp == null && !promoResult?.discountAmount);
+  const discountReadOnly = discountLocked || !showManualInput;
+  const discountInputValue = discountReadOnly
+    ? formatAmountGroup(effectiveDiscount)
+    : formatAmountGroup(manualDiscount);
+
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (lockPromotionDiscount && !allowDiscountOverride) return;
+    if (discountReadOnly) return;
     discountEditedRef.current = true;
     setError(null);
-    const value = e.target.value.replace(/[^\d]/g, '');
-    setManualDiscount(value === '' ? '' : Number(value));
+    setManualDiscount(parseAmountGroup(e.target.value));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -137,13 +146,6 @@ export function PriceStep({
 
     onComplete(netPrice, discountVal, normalizePartnerCode(partnerCode) || null);
   };
-
-  const discountLocked =
-    !allowDiscountOverride && lockPromotionDiscount && effectiveDiscount > 0;
-  const showManualInput =
-    allowDiscountOverride ||
-    (promotionDiscountProp == null && !promoResult?.discountAmount);
-  const discountReadOnly = discountLocked || !showManualInput;
 
   return (
     <div className="space-y-6 text-gray-900">
@@ -193,14 +195,10 @@ export function PriceStep({
           {(showManualInput || effectiveDiscount > 0) && (
             <input
               type="text"
+              inputMode="numeric"
+              autoComplete="off"
               id="discount"
-              value={
-                effectiveDiscount === 0 && showManualInput
-                  ? manualDiscount === '' || manualDiscount === 0
-                    ? ''
-                    : formatPrice(manualDiscount)
-                  : formatPrice(effectiveDiscount)
-              }
+              value={discountInputValue}
               onChange={handleDiscountChange}
               readOnly={discountReadOnly}
               placeholder={t('discountPlaceholder')}
@@ -247,4 +245,14 @@ export function PriceStep({
       </form>
     </div>
   );
+}
+
+function formatAmountGroup(value: number | ''): string {
+  if (value === '' || value === 0) return '';
+  return new Intl.NumberFormat('id-ID').format(value);
+}
+
+function parseAmountGroup(raw: string): number | '' {
+  const digits = raw.replace(/[^\d]/g, '');
+  return digits === '' ? '' : Number(digits);
 }

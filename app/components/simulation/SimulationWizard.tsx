@@ -582,6 +582,7 @@ export function SimulationWizard({
                   assetCode={selectedAsset!.AssetCode}
                   initialPartnerCode={partnerCode}
                   initialDiscount={isPromoLanding ? discount : undefined}
+                  lockPromotionDiscount={false}
                   allowDiscountOverride={isDealerSales}
                   onComplete={handlePriceComplete}
                 />
