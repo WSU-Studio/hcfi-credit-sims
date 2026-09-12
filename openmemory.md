@@ -16,6 +16,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Salesman fee override (Phase 2 Poin 2): quotation `/dealer/quotation` stepper admin fee 500rb. Bounds come from Hyundai `AdminFeeAmt` + `AdminFeeBhv` (Lock / Min / Max / Def) on the product row — not CMS `maxAdminFeeAmt`. Provision still uses CMS `maxProvisionPrcnt` (0.5% steps) until Harry confirms amt vs prcnt.
 - Promo banner live landing (Phase 2 Poin 3): one PreSimulation record, two public URLs. Snapshot `/pre-sim/[slug]` stays QR/read-only. Live `/credit-simulation?promo=[slug]` hydrates the public wizard to ResultStep (Jakarta dealer, new AddLeadAsset, editable, submittable). Banner CMS picks live vs snapshot vs custom CTA. Do not reuse `simulationLeadNo` from the template.
 - Salesman PriceStep discount is editable (Harry finding). Promo lookup still prefills; salesman may override. Admin fee on quotation is Hyundai `AdminFeeAmt` + `AdminFeeBhv` from CalculateProductFromRule. CMS no longer caps admin fee.
+- Production discount unlock (Harry 12 Sep 2026) is `hotfix/salesman-discount-input` from `main` (`allowDiscountOverride` on `PriceStep` + `SimulationWizard` only). Do not cherry-pick the `dev` commit `7b80730` onto `main`. After merging the hotfix to `main`, merge it back into `dev` (keep `dev`’s `initialDiscount` / promo-landing bits). Later `dev` → `main` then shares that hotfix ancestor instead of duplicating the hunk.
 - First-party visitor analytics (Phase 2 Poin 5): in-app tracker under `lib/first-party-tracker/` (not a standalone product). Ingest `POST /api/t/e`. Admin `/admin/analytics` (menu `ANALYTICS`). GA/GTM stays optional marketing, not CMS source of truth. Retention purge is a 90-day follow-up (not in this slice).
 
 ## User Defined Namespaces
@@ -47,6 +48,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Rate limits: in-memory `lib/ratelimit.ts` + middleware per-IP on login/OTP
 - Dealer vs CMS: `USER_TYPES` in `lib/user-types.ts`; OTP required only for `DEALER_ADMIN` and `SALESMAN`
 - Email send is best-effort (`sendEmail` returns boolean). OTP issue fails closed if SMTP send fails in production. Local without SMTP logs the code to the server console.
+- Isolated production slice: branch from `main`, re-apply the small change on `main`’s files, merge to `main`, then merge that hotfix into `dev` (resolve conflicts by keeping `dev` when it already has the fuller feature). Do not cherry-pick a `dev` commit whose parent is far ahead of `main`.
 - Pre-sim dual links: snapshot `/pre-sim/[slug]` vs live `/credit-simulation?promo=[slug]` — never mix submit onto the QR page
 - First-party analytics: public site only (ignore `/admin`, `/dealer`, `/auth`); DNT/bots dropped; no name/email/phone in events
 
