@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { MAX_DISCOUNT_PERCENT } from '@/lib/dealer-promotion';
 import { normalizePartnerCode, MAX_PARTNER_CODE_LENGTH } from '@/lib/hyundai-partner';
@@ -13,8 +13,10 @@ interface PriceStepProps {
   initialPartnerCode?: string | null;
   /** Prefill from dealer promotion (nominal) */
   promotionDiscount?: number;
-  /** When true, discount field is read-only (dealer-sales mode) */
+  /** When true, discount field is read-only (locked promo) */
   lockPromotionDiscount?: boolean;
+  /** Dealer/salesman may type discount even when a promo is prefilled. */
+  allowDiscountOverride?: boolean;
   onComplete: (
     netPrice: number,
     discount: number,
@@ -29,6 +31,7 @@ export function PriceStep({
   initialPartnerCode = null,
   promotionDiscount: promotionDiscountProp,
   lockPromotionDiscount = false,
+  allowDiscountOverride = false,
   onComplete,
 }: PriceStepProps) {
   const t = useTranslations('creditSimulation');
@@ -37,6 +40,7 @@ export function PriceStep({
     () => initialPartnerCode ?? ''
   );
   const [error, setError] = useState<string | null>(null);
+  const discountEditedRef = useRef(false);
 
   const otrPrice = suggestedPrice ?? 0;
   const lookupEnabled = promotionDiscountProp == null && !!assetCode;
@@ -46,10 +50,25 @@ export function PriceStep({
     lookupEnabled
   );
 
-  const effectiveDiscount =
-    promotionDiscountProp ??
-    promoResult?.discountAmount ??
-    (typeof manualDiscount === 'number' ? manualDiscount : 0);
+  useEffect(() => {
+    if (!allowDiscountOverride || discountEditedRef.current) return;
+    const seed = promotionDiscountProp ?? promoResult?.discountAmount ?? null;
+    if (seed != null && seed > 0) {
+      setManualDiscount(seed);
+    }
+  }, [
+    allowDiscountOverride,
+    promotionDiscountProp,
+    promoResult?.discountAmount,
+  ]);
+
+  const typedDiscount = typeof manualDiscount === 'number' ? manualDiscount : 0;
+  const promoAmount = promotionDiscountProp ?? promoResult?.discountAmount ?? 0;
+  const effectiveDiscount = allowDiscountOverride
+    ? typedDiscount
+    : (promotionDiscountProp ??
+      promoResult?.discountAmount ??
+      typedDiscount);
 
   const promoLabel =
     promotionDiscountProp != null
@@ -66,7 +85,8 @@ export function PriceStep({
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (lockPromotionDiscount) return;
+    if (lockPromotionDiscount && !allowDiscountOverride) return;
+    discountEditedRef.current = true;
     setError(null);
     const value = e.target.value.replace(/[^\d]/g, '');
     setManualDiscount(value === '' ? '' : Number(value));
@@ -106,9 +126,12 @@ export function PriceStep({
     onComplete(netPrice, discountVal, normalizePartnerCode(partnerCode) || null);
   };
 
-  const discountLocked = lockPromotionDiscount && effectiveDiscount > 0;
+  const discountLocked =
+    !allowDiscountOverride && lockPromotionDiscount && effectiveDiscount > 0;
   const showManualInput =
-    promotionDiscountProp == null && !promoResult?.discountAmount;
+    allowDiscountOverride ||
+    (promotionDiscountProp == null && !promoResult?.discountAmount);
+  const discountReadOnly = discountLocked || !showManualInput;
 
   return (
     <div className="space-y-6 text-gray-900">
@@ -149,9 +172,9 @@ export function PriceStep({
           {promoLoading && (
             <p className="mb-2 text-xs text-[#002c5f]">Memuat promo dealer...</p>
           )}
-          {promoLabel && !promoLoading && effectiveDiscount > 0 && (
+          {promoLabel && !promoLoading && promoAmount > 0 && (
             <p className="mb-2 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-              {promoLabel} — {formatPrice(effectiveDiscount)}
+              {promoLabel} — {formatPrice(promoAmount)}
             </p>
           )}
 
@@ -167,10 +190,10 @@ export function PriceStep({
                   : formatPrice(effectiveDiscount)
               }
               onChange={handleDiscountChange}
-              readOnly={discountLocked || !showManualInput}
+              readOnly={discountReadOnly}
               placeholder={t('discountPlaceholder')}
               className={`w-full px-4 py-3 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[#002c5f] focus:border-transparent ${
-                discountLocked || !showManualInput
+                discountReadOnly
                   ? 'bg-gray-100 cursor-not-allowed'
                   : 'bg-[var(--background)]'
               }`}
