@@ -41,6 +41,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - `AnalyticsEvent` (`analytics_events`) — `page_view` | `product_click` | `sim_start` | `sim_step` | `sim_submit`; anonymous `visitorId` cookie `hcfi_fp_vid` (not Lead id)
 - `Lead.hyundaiGoLiveAt` — first time monitoring shows Contract Activation completed
 - Admin Visitor Analytics (`app/(back-office)/admin/analytics/page.tsx`) — traffic, product clicks, funnel, three conversion ratios
+- Page-builder `download` widget — public view is a centered wrap of PDF icons (`IconFileTypePdf` red) with captions underneath, not stacked download cards. Editor list (max 10) via `DownloadWidgetFields`. `MediaPicker` `kind="document"` `multiple` lets editors check several library PDFs then confirm; that set becomes `files[]` (titles kept for URLs already attached). Library list ≠ widget list. Upload API stores PDF as-is (no sharp/WebP). Payload: `files: DownloadFileItem[]`. `normalizeDownloadFiles` still reads a leftover single-file payload if `files` is absent. Only items with a safe `fileUrl` render.
 
 ## Patterns
 
@@ -51,6 +52,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - Isolated production slice: branch from `main`, re-apply the small change on `main`’s files, merge to `main`, then merge that hotfix into `dev` (resolve conflicts by keeping `dev` when it already has the fuller feature). Do not cherry-pick a `dev` commit whose parent is far ahead of `main`.
 - Pre-sim dual links: snapshot `/pre-sim/[slug]` vs live `/credit-simulation?promo=[slug]` — never mix submit onto the QR page
 - First-party analytics: public site only (ignore `/admin`, `/dealer`, `/auth`); DNT/bots dropped; no name/email/phone in events
+- CMS files: widgets store URLs, not blobs. Images and PDFs go through `/api/admin/media/upload` + `Media` table. `MediaPicker` `kind="image"` (default, single) or `kind="document"` (`multiple` for the download widget). Do not add a second widget-only upload path. Download widget list follows CTA `buttons[]`: `createEmptyDownloadFile` + `normalizeDownloadFiles` + `mergeSelectedDownloadMedia` in `lib/layout-builder-utils.ts`. Empty `files: []` must not fall back to leftover single-file fields.
 
 ## Auth OTP flow
 
