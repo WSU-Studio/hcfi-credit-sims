@@ -41,7 +41,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - `AnalyticsEvent` (`analytics_events`) — `page_view` | `product_click` | `sim_start` | `sim_step` | `sim_submit`; anonymous `visitorId` cookie `hcfi_fp_vid` (not Lead id)
 - `Lead.hyundaiGoLiveAt` — first time monitoring shows Contract Activation completed
 - Admin Visitor Analytics (`app/(back-office)/admin/analytics/page.tsx`) — traffic, product clicks, funnel, three conversion ratios
-- Page-builder `download` widget — public cards with red PDF icon, title, optional subtitle, **Lihat PDF** and **Unduh**. Layout settings: `direction` (`row` | `column`) and `align` (`left` | `center` | `right`). Mobile is always `flex-col` (`items-*` for left/center/right). Desktop row uses `md:flex-row` + `md:justify-*`. Classes live in `downloadSettings.ts`. `WidgetRenderer` and `DownloadWidget` are **Server Components** (no `'use client'`). Async pages (`StaticPageBySlug`) must not import a new client widget — that Flight-loads a Promise of `undefined` and Next refetch-loops `/id/informasi` (same as `FirstPartyPageview`). **Lihat PDF** is `target="_blank"`; **Unduh** is `?download=1`. Do not mount EmbedPDF/`PdfViewerDialog` from the page-builder graph. `next.config.js` serves `.wasm` as `asset/resource` only (no `asyncWebAssembly`).
+- Dealer sales promotions (`DealerPromotionForm` / `lib/dealer-promotion.ts`) — period is **inclusive calendar days in Asia/Jakarta**. `validTo` 17 Sep means the whole WIB day, not midnight UTC. Form uses `type="date"`. `isPromotionCurrentlyValid` compares `toJakartaYmd`. Lookup quotation uses the same helper.
 
 ## Patterns
 

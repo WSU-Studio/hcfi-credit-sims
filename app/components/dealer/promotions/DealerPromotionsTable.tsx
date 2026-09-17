@@ -25,7 +25,10 @@ type Promotion = {
 
 const formatDate = (iso: string | null) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('id-ID', { dateStyle: 'medium' });
+  return new Date(iso).toLocaleDateString('id-ID', {
+    dateStyle: 'medium',
+    timeZone: 'Asia/Jakarta',
+  });
 };
 
 export function DealerPromotionsTable() {
