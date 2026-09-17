@@ -40,7 +40,7 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 - First-party tracker (`lib/first-party-tracker/`) — client `track()` via sendBeacon, Zod ingest schema, admin summary queries
 - `AnalyticsEvent` (`analytics_events`) — `page_view` | `product_click` | `sim_start` | `sim_step` | `sim_submit`; anonymous `visitorId` cookie `hcfi_fp_vid` (not Lead id)
 - `Lead.hyundaiGoLiveAt` — first time monitoring shows Contract Activation completed
-- Admin Visitor Analytics (`app/(back-office)/admin/analytics/page.tsx`) — traffic, product clicks, funnel, three conversion ratios
+- Admin Visitor Analytics (`app/(back-office)/admin/analytics/page.tsx`) — traffic, product clicks, funnel, three conversion ratios. Default date range is last 30 inclusive days (`today` and `today - 29`); not persisted in the URL so a full refresh resets it. **Terapkan** always refetches even if Dari/Sampai did not change (repeat click is a refresh; numbers stay the same if no new events).
 - Dealer sales promotions (`DealerPromotionForm` / `lib/dealer-promotion.ts`) — period is **inclusive calendar days in Asia/Jakarta**. `validTo` 17 Sep means the whole WIB day, not midnight UTC. Form uses `type="date"`. `isPromotionCurrentlyValid` compares `toJakartaYmd`. Lookup quotation uses the same helper.
 
 ## Patterns
