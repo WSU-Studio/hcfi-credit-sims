@@ -43,7 +43,7 @@ export function normalizeFeeBhv(raw: string | null | undefined): HyundaiFeeBhv {
   return 'DEF';
 }
 
-type AdminFeeRow = {
+export type AdminFeeRow = {
   AdminFeeAmt?: unknown;
   AdminFeeBhv?: unknown;
   adminFeeAmt?: unknown;

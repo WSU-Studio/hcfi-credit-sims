@@ -30,6 +30,10 @@ type ProductRow = {
   ProductName?: string;
   PartnerCode?: string | null;
   IsPartner?: boolean | string | null;
+  AdminFeeAmt?: unknown;
+  AdminFeeBhv?: unknown;
+  adminFeeAmt?: unknown;
+  adminFeeBhv?: unknown;
   [key: string]: unknown;
 };
 
