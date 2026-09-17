@@ -15,7 +15,7 @@ import {
 import { ContactModal, type UserLocation } from '@/app/components/simulation/ContactModal';
 import { SimulationRetryError } from '@/app/components/simulation/SimulationRetryError';
 import { CustomerPaidFees } from '@/app/components/simulation/CustomerPaidFees';
-import { buildSummaryFromProductRow, withProvisionBreakdown } from '@/lib/lead-summary-snapshot';
+import { buildSummaryFromProductRow, withCustomerFeeBreakdown } from '@/lib/lead-summary-snapshot';
 import {
   getAvailableFirstInstallments,
   normalizeFirstInstallment,
@@ -372,12 +372,14 @@ export function ResultStep({
       const rowBalloon = Number(highlightedRow?.BalloonAmt) || 0;
       const summaryBalloon = Number(summary.balloonAmt) || 0;
       setFinalSummary(
-        withProvisionBreakdown(
+        withCustomerFeeBreakdown(
           {
             ...summary,
             balloonAmt: summaryBalloon > 0 ? summaryBalloon : rowBalloon > 0 ? rowBalloon : 0,
           },
-          provisionPrcnt
+          provisionPrcnt,
+          highlightedRow,
+          { adminFeeAmt }
         )
       );
       setFinalSummaryAt(new Date().toISOString());
@@ -437,13 +439,15 @@ export function ResultStep({
         tenor: highlightedRow.Tenor,
         firstInstallment,
         isPromotion,
-        summary: withProvisionBreakdown(
+        summary: withCustomerFeeBreakdown(
           {
             ...summary,
             balloonAmt: summaryBalloon > 0 ? summaryBalloon : rowBalloon > 0 ? rowBalloon : 0,
             firstInstallment,
           },
-          provisionPrcnt
+          provisionPrcnt,
+          highlightedRow,
+          { adminFeeAmt }
         ),
       });
     } catch (err) {
@@ -1183,7 +1187,7 @@ export function ResultStep({
                 summarySnapshot={
                   finalSummary ??
                   (selectedProduct && highlightedRow && otrPrice
-                    ? withProvisionBreakdown(
+                    ? withCustomerFeeBreakdown(
                         buildSummaryFromProductRow({
                           productName: selectedProduct.ProductName,
                           productCode: selectedProduct.ProductCode,
@@ -1194,7 +1198,9 @@ export function ResultStep({
                           firstInstallment,
                           row: highlightedRow,
                         }),
-                        provisionPrcnt
+                        provisionPrcnt,
+                        highlightedRow,
+                        { adminFeeAmt }
                       )
                     : null)
                 }
