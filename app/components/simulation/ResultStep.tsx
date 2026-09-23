@@ -914,7 +914,7 @@ export function ResultStep({
                 adminFee: t('adminFeeLabel'),
                 adminFeeHint: adminFeeRule.locked
                   ? t('adminFeeLockedHint')
-                  : adminFeeRule.bhv === 'MIN'
+                  : adminFeeRule.bhv === 'MIN' || adminFeeRule.bhv === 'LOCK_CPTLZ'
                     ? t('adminFeeMinHint', { min: formatCurrency(adminFeeRule.min) })
                     : adminFeeRule.bhv === 'MAX'
                       ? t('adminFeeMaxHint', { max: formatCurrency(adminFeeRule.max) })
@@ -1194,7 +1194,13 @@ export function ResultStep({
                 discount={discount}
                 dpPercent={dpPercent}
                 tenor={highlightedRow?.Tenor}
-                adminFeeAmtOverride={isDealerSales ? adminFeeAmt : null}
+                adminFeeAmtOverride={highlightedRow ? adminFeeAmt : null}
+                adminFeeBhvOverride={
+                  highlightedRow ? readAdminFeeBhv(adminFeeSource) || null : null
+                }
+                adminFeeCptlzOverride={
+                  highlightedRow && adminFeeSource ? readAdminFeeCptlz(adminFeeSource) : null
+                }
                 provisionFeeOverride={isDealerSales ? provisionPrcnt : null}
                 vehicleSummary={
                   vehicle

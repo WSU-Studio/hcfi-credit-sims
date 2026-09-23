@@ -81,6 +81,7 @@ import {
 } from '@/lib/ocr-ktp-snapshot';
 import { resolveIsPartner } from '@/lib/hyundai-partner';
 import { mrChannelCodeFromLeadSource } from '@/lib/hyundai-channel-code';
+import { buildLeadHyundaiFeeOverride } from '@/lib/salesman-fee';
 import {
   HYUNDAI_VENDOR_LIST_PATH,
   buildHyundaiVendorListBody,
@@ -206,6 +207,8 @@ export type LeadRecordForHyundai = {
    */
   salesEmpNo?: string | null;
   adminFeeAmtOverride?: number | null;
+  adminFeeBhvOverride?: string | null;
+  adminFeeCptlzOverride?: boolean | null;
   provisionFeeOverride?: number | null;
   /**
    * WEBSITE | DEALER_SALES — dipetakan ke Confins MrChannelCode di AddLeadAsset.
@@ -571,18 +574,7 @@ export async function submitLeadToHyundai(params: {
       isPromotion: params.lead.isPromotion ?? false,
       leadId: params.lead.id,
       isPartner,
-      feeOverride:
-        params.lead.adminFeeAmtOverride != null || params.lead.provisionFeeOverride != null
-          ? {
-              ...(params.lead.adminFeeAmtOverride != null
-                ? { adminFeeAmt: params.lead.adminFeeAmtOverride }
-                : {}),
-              ...(params.lead.provisionFeeOverride != null
-                ? { provisionFee: params.lead.provisionFeeOverride }
-                : {}),
-              provisionType: 'PRCNT',
-            }
-          : null,
+      feeOverride: buildLeadHyundaiFeeOverride(params.lead),
     });
   } else {
     flow = 'cross_office';
@@ -660,18 +652,7 @@ export async function submitLeadToHyundai(params: {
       isPromotion: params.lead.isPromotion ?? false,
       leadId: params.lead.id,
       isPartner,
-      feeOverride:
-        params.lead.adminFeeAmtOverride != null || params.lead.provisionFeeOverride != null
-          ? {
-              ...(params.lead.adminFeeAmtOverride != null
-                ? { adminFeeAmt: params.lead.adminFeeAmtOverride }
-                : {}),
-              ...(params.lead.provisionFeeOverride != null
-                ? { provisionFee: params.lead.provisionFeeOverride }
-                : {}),
-              provisionType: 'PRCNT',
-            }
-          : null,
+      feeOverride: buildLeadHyundaiFeeOverride(params.lead),
     });
   }
 

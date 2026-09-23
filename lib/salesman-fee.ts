@@ -65,6 +65,11 @@ export function isFeeAmountLocked(bhv: HyundaiFeeBhv): boolean {
   return bhv === 'LOCK_ALL' || bhv === 'LOCK_AMT' || bhv === 'LOCK';
 }
 
+/** Hery 22 Sep 2026 poin 4: LOCK_* uses the rule amount as a floor. */
+export function isLockFamilyBhv(bhv: HyundaiFeeBhv): boolean {
+  return bhv === 'LOCK' || bhv === 'LOCK_ALL' || bhv === 'LOCK_AMT' || bhv === 'LOCK_CPTLZ';
+}
+
 export type AdminFeeRow = {
   AdminFeeAmt?: unknown;
   AdminFeeBhv?: unknown;
@@ -109,7 +114,11 @@ export function resolveAdminFeeRule(row: AdminFeeRow | null | undefined): AdminF
   if (bhv === 'MAX') {
     return { bhv, amount, min: 0, max: amount, locked: false };
   }
-  // DEF and LOCK_CPTLZ: amount prefilled, still editable.
+  // LOCK_CPTLZ: amount still editable (3e) but cannot go below the rule (poin 4).
+  if (isLockFamilyBhv(bhv)) {
+    return { bhv, amount, min: amount, max: ADMIN_FEE_TECHNICAL_MAX_AMT, locked: false };
+  }
+  // DEF: amount prefilled, still editable down to 0.
   return { bhv, amount, min: 0, max: ADMIN_FEE_TECHNICAL_MAX_AMT, locked: false };
 }
 
@@ -275,9 +284,11 @@ export function buildHyundaiFeeRequestFields(
   if (override.adminFeeAmt != null) {
     fields.AdminFeeAmt = override.adminFeeAmt;
     fields.AdminFeeCptlz = override.adminFeeCptlz ?? false;
-    if (override.adminFeeBhv) {
-      fields.AdminFeeBhv = override.adminFeeBhv;
-    }
+  } else if (override.adminFeeCptlz != null) {
+    fields.AdminFeeCptlz = override.adminFeeCptlz;
+  }
+  if (override.adminFeeBhv) {
+    fields.AdminFeeBhv = override.adminFeeBhv;
   }
   if (override.provisionFee != null) {
     fields.ProvisionType = override.provisionType || 'PRCNT';
@@ -311,6 +322,33 @@ export function parseSalesmanFeeOverride(input: {
       ? { adminFeeCptlz: readAdminFeeCptlz({ AdminFeeCptlz: input.adminFeeCptlz }) }
       : {}),
     ...(hasProvision ? { provisionFee } : {}),
+    provisionType: 'PRCNT',
+  };
+}
+
+/**
+ * Snapshot tenor rule for Mobile Loan (Hery poin 7): Amt + Bhv + Cptlz.
+ * Amt 0 (LOCK_ALL) still counts — do not treat 0 as "no override".
+ */
+export function buildLeadHyundaiFeeOverride(lead: {
+  adminFeeAmtOverride?: number | null;
+  adminFeeBhvOverride?: string | null;
+  adminFeeCptlzOverride?: boolean | null;
+  provisionFeeOverride?: number | null;
+}): SalesmanFeeOverride | null {
+  const hasAdmin = lead.adminFeeAmtOverride != null && Number.isFinite(lead.adminFeeAmtOverride);
+  const bhv =
+    typeof lead.adminFeeBhvOverride === 'string' && lead.adminFeeBhvOverride.trim()
+      ? lead.adminFeeBhvOverride.trim()
+      : undefined;
+  const hasCptlz = lead.adminFeeCptlzOverride != null;
+  const hasProv = lead.provisionFeeOverride != null && Number.isFinite(lead.provisionFeeOverride);
+  if (!hasAdmin && !bhv && !hasCptlz && !hasProv) return null;
+  return {
+    ...(hasAdmin ? { adminFeeAmt: Number(lead.adminFeeAmtOverride) } : {}),
+    ...(bhv ? { adminFeeBhv: bhv } : {}),
+    ...(hasCptlz ? { adminFeeCptlz: Boolean(lead.adminFeeCptlzOverride) } : {}),
+    ...(hasProv ? { provisionFee: Number(lead.provisionFeeOverride) } : {}),
     provisionType: 'PRCNT',
   };
 }
