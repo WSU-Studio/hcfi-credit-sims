@@ -35,7 +35,9 @@ import {
   readAdminFeeAmt,
   readAdminFeeBhv,
   readAdminFeeCptlz,
+  readProvisionFeeBhv,
   resolveAdminFeeRule,
+  resolveProvisionFeeRule,
   restoreTenorAdminFees,
   snapshotTenorAdminFees,
   type SalesmanFeeCaps,
@@ -229,6 +231,9 @@ export function ResultStep({
   const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
   const adminFeeSource = pickAdminFeeSource(highlightedRow, selectedProduct);
   const adminFeeRule = resolveAdminFeeRule(adminFeeSource);
+  const provisionSource = highlightedRow ?? selectedProduct ?? null;
+  const provisionNtf = ntfFromAsset(Number(otrPrice) || 0, dpPercent);
+  const provisionFeeRule = resolveProvisionFeeRule(provisionSource, provisionNtf);
   const dealerFeeOverrideBase = {
     enabled: isDealerSales,
     adminFeeTouched: adminFeeTouchedRef.current,
@@ -238,6 +243,8 @@ export function ResultStep({
     adminFeeBhv: readAdminFeeBhv(adminFeeSource),
     adminFeeCptlz: adminFeeSource ? readAdminFeeCptlz(adminFeeSource) : null,
     provisionPrcnt,
+    provisionFeeBhv: readProvisionFeeBhv(provisionSource) || null,
+    provisionLocked: provisionFeeRule.locked,
   };
   /** Multi-tenor CalculateProductFromRule: provision-only must not send AdminFeeAmt (flattens other tenors). */
   const dealerFeeOverride = buildDealerFeeOverrideBody(dealerFeeOverrideBase);
@@ -658,9 +665,18 @@ export function ResultStep({
         const rule = resolveAdminFeeRule(source);
         setAdminFeeAmt(alignAdminFeeAmt(readAdminFeeAmt(source), rule));
       }
-      if (seedRow && !provisionTouched) {
+      if (seedRow) {
         const ntf = ntfFromAsset(Number(otrPrice) || 0, dpPercent);
-        setProvisionPrcnt(Math.round(provisionPercentOf(seedRow, ntf) * 2) / 2);
+        const provRule = resolveProvisionFeeRule(
+          seedRow ?? selectedProduct ?? null,
+          ntf
+        );
+        if (provRule.locked) {
+          provisionTouchedRef.current = false;
+          setProvisionPrcnt(Math.round(provRule.percent * 2) / 2);
+        } else if (!provisionTouched) {
+          setProvisionPrcnt(Math.round(provisionPercentOf(seedRow, ntf) * 2) / 2);
+        }
       }
     } catch (e) {
       // AbortError dari controller.abort() bukan error sungguhan — skip diam-diam.
@@ -683,7 +699,9 @@ export function ResultStep({
     tenorAdminFeeSnapRef.current = {};
     const rule = resolveAdminFeeRule(product);
     setAdminFeeAmt(alignAdminFeeAmt(readAdminFeeAmt(product), rule));
-    setProvisionPrcnt(Number(product.ProvisionFee) || 0);
+    const ntf = ntfFromAsset(Number(otrPrice) || 0, resolveDefaultDpPercent(product));
+    const provRule = resolveProvisionFeeRule(product, ntf);
+    setProvisionPrcnt(Math.round(provRule.percent * 2) / 2);
     setSelectedProduct(product);
     setDpPercent(resolveDefaultDpPercent(product));
     const preferred =
@@ -935,6 +953,7 @@ export function ResultStep({
               adminFeeMin={adminFeeRule.min}
               adminFeeMax={adminFeeRule.max}
               adminFeeLocked={adminFeeRule.locked}
+              provisionLocked={provisionFeeRule.locked}
               disabled={simulateLoading}
               onAdminFeeChange={(next) => {
                 if (adminFeeRule.locked) return;
@@ -942,6 +961,7 @@ export function ResultStep({
                 setAdminFeeAmt(next);
               }}
               onProvisionPrcntChange={(next) => {
+                if (provisionFeeRule.locked) return;
                 provisionTouchedRef.current = true;
                 setProvisionPrcnt(next);
               }}
@@ -957,7 +977,9 @@ export function ResultStep({
                       ? t('adminFeeMaxHint', { max: formatCurrency(adminFeeRule.max) })
                       : t('adminFeeHint'),
                 provision: t('provisionFeeLabel'),
-                provisionHint: t('provisionFeeHint'),
+                provisionHint: provisionFeeRule.locked
+                  ? t('provisionFeeLockedHint')
+                  : t('provisionFeeHint'),
                 provisionAmount: t('provisionAmountLabel'),
               }}
             />
@@ -1244,7 +1266,13 @@ export function ResultStep({
                 adminFeeCptlzOverride={
                   highlightedRow && adminFeeSource ? readAdminFeeCptlz(adminFeeSource) : null
                 }
-                provisionFeeOverride={isDealerSales ? provisionPrcnt : null}
+                provisionFeeOverride={
+                  isDealerSales &&
+                  !provisionFeeRule.locked &&
+                  provisionTouchedRef.current
+                    ? provisionPrcnt
+                    : null
+                }
                 vehicleSummary={
                   vehicle
                     ? [vehicle.modelName, vehicle.trimName, vehicle.exteriorColor, vehicle.interiorColor]

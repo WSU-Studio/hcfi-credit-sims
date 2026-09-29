@@ -173,6 +173,7 @@
     "adminFeeMaxHint": "Maksimum sesuai rule: {max}.",
     "provisionFeeLabel": "Provision",
     "provisionFeeHint": "Kelipatan 0,5%.",
+    "provisionFeeLockedHint": "Provision fee dikunci oleh rule kredit.",
     "provisionAmountLabel": "Nominal provision",
     "standard": "Standard",
     "promotion": "Promotion",
