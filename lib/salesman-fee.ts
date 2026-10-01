@@ -209,18 +209,39 @@ export function pickAdminFeeSource(
   return primary ?? secondary ?? null;
 }
 
+export type TenorAdminFeeSnap = {
+  amt: number;
+  bhv: string;
+  cptlz: boolean;
+};
+
+/** Last clean Confins tenor snapshot — not the echoed override after salesman +/−. */
+export function adminFeeRowFromSnap(
+  snap: TenorAdminFeeSnap | null | undefined
+): AdminFeeRow | null {
+  if (!snap) return null;
+  return { AdminFeeAmt: snap.amt, AdminFeeBhv: snap.bhv, AdminFeeCptlz: snap.cptlz };
+}
+
+/**
+ * LOCK_CPTLZ / MIN floors must stay on the original tenor rule amount.
+ * After + the current row's AdminFeeAmt is the override (e.g. 2.5jt),
+ * which must not become the new minimum.
+ */
+export function pickAdminFeeRuleSource(
+  snap: TenorAdminFeeSnap | null | undefined,
+  primary: AdminFeeRow | null | undefined,
+  secondary: AdminFeeRow | null | undefined
+): AdminFeeRow | null {
+  return adminFeeRowFromSnap(snap) ?? pickAdminFeeSource(primary, secondary);
+}
+
 /** LOCK memakai nominal Confins apa adanya (boleh tidak kelipatan 500rb). */
 export function alignAdminFeeAmt(value: number, rule: AdminFeeRule): number {
   if (rule.locked) return rule.amount;
   const n = Number.isFinite(value) ? value : rule.amount;
   return snapToStep(n, ADMIN_FEE_STEP_AMT, rule.min, rule.max);
 }
-
-export type TenorAdminFeeSnap = {
-  amt: number;
-  bhv: string;
-  cptlz: boolean;
-};
 
 export function snapshotTenorAdminFees(
   rows: Array<{ Tenor?: unknown } & AdminFeeRow>

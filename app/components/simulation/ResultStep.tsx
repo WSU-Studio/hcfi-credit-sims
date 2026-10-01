@@ -31,6 +31,7 @@ import {
   DEFAULT_MAX_PROVISION_PRCNT,
   ntfFromAsset,
   parseSalesmanFeeCaps,
+  pickAdminFeeRuleSource,
   pickAdminFeeSource,
   provisionAmountOf,
   provisionPercentOf,
@@ -231,7 +232,11 @@ export function ResultStep({
   // Hyundai: IsPromotion wajib true untuk produk dari tab Promotion (CalculateProductFromRule).
   const isPromotion = tab === 'Promotion';
   const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
-  const adminFeeSource = pickAdminFeeSource(highlightedRow, selectedProduct);
+  const adminFeeSource = pickAdminFeeRuleSource(
+    tenorAdminFeeSnapRef.current[Number(selectedTenor)],
+    highlightedRow,
+    selectedProduct
+  );
   const adminFeeRule = applyAdminFeeCmsCap(
     resolveAdminFeeRule(adminFeeSource),
     feeCaps.maxAdminFeeAmt
@@ -724,10 +729,11 @@ export function ResultStep({
     const restored = restoreTenorAdminFees(tableRows, tenorAdminFeeSnapRef.current);
     if (restored !== tableRows) setTableRows(restored);
     const sourceRow = restored.find((r) => r.Tenor === row.Tenor) ?? row;
-    const snap = tenorAdminFeeSnapRef.current[Number(row.Tenor)];
-    const source = snap
-      ? { AdminFeeAmt: snap.amt, AdminFeeBhv: snap.bhv, AdminFeeCptlz: snap.cptlz }
-      : pickAdminFeeSource(sourceRow, selectedProduct);
+    const source = pickAdminFeeRuleSource(
+      tenorAdminFeeSnapRef.current[Number(row.Tenor)],
+      sourceRow,
+      selectedProduct
+    );
     const rule = resolveAdminFeeRule(source);
     setAdminFeeAmt(alignAdminFeeAmt(readAdminFeeAmt(source), rule));
   };
