@@ -23,7 +23,9 @@ import {
   type FirstInstallmentType,
 } from '@/lib/product-calculation-rows';
 import {
+  ADMIN_FEE_TECHNICAL_MAX_AMT,
   alignAdminFeeAmt,
+  applyAdminFeeCmsCap,
   buildDealerFeeOverrideBody,
   DEFAULT_MAX_ADMIN_FEE_AMT,
   DEFAULT_MAX_PROVISION_PRCNT,
@@ -230,7 +232,10 @@ export function ResultStep({
   const isPromotion = tab === 'Promotion';
   const highlightedRow = tableRows.find((r) => r.Tenor === selectedTenor);
   const adminFeeSource = pickAdminFeeSource(highlightedRow, selectedProduct);
-  const adminFeeRule = resolveAdminFeeRule(adminFeeSource);
+  const adminFeeRule = applyAdminFeeCmsCap(
+    resolveAdminFeeRule(adminFeeSource),
+    feeCaps.maxAdminFeeAmt
+  );
   const provisionSource = highlightedRow ?? selectedProduct ?? null;
   const provisionNtf = ntfFromAsset(Number(otrPrice) || 0, dpPercent);
   const provisionFeeRule = resolveProvisionFeeRule(provisionSource, provisionNtf);
@@ -973,7 +978,8 @@ export function ResultStep({
                   ? t('adminFeeLockedHint')
                   : adminFeeRule.bhv === 'MIN' || adminFeeRule.bhv === 'LOCK_CPTLZ'
                     ? t('adminFeeMinHint', { min: formatCurrency(adminFeeRule.min) })
-                    : adminFeeRule.bhv === 'MAX'
+                    : adminFeeRule.bhv === 'MAX' ||
+                        adminFeeRule.max < ADMIN_FEE_TECHNICAL_MAX_AMT
                       ? t('adminFeeMaxHint', { max: formatCurrency(adminFeeRule.max) })
                       : t('adminFeeHint'),
                 provision: t('provisionFeeLabel'),

@@ -41,7 +41,7 @@ export function CustomerPaidFees({
   showProvision,
   caps,
   adminFeeMin = 0,
-  adminFeeMax = 50_000_000,
+  adminFeeMax = caps.maxAdminFeeAmt,
   adminFeeLocked = false,
   provisionLocked = false,
   disabled,

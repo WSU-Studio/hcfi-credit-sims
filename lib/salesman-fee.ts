@@ -4,7 +4,7 @@ import type { ProductCalculation } from '@/app/types/credit-simulation';
 export const ADMIN_FEE_STEP_AMT = 500_000;
 /** Batas teknis jika rule API Def/Min tanpa ceiling. */
 export const ADMIN_FEE_TECHNICAL_MAX_AMT = 50_000_000;
-/** Default cap admin fee jika CMS belum set (legacy; quotation memakai AdminFeeBhv). */
+/** Default cap admin fee jika CMS belum set. Quotation memakai min(CMS, AdminFeeBhv). */
 export const DEFAULT_MAX_ADMIN_FEE_AMT = 9_000_000;
 /** Kelipatan stepper provision % (meeting Phase 2 Poin 2). */
 export const PROVISION_FEE_STEP_PRCNT = 0.5;
@@ -122,6 +122,19 @@ export function resolveAdminFeeRule(row: AdminFeeRow | null | undefined): AdminF
   }
   // DEF: amount prefilled, still editable down to 0.
   return { bhv, amount, min: 0, max: ADMIN_FEE_TECHNICAL_MAX_AMT, locked: false };
+}
+
+/**
+ * CMS `maxAdminFeeAmt` is a ceiling on editable Admin Fee.
+ * Locked Confins amounts stay as-is. The Confins floor is never lowered.
+ */
+export function applyAdminFeeCmsCap(rule: AdminFeeRule, maxAdminFeeAmt: number): AdminFeeRule {
+  if (rule.locked) return rule;
+  const cap =
+    Number.isFinite(maxAdminFeeAmt) && maxAdminFeeAmt >= 0
+      ? maxAdminFeeAmt
+      : ADMIN_FEE_TECHNICAL_MAX_AMT;
+  return { ...rule, max: Math.max(rule.min, Math.min(rule.max, cap)) };
 }
 
 export type ProvisionFeeRow = {
@@ -389,7 +402,7 @@ export function clampSalesmanFeeOverride(
               override.adminFeeAmt,
               ADMIN_FEE_STEP_AMT,
               0,
-              ADMIN_FEE_TECHNICAL_MAX_AMT
+              caps.maxAdminFeeAmt
             )
         : undefined,
     adminFeeBhv: override.adminFeeBhv,
