@@ -84,3 +84,4 @@ Next.js App Router site with public credit simulation (Hyundai LOS), CMS back-of
 3. Go-live write-back: public lead tracking + admin **Sinkron go-live** (batch of 10 submitted leads) set `hyundaiGoLiveAt` when Adins stage Contract Activation is completed.
 4. CMS conversions (numerator = go-live in range): go-live / unique visitors, go-live / simulation starts, go-live / submitted leads. Dashboard CMS counts are unchanged.
 5. Follow-up: 90-day event retention/purge is not automatic in this slice.
+6. Funnel steps: the wizard's first step is sent as `sim_start` (not `sim_step`), so `getAnalyticsSummary` counts a step from `sim_start` + `sim_step` and returns steps in fixed `FUNNEL_STEPS` order (dealer → model → spec → price → result), with 0 for missing steps.
