@@ -36,12 +36,12 @@ function buildNavItems(
   const informationHref = informationPage ? `/${informationPage.slug}` : "/informasi";
 
   const fixed: NavItem[] = [
+    { label: t("hyundaiMotor"), href: "https://www.hyundai.com/id/id", target: "_blank", rel: "noopener noreferrer" },
     { label: t("creditSimulation"), href: "/credit-simulation" },
     { label: t("tracking"), href: "/tracking" },
     { label: t("promo"), href: "/promo" },
     { label: t("products"), href: "/products" },
     { label: t("information"), href: informationHref },
-    { label: t("hyundaiMotor"), href: "https://www.hyundai.com/id/id", target: "_blank", rel: "noopener noreferrer" },
   ];
   const menuPages = pages
     .filter((p) => p.showInMenu && p.slug !== informationPage?.slug)
